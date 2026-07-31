@@ -1,0 +1,27 @@
+{
+  "name": "pianificatore-dieta",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Il piano del professionista, eseguito dal software e spiegato al cliente",
+  "engines": {
+    "node": ">=22.6"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:crea": "wrangler d1 create pianificatore",
+    "db:locale": "wrangler d1 migrations apply pianificatore --local",
+    "db:remoto": "wrangler d1 migrations apply pianificatore --remote",
+    "test": "node --test test/*.test.ts",
+    "tipi": "tsc --noEmit",
+    "motore": "node src/cli.ts settimana",
+    "anteprima": "node src/server.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260722.1",
+    "@types/node": "^26.1.2",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.115.0"
+  }
+}

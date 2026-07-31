@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Accedi — Pianificatore</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="stylesheet" href="/ui.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231f6b46'/><text x='16' y='23' font-family='-apple-system,Helvetica,Arial,sans-serif' font-size='20' font-weight='700' fill='%23ffffff' text-anchor='middle'>P</text></svg>"
+    />
+  </head>
+  <body>
+    <!--
+      Una schermata sola per due mestieri.
+
+      Qui NON c'è un selettore «sono un nutrizionista / sono un cliente»: il
+      ruolo sta nel database e lo decide il server. Chiederlo a chi entra
+      sarebbe un suggerimento per chi prova le credenziali, e una domanda in
+      più per chi le ha davvero. Si sceglie una volta sola, alla registrazione.
+    -->
+    <main class="centrata">
+      <div class="scheda accesso">
+        <div class="marchio">
+          <span class="segno" aria-hidden="true">P</span>
+          <div>
+            <div class="nome">Pianificatore</div>
+            <div class="sotto">piano alimentare e assistente</div>
+          </div>
+        </div>
+
+        <h1>Accedi</h1>
+        <p class="muto piccolo sotto-molto">
+          Con le credenziali che ti ha dato il tuo studio.
+        </p>
+
+        <div id="errore" class="avviso grave sotto" hidden>
+          <span class="segno" aria-hidden="true">!</span>
+          <span id="errore-testo"></span>
+        </div>
+
+        <form id="form" novalidate>
+          <label>
+            <span>Email</span>
+            <input
+              id="email"
+              type="email"
+              autocomplete="username"
+              required
+              autocapitalize="none"
+              spellcheck="false"
+            />
+          </label>
+
+          <label>
+            <span>Password</span>
+            <input id="password" type="password" autocomplete="current-password" required />
+          </label>
+
+          <button class="btn larga" id="invia" type="submit">Entra</button>
+        </form>
+
+        <p class="muto piccolo sopra centro">
+          Non hai un account? <a href="/registrazione">Creane uno</a>
+        </p>
+      </div>
+    </main>
+
+    <script type="module" src="/accedi.js"></script>
+  </body>
+</html>

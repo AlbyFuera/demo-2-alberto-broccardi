@@ -1,0 +1,2193 @@
+/*
+ * Foglio di stile unico delle quattro schermate: accesso, registrazione,
+ * studio, cliente.
+ *
+ * Due lettori diversi, due esigenze diverse:
+ *
+ *   il professionista guarda lo strumento tra due visite, di corsa, e deve
+ *   vedere in un colpo d'occhio se c'è qualcosa che richiede la sua attenzione;
+ *
+ *   il cliente lo apre in piedi davanti al frigorifero, con una mano.
+ *
+ * Da qui le due scelte che governano tutto il resto: densità alta e gerarchia
+ * severa per lo studio, elementi grandi e una colonna sola per il cliente.
+ *
+ * Nessun font esterno, nessuna icona scaricata: la Content-Security-Policy del
+ * Worker vieta le richieste a terzi, e una pagina che non aspetta nulla da
+ * fuori si apre anche in uno studio con la connessione dell'ospedale.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * I SIMBOLI, e sono questi e nessun altro
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ *   P   il marchio, un monogramma
+ *   ✓   fatto, conforme, ammesso
+ *   !   attenzione, qualcosa da guardare
+ *   ✕   errore, chiudi, togli
+ *   i   informazione, nota di contesto
+ *   +   aggiungi
+ *   →   direzione: da una cosa all'altra, o «è partita»
+ *   ←   indietro, ripristina
+ *   ↑   invia
+ *   ⇄   sostituisci
+ *   ≡   apri il pannello
+ *   ≈   il numero è una stima, non un valore esatto
+ *   ·   separatore, elemento di elenco
+ *   —   qui non c'è ancora niente
+ *
+ * NESSUNA EMOJI. Non è una questione di gusto: un'emoji viene disegnata dal
+ * sistema operativo, cambia forma tra un telefono e un computer, arriva a
+ * colori dentro un'interfaccia che ha un accento solo, e su alcuni sistemi non
+ * arriva affatto. Questi glifi sono testo: prendono il colore del testo,
+ * seguono il peso del carattere e si stampano.
+ *
+ * Ognuno ha un significato, uno solo, sempre lo stesso. Un simbolo nuovo si
+ * aggiunge qui prima di usarlo, o l'insieme smette di essere un insieme.
+ */
+
+:root {
+  /*
+   * Solo chiaro. Il tema scuro c'era e seguiva il sistema operativo: è stato
+   * tolto perché una dieta si legge, si stampa e si mostra a un professionista,
+   * e la stessa schermata deve avere lo stesso aspetto su tutti gli schermi di
+   * chi la guarda. Un'interfaccia che cambia colore da sola è un'interfaccia di
+   * cui non si può dire com'è fatta.
+   */
+  color-scheme: light;
+
+  --sfondo: #f6f7f5;
+  --superficie: #ffffff;
+  --superficie-2: #f0f2ef;
+  --bordo: #dfe3dd;
+  --bordo-forte: #c6ccc2;
+
+  --testo: #16201a;
+  --testo-2: #5c665e;
+  --testo-3: #8a938c;
+
+  /* Un solo accento, verde profondo: è un prodotto clinico, non un gioco. */
+  --accento: #1f6b46;
+  --accento-chiaro: #e8f2ec;
+  --accento-scuro: #175135;
+
+  --ok: #1f6b46;
+  --avviso: #9a6414;
+  --avviso-chiaro: #fdf4e3;
+  --errore: #a32a26;
+  --errore-chiaro: #fdecec;
+
+  --raggio: 12px;
+  --raggio-s: 8px;
+  --ombra: 0 1px 2px rgb(22 32 26 / 6%), 0 4px 12px rgb(22 32 26 / 4%);
+  --ombra-alta: 0 8px 32px rgb(22 32 26 / 12%);
+
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+}
+
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--sfondo);
+  color: var(--testo);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  line-height: 1.25;
+  letter-spacing: -0.011em;
+}
+
+h1 {
+  font-size: 1.5rem;
+  font-weight: 650;
+}
+h2 {
+  font-size: 1.0625rem;
+  font-weight: 620;
+}
+h3 {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--testo-3);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--accento);
+}
+
+/* Il focus resta visibile: si usa con la tastiera più di quanto si creda. */
+:focus-visible {
+  outline: 2px solid var(--accento);
+  outline-offset: 2px;
+}
+
+.muto {
+  color: var(--testo-2);
+}
+.piccolo {
+  font-size: 0.8125rem;
+}
+.mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+[hidden] {
+  display: none !important;
+}
+
+/* ─────────────────────────────  controlli  ───────────────────────────── */
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='number'],
+input[type='date'],
+select,
+textarea {
+  width: 100%;
+  padding: 0.5625rem 0.75rem;
+  background: var(--superficie);
+  border: 1px solid var(--bordo-forte);
+  border-radius: var(--raggio-s);
+  transition: border-color 0.12s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accento);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accento-chiaro);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 7rem;
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+label {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+label > span {
+  display: block;
+  margin-bottom: 0.3125rem;
+  font-size: 0.8125rem;
+  font-weight: 550;
+  color: var(--testo-2);
+}
+
+label .aiuto {
+  font-weight: 400;
+  color: var(--testo-3);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5625rem 1rem;
+  background: var(--accento);
+  color: #fff;
+  border: 1px solid transparent;
+  border-radius: var(--raggio-s);
+  font-size: 0.875rem;
+  font-weight: 550;
+  cursor: pointer;
+  transition: background 0.12s, opacity 0.12s;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--accento-scuro);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn.larga {
+  width: 100%;
+  padding: 0.6875rem 1rem;
+}
+
+.btn.neutra {
+  background: var(--superficie);
+  color: var(--testo);
+  border-color: var(--bordo-forte);
+}
+.btn.neutra:hover:not(:disabled) {
+  background: var(--superficie-2);
+}
+
+.btn.pericolo {
+  background: transparent;
+  color: var(--errore);
+  border-color: var(--bordo-forte);
+}
+.btn.pericolo:hover:not(:disabled) {
+  background: var(--errore-chiaro);
+  border-color: var(--errore);
+}
+
+.btn.mini {
+  padding: 0.25rem 0.5625rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+}
+
+/* ─────────────────────────────  strutture  ───────────────────────────── */
+
+.centrata {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.scheda {
+  background: var(--superficie);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio);
+  box-shadow: var(--ombra);
+}
+
+.accesso {
+  width: 100%;
+  max-width: 25rem;
+  padding: 2rem;
+}
+
+.marchio {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 1.75rem;
+}
+
+/* Il monogramma. Un carattere, il peso del titolo, nessun disegno da caricare. */
+.marchio .segno {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  background: var(--accento);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.marchio .nome {
+  font-size: 1.0625rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+.marchio .sotto {
+  font-size: 0.75rem;
+  color: var(--testo-3);
+}
+
+/*
+ * Barra superiore comune a studio e cliente.
+ *
+ * `viewport-fit=cover` fa arrivare la pagina sotto la tacca e sotto la barra di
+ * stato: l'inset in alto è ciò che impedisce al nome dell'utente di finirci
+ * sotto. Su un computer vale zero e non si vede.
+ */
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  padding-top: calc(0.75rem + env(safe-area-inset-top));
+  padding-left: calc(1.25rem + env(safe-area-inset-left));
+  padding-right: calc(1.25rem + env(safe-area-inset-right));
+  background: color-mix(in srgb, var(--superficie) 88%, transparent);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--bordo);
+}
+
+.barra .segno {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  background: var(--accento);
+  color: #fff;
+  border-radius: 9px;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.barra .chi {
+  flex: 1;
+  min-width: 0;
+}
+
+.barra .chi strong {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barra .chi span {
+  font-size: 0.75rem;
+  color: var(--testo-3);
+}
+
+.contenitore {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem;
+}
+
+.stretto {
+  max-width: 40rem;
+}
+
+/* ─────────────────────────────  avvisi  ───────────────────────────── */
+
+.avviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.75rem 0.875rem;
+  border-radius: var(--raggio-s);
+  border: 1px solid;
+  font-size: 0.875rem;
+}
+
+.avviso .segno {
+  flex: none;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.avviso.ok {
+  background: var(--accento-chiaro);
+  border-color: color-mix(in srgb, var(--ok) 30%, transparent);
+  color: var(--ok);
+}
+.avviso.attenzione {
+  background: var(--avviso-chiaro);
+  border-color: color-mix(in srgb, var(--avviso) 30%, transparent);
+  color: var(--avviso);
+}
+.avviso.grave {
+  background: var(--errore-chiaro);
+  border-color: color-mix(in srgb, var(--errore) 30%, transparent);
+  color: var(--errore);
+}
+.avviso.neutro {
+  background: var(--superficie-2);
+  border-color: var(--bordo);
+  color: var(--testo-2);
+}
+
+/* ─────────────────────────────  etichette  ───────────────────────────── */
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.4375rem;
+  background: var(--superficie-2);
+  border: 1px solid var(--bordo);
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 550;
+  color: var(--testo-2);
+  white-space: nowrap;
+}
+
+.tag.ok {
+  background: var(--accento-chiaro);
+  border-color: transparent;
+  color: var(--ok);
+}
+.tag.attenzione {
+  background: var(--avviso-chiaro);
+  border-color: transparent;
+  color: var(--avviso);
+}
+.tag.grave {
+  background: var(--errore-chiaro);
+  border-color: transparent;
+  color: var(--errore);
+}
+
+/* Il pallino delle notifiche non ancora viste. */
+.pallino {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 0.3125rem;
+  background: var(--errore);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+/*
+ * Lo scostamento calorico.
+ *
+ * Il segno è sempre esplicito, anche col più: «+180» e «180» si leggono in due
+ * modi diversi, e un professionista che scorre venti righe non deve dedurlo.
+ */
+.delta {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.delta.su {
+  color: var(--avviso);
+}
+.delta.giu {
+  color: var(--accento);
+}
+.delta.pari {
+  color: var(--testo-3);
+}
+
+/* Un delta parziale non deve MAI sembrare esatto: la tilde lo dichiara. */
+.delta.parziale::before {
+  content: '≈';
+  margin-right: 0.0625rem;
+  opacity: 0.7;
+}
+
+/* ─────────────────────────────  navigazione a schede  ───────────────── */
+
+.schede {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--bordo);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.schede::-webkit-scrollbar {
+  display: none;
+}
+
+/*
+ * Dentro il pannello del cliente le linguette NON si devono comprimere.
+ *
+ * `.pannello-corpo` è una colonna flex con dentro molto contenuto: senza questo,
+ * le linguette venivano schiacciate a 22px di altezza — illeggibili e
+ * impossibili da centrare con un pollice. È il tipo di difetto che non si vede
+ * guardando il codice, solo misurando l'elemento.
+ */
+.pannello-corpo > .schede {
+  flex: none;
+}
+
+.schede button {
+  position: relative;
+  padding: 0.625rem 0.875rem;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-size: 0.875rem;
+  font-weight: 550;
+  color: var(--testo-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.schede button[aria-selected='true'] {
+  color: var(--accento);
+  border-bottom-color: var(--accento);
+}
+
+/* ─────────────────────────────  elenchi  ───────────────────────────── */
+
+.griglia {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.griglia.due {
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+}
+
+.riga {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  background: var(--superficie);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio-s);
+}
+
+.riga .corpo {
+  flex: 1;
+  min-width: 0;
+}
+
+.riga .titolo {
+  font-weight: 550;
+}
+
+.riga.nuova {
+  border-left: 3px solid var(--accento);
+}
+
+.vuoto {
+  padding: 2.5rem 1.25rem;
+  text-align: center;
+  color: var(--testo-2);
+}
+
+/*
+ * Il segno di uno stato vuoto è discreto per scelta: deve dire «non c'è ancora
+ * niente», non attirare l'occhio più della frase che spiega cosa fare.
+ */
+.vuoto .grande {
+  font-size: 1.5rem;
+  line-height: 1;
+  margin-bottom: 0.625rem;
+  color: var(--testo-3);
+}
+
+/* ─────────────────────────────  variazione  ───────────────────────────── */
+
+/*
+ * La riga di notifica: chi, cosa era, cosa è diventato, di quanto si è spostata
+ * la giornata. Quattro informazioni, nell'ordine in cui servono.
+ */
+.variazione {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem 0.75rem;
+  padding: 0.875rem;
+  background: var(--superficie);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio-s);
+}
+
+.variazione.nuova {
+  border-left: 3px solid var(--accento);
+}
+
+.variazione .cambio {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  font-size: 0.9375rem;
+}
+
+.variazione .cambio .via {
+  color: var(--testo-3);
+  text-decoration: line-through;
+}
+
+.variazione .cambio .freccia {
+  color: var(--testo-3);
+}
+
+.variazione .cambio .nuovo {
+  font-weight: 600;
+}
+
+.variazione .dove {
+  font-size: 0.8125rem;
+  color: var(--testo-2);
+}
+
+.variazione .numeri {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--bordo);
+  font-size: 0.75rem;
+  color: var(--testo-2);
+}
+
+.variazione .azioni {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Il campo della nota di annullamento, che nasce dentro la griglia. */
+.variazione .intera {
+  grid-column: 1 / -1;
+}
+
+/* ─────────────────────────────  settimana  ───────────────────────────── */
+
+.giorno {
+  padding: 0.875rem;
+  background: var(--superficie);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio-s);
+}
+
+.giorno.oggi {
+  border-color: var(--accento);
+  box-shadow: 0 0 0 1px var(--accento);
+}
+
+.giorno-testa {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--bordo);
+}
+
+.giorno-testa .nome {
+  flex: 1;
+  font-weight: 600;
+}
+
+.pasto {
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--superficie-2);
+}
+
+.pasto:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.pasto-nome {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--testo-3);
+  margin-bottom: 0.375rem;
+}
+
+.pasto-nota {
+  font-size: 0.875rem;
+  color: var(--testo-2);
+  font-style: italic;
+}
+
+/* Gli alimenti sono BOTTONI: toccarli è il gesto che apre le alternative. */
+.alimenti {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.alimento {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  background: var(--superficie-2);
+  border: 1px solid var(--bordo);
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.12s, background 0.12s;
+  /* «crema di frutta secca senza zuccheri aggiunti» non deve spingere la
+     settimana fuori dallo schermo: va a capo dentro la sua pillola. */
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.alimento:hover {
+  border-color: var(--accento);
+  background: var(--accento-chiaro);
+}
+
+/* Ogni quantità è in tabellare: le colonne di numeri devono incolonnarsi. */
+.peso {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.alimento .scambia {
+  color: var(--testo-3);
+  font-size: 0.75rem;
+}
+
+.alimento.cambiato {
+  border-color: var(--accento);
+  background: var(--accento-chiaro);
+}
+
+/* ─────────────────────────────  conversazione  ───────────────────────── */
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+}
+
+.filo {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 46rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.msg {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 90%;
+}
+
+.msg.io {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.bolla {
+  padding: 0.625rem 0.875rem;
+  border-radius: 14px;
+  font-size: 0.9375rem;
+}
+
+.msg.lui .bolla {
+  background: var(--superficie);
+  border: 1px solid var(--bordo);
+  border-bottom-left-radius: 4px;
+}
+
+.msg.io .bolla {
+  background: var(--accento);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.bolla.errore {
+  background: var(--errore-chiaro);
+  border-color: var(--errore);
+  color: var(--errore);
+}
+
+/*
+ * La provenienza di ogni risposta, sotto ogni messaggio.
+ *
+ * Non è un dettaglio tecnico da nascondere: è la ragione per cui un
+ * professionista può mettere il suo nome su questo strumento. Il cliente deve
+ * poter distinguere sempre una frase riformulata da un modello da un numero
+ * deciso dal piano.
+ */
+.fonte {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  font-size: 0.6875rem;
+  color: var(--testo-3);
+}
+
+.fonte .bollino {
+  padding: 0.0625rem 0.375rem;
+  background: var(--superficie-2);
+  border: 1px solid var(--bordo);
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.fonte .bollino.ai {
+  background: var(--accento-chiaro);
+  border-color: transparent;
+  color: var(--accento);
+}
+
+.citazioni {
+  padding: 0.5rem 0.75rem;
+  background: var(--superficie-2);
+  border-left: 2px solid var(--bordo-forte);
+  border-radius: 0 var(--raggio-s) var(--raggio-s) 0;
+  font-size: 0.8125rem;
+  color: var(--testo-2);
+}
+
+.citazioni div + div {
+  margin-top: 0.25rem;
+}
+
+.girata {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--avviso-chiaro);
+  border-radius: var(--raggio-s);
+  font-size: 0.8125rem;
+  color: var(--avviso);
+}
+
+/* Le alternative, in colonna: ognuna col suo scostamento. */
+.opzioni {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  background: var(--superficie);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio-s);
+}
+
+.opzione {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 0;
+  background: none;
+  border-radius: 6px;
+  text-align: left;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.opzione:hover:not(:disabled) {
+  background: var(--accento-chiaro);
+}
+
+.opzione:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.opzione .marca {
+  font-weight: 700;
+}
+
+.opzione.si .marca {
+  color: var(--ok);
+}
+.opzione.no .marca {
+  color: var(--errore);
+}
+
+.opzione .motivo {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--testo-3);
+}
+
+.scrivi {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+  background: var(--superficie);
+  border-top: 1px solid var(--bordo);
+  max-width: 46rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.scrivi input {
+  flex: 1;
+  border-radius: 999px;
+}
+
+.scrivi .invia {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 1.125rem;
+}
+
+.suggerimenti {
+  display: flex;
+  gap: 0.375rem;
+  padding: 0 1rem 0.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  max-width: 46rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.suggerimenti::-webkit-scrollbar {
+  display: none;
+}
+
+.suggerimento {
+  flex: none;
+  padding: 0.375rem 0.75rem;
+  background: var(--superficie);
+  border: 1px solid var(--bordo);
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  color: var(--testo-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.suggerimento:hover {
+  border-color: var(--accento);
+  color: var(--accento);
+}
+
+/* I tre punti dell'attesa. */
+.attesa {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.attesa i {
+  width: 0.375rem;
+  height: 0.375rem;
+  background: var(--testo-3);
+  border-radius: 50%;
+  animation: salta 1.2s infinite;
+}
+
+.attesa i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.attesa i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes salta {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .attesa i {
+    animation: none;
+    opacity: 0.5;
+  }
+  * {
+    transition: none !important;
+  }
+}
+
+/* ─────────────────────────────  pannello laterale  ───────────────────── */
+
+.velo {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgb(10 14 11 / 45%);
+}
+
+.pannello {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 31;
+  width: min(29rem, 100%);
+  display: flex;
+  flex-direction: column;
+  background: var(--sfondo);
+  border-left: 1px solid var(--bordo);
+  box-shadow: var(--ombra-alta);
+}
+
+.pannello-testa {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  padding-top: calc(0.75rem + env(safe-area-inset-top));
+  background: var(--superficie);
+  border-bottom: 1px solid var(--bordo);
+}
+
+.pannello-testa h2 {
+  flex: 1;
+  min-width: 0;
+}
+
+.pannello-corpo {
+  flex: 1;
+  overflow-y: auto;
+  /* Mai in orizzontale: un nome di alimento lungo deve andare a capo, non
+     spingere la settimana fuori dallo schermo. */
+  overflow-x: hidden;
+  padding: 1rem;
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.icona {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  background: none;
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio-s);
+  color: var(--testo-2);
+  cursor: pointer;
+}
+
+.icona:hover {
+  background: var(--superficie-2);
+  color: var(--testo);
+}
+
+/* ─────────────────────────────  passi guidati  ───────────────────────── */
+
+/*
+ * Il caricamento di un piano è a passi, e il passo di CONFERMA non si può
+ * saltare: è lì che il professionista si assume la responsabilità dei numeri
+ * che il software ha letto. L'interfaccia lo rende un passaggio esplicito
+ * invece di un bottone «avanti».
+ */
+.passi {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.8125rem;
+  color: var(--testo-3);
+}
+
+.passo {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.passo .numero {
+  display: grid;
+  place-items: center;
+  width: 1.375rem;
+  height: 1.375rem;
+  background: var(--superficie-2);
+  border: 1px solid var(--bordo);
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 650;
+}
+
+.passo.attivo {
+  color: var(--testo);
+  font-weight: 550;
+}
+
+.passo.attivo .numero {
+  background: var(--accento);
+  border-color: transparent;
+  color: #fff;
+}
+
+.passo.fatto .numero {
+  background: var(--accento-chiaro);
+  border-color: transparent;
+  color: var(--accento);
+}
+
+.passi .sep {
+  flex: 1;
+  height: 1px;
+  background: var(--bordo);
+}
+
+/* ─────────────────────────────  tabelle  ───────────────────────────── */
+
+.tabella {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.tabella th,
+.tabella td {
+  padding: 0.5rem 0.625rem;
+  text-align: left;
+  border-bottom: 1px solid var(--bordo);
+}
+
+.tabella th {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--testo-3);
+}
+
+.tabella td.num {
+  text-align: right;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.scorri {
+  overflow-x: auto;
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio-s);
+  background: var(--superficie);
+}
+
+/* ─────────────────────────────  spaziature  ───────────────────────────── */
+
+/*
+ * Poche classi di servizio, e la ragione è la Content-Security-Policy: senza
+ * 'unsafe-inline' in `style-src` un attributo `style=""` viene ignorato dal
+ * browser. Distanze e allineamenti devono quindi avere un nome qui.
+ */
+
+.sopra {
+  margin-top: 1rem;
+}
+.sotto {
+  margin-bottom: 1rem;
+}
+.sotto-poco {
+  margin-bottom: 0.5rem;
+}
+.sotto-molto {
+  margin-bottom: 1.5rem;
+}
+.centro {
+  text-align: center;
+}
+.pila {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.fila {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.spinge {
+  margin-left: auto;
+}
+.sezione + .sezione {
+  margin-top: 2rem;
+}
+.sezione-testa {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 0.75rem;
+}
+
+/*
+ * La riga di conferma dopo un'azione: compare, dice cosa è successo, resta.
+ * Non è un "toast" che sparisce: se il professionista ha appena creato un
+ * cliente, la password che deve consegnargli non può svanire dopo tre secondi.
+ */
+.esito {
+  margin-top: 0.75rem;
+}
+
+/* Campi affiancati nei moduli — collassano su una colonna sul telefono. */
+.campi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0 0.75rem;
+}
+
+/* ─────────────────────────────  scelta del ruolo  ───────────────────────── */
+
+/*
+ * Due bottoni grandi, non un menù a tendina.
+ *
+ * È la prima domanda che il prodotto fa a chi arriva, e determina in quale
+ * delle due applicazioni finisce. Un menù a tendina la farebbe sembrare un
+ * campo da compilare tra gli altri; due riquadri la fanno sembrare quello che
+ * è — una scelta.
+ */
+.scelta-ruolo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.625rem;
+  margin-bottom: 1.5rem;
+}
+
+.ruolo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.875rem 0.75rem;
+  background: var(--superficie);
+  border: 1px solid var(--bordo-forte);
+  border-radius: var(--raggio-s);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.ruolo .segno {
+  font-size: 1.25rem;
+}
+
+.ruolo .titolo {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.ruolo:hover {
+  border-color: var(--accento);
+}
+
+.ruolo[aria-pressed='true'] {
+  border-color: var(--accento);
+  background: var(--accento-chiaro);
+  box-shadow: 0 0 0 1px var(--accento);
+}
+
+@media (max-width: 26rem) {
+  .scelta-ruolo {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─────────────────────────────  editor della dieta  ─────────────────────── */
+
+/*
+ * La dieta si scrive giorno per giorno, e la riga di un alimento è la cosa che
+ * il professionista tocca più di ogni altra: nome, quantità, unità, e via.
+ * Tutto su una riga sola, con il campo del nome che si prende lo spazio.
+ */
+.riga-alimento {
+  display: grid;
+  grid-template-columns: 1fr 5rem 4.5rem auto;
+  gap: 0.375rem;
+  align-items: center;
+  margin-bottom: 0.375rem;
+}
+
+.riga-alimento input,
+.riga-alimento select {
+  margin: 0;
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* L'alimento di cui non si conoscono i valori: non è un errore, è un lavoro
+   da fare, e finché non è fatto i totali restano incompleti. */
+.riga-alimento.ignoto input:first-child {
+  border-color: var(--avviso);
+  background: var(--avviso-chiaro);
+}
+
+.editor-pasto {
+  padding: 0.75rem;
+  background: var(--superficie);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio-s);
+  margin-bottom: 0.625rem;
+}
+
+.editor-pasto-testa {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+  margin-bottom: 0.625rem;
+}
+
+.editor-pasto-testa .nome-pasto {
+  flex: 1;
+  margin: 0;
+  padding: 0.375rem 0.5rem;
+  font-weight: 600;
+}
+
+.editor-pasto-testa .orario {
+  width: 5.5rem;
+  margin: 0;
+  padding: 0.375rem 0.5rem;
+}
+
+/* Il totale del giorno, sempre visibile mentre si scrive: è il numero che il
+   professionista sta cercando di far quadrare. */
+.conta-giorno {
+  position: sticky;
+  top: 3.25rem;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  margin-bottom: 0.875rem;
+  background: color-mix(in srgb, var(--superficie) 94%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio-s);
+  font-size: 0.8125rem;
+}
+
+.conta-giorno .grande {
+  font-family: var(--mono);
+  font-size: 1.125rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.conta-giorno .macro {
+  color: var(--testo-2);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* I sette giorni come schede: si scrive un giorno per volta. */
+.giorni-nav {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-bottom: 0.875rem;
+}
+
+.giorni-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.giorni-nav button {
+  flex: none;
+  padding: 0.4375rem 0.75rem;
+  background: var(--superficie);
+  border: 1px solid var(--bordo);
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.giorni-nav button[aria-pressed='true'] {
+  background: var(--accento);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 600;
+}
+
+/*
+ * Il giorno ancora vuoto è smorto: si vede a colpo d'occhio cosa manca, senza
+ * aggiungere un simbolo. I giorni scritti portano le loro kcal accanto al nome,
+ * quelli vuoti no — la differenza è già leggibile così.
+ */
+.giorni-nav button.vuoto-giorno {
+  color: var(--testo-3);
+  border-style: dashed;
+}
+
+.giorni-nav button.vuoto-giorno[aria-pressed='true'] {
+  color: #fff;
+  border-style: solid;
+}
+
+/* ─────────────────────────────  stato vuoto grande  ───────────────────── */
+
+/*
+ * La schermata del cliente appena iscritto.
+ *
+ * È l'unica cosa che vede, e deve dirgli con chiarezza che non è rotto niente:
+ * manca un passo, ed è questo.
+ */
+.primo-passo {
+  max-width: 30rem;
+  margin: 3rem auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* Il segno del primo passo: dentro un cerchio, perché è l'unica cosa sulla
+   schermata e da sola si perderebbe. */
+.primo-passo .grande {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 1rem;
+  background: var(--accento-chiaro);
+  color: var(--accento);
+  border-radius: 999px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.primo-passo h1 {
+  margin-bottom: 0.5rem;
+}
+
+.primo-passo form {
+  margin-top: 1.5rem;
+  text-align: left;
+}
+
+/* ─────────────────────────────  schermi piccoli  ───────────────────────── */
+
+/*
+ * Il cliente apre questa applicazione IN PIEDI, davanti al frigorifero, con una
+ * mano, e quasi sempre da un telefono. Non è il caso da sistemare per ultimo: è
+ * il caso normale, e le regole qui sotto valgono più di quelle sopra.
+ *
+ * Tre cose che si sbagliano sempre e che qui sono risolte:
+ *
+ *  1. i CAMPI DI TESTO sotto i 16px fanno ingrandire la pagina a ogni tocco su
+ *     iOS, e la pagina non torna più indietro da sola. Non è un dettaglio
+ *     estetico: dopo aver scritto una domanda all'assistente ci si ritrova la
+ *     schermata sformata;
+ *  2. i BERSAGLI da toccare devono stare intorno ai 44px. Una pillola alta 30px
+ *     si sbaglia una volta su tre, e qui toccare un alimento è IL gesto del
+ *     prodotto;
+ *  3. niente deve mai scorrere in ORIZZONTALE. Un nome di alimento lungo, una
+ *     tabella, una riga di numeri: se spingono la pagina di lato, il cliente si
+ *     ritrova a trascinare la settimana invece di leggerla.
+ */
+
+@media (max-width: 48rem) {
+  .contenitore {
+    padding: 1.25rem 1rem 3rem;
+  }
+
+  /* La griglia della variazione va in colonna: due colonne su 360px non stanno. */
+  .variazione {
+    grid-template-columns: 1fr;
+  }
+
+  /* Le tabelle dello studio scorrono dentro il loro contenitore, non nella pagina. */
+  .scorri {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 40rem) {
+  /* 1 · Nessuno zoom involontario: 16px è la soglia di iOS, non un gusto. */
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  input[type='number'],
+  input[type='date'],
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* 2 · Bersagli da pollice. */
+  .alimento {
+    padding: 0.5625rem 0.875rem;
+    font-size: 0.9375rem;
+  }
+
+  .icona {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.125rem;
+  }
+
+  .btn,
+  .btn.mini {
+    min-height: 2.5rem;
+  }
+
+  .btn.mini {
+    padding: 0.4375rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .opzione {
+    padding: 0.6875rem 0.5rem;
+    font-size: 0.9375rem;
+  }
+
+  .suggerimento {
+    min-height: 2.5rem;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  /* Le linguette sono la navigazione del pannello: si centrano col pollice. */
+  .schede button {
+    padding: 0.75rem 0.875rem;
+  }
+
+  /* 3 · La pagina non si sposta di lato, mai. */
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  .accesso {
+    padding: 1.5rem;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .centrata {
+    padding: 1rem;
+    align-content: start;
+    padding-top: calc(2rem + env(safe-area-inset-top));
+  }
+
+  /* Il messaggio prende tutta la larghezza: su un telefono il 10% risparmiato
+     non aiuta a capire chi parla — a quello serve il colore della bolla. */
+  .msg {
+    max-width: 100%;
+  }
+
+  .filo {
+    padding: 1rem 0.875rem 0.5rem;
+  }
+
+  .scrivi {
+    padding: 0.625rem 0.875rem calc(0.625rem + env(safe-area-inset-bottom));
+  }
+
+  .suggerimenti {
+    padding: 0 0.875rem 0.5rem;
+  }
+
+  /* Il pannello è uno schermo intero: niente bordo, niente ombra da mezzo lato. */
+  .pannello {
+    width: 100%;
+    border-left: 0;
+  }
+
+  .pannello-corpo {
+    padding: 0.875rem;
+    padding-bottom: calc(2.5rem + env(safe-area-inset-bottom));
+  }
+
+  .giorno,
+  .riga,
+  .variazione,
+  .opzioni {
+    padding: 0.75rem;
+  }
+
+  /* La riga con il peso a destra: se il nome è lungo va a capo invece di
+     schiacciare il numero. */
+  .riga {
+    flex-wrap: wrap;
+  }
+
+  .riga .corpo {
+    flex-basis: 100%;
+  }
+
+  .primo-passo {
+    margin: 1.5rem auto;
+    padding: 1.5rem;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  /* L'editor dello studio su un telefono: il nome dell'alimento si prende una
+     riga sua, quantità e unità stanno sotto. Scrivere una dieta dal telefono non
+     è il caso principale, ma correggere una grammatura sì. */
+  .riga-alimento {
+    grid-template-columns: 1fr 4.5rem 4rem;
+    gap: 0.375rem 0.5rem;
+  }
+
+  .riga-alimento input:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .campi {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .conta-giorno {
+    top: calc(3rem + env(safe-area-inset-top));
+  }
+}
+
+/* Schermi molto stretti: 320px esiste ancora, e chi lo usa non è colpa sua. */
+@media (max-width: 22rem) {
+  .campi {
+    grid-template-columns: 1fr;
+  }
+
+  .barra {
+    gap: 0.625rem;
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
+  }
+
+  .schede button {
+    padding: 0.625rem 0.625rem;
+  }
+}
+
+/*
+ * Telefono in orizzontale: l'altezza crolla a ~320px e la conversazione diventa
+ * una fessura. Si recupera spazio da tutto ciò che non è il filo dei messaggi.
+ */
+@media (max-height: 30rem) and (orientation: landscape) {
+  .barra {
+    padding-top: calc(0.375rem + env(safe-area-inset-top));
+    padding-bottom: 0.375rem;
+  }
+
+  .suggerimenti {
+    display: none;
+  }
+
+  .filo {
+    padding-top: 0.625rem;
+  }
+}
+
+/* ─────────────────────────────  dashboard del cliente  ─────────────────── */
+
+/*
+ * La schermata principale del cliente.
+ *
+ * Non è più la conversazione: è quello che deve fare oggi. La chat resta, ma
+ * dietro una linguetta, perché si apre quando si ha una domanda — e una domanda
+ * non ce l'hai tutti i giorni, mentre la colazione sì.
+ *
+ * L'ordine dall'alto è l'ordine delle domande che si fa chi apre l'applicazione:
+ * cosa mangio adesso, come sto andando, quanto mi manca.
+ */
+
+.riquadri {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.riquadro {
+  padding: 0.875rem 1rem;
+  background: var(--superficie);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio);
+}
+
+.riquadro .etichetta {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--testo-3);
+  margin-bottom: 0.375rem;
+}
+
+.riquadro .cifra {
+  font-family: var(--mono);
+  font-size: 1.625rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.riquadro .sotto-cifra {
+  font-size: 0.75rem;
+  color: var(--testo-2);
+  margin-top: 0.125rem;
+}
+
+/* Barra di avanzamento: calorie della giornata, passi, aderenza. */
+.barra-avanzamento {
+  height: 0.375rem;
+  margin-top: 0.625rem;
+  background: var(--superficie-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.barra-avanzamento i {
+  display: block;
+  height: 100%;
+  background: var(--accento);
+  border-radius: 999px;
+  transition: width 0.3s;
+}
+
+.barra-avanzamento.attenzione i {
+  background: var(--avviso);
+}
+.barra-avanzamento.grave i {
+  background: var(--errore);
+}
+
+/*
+ * Il pasto di oggi: la riga che si tocca per dire «fatto».
+ *
+ * La spunta è il gesto su cui poggia tutta l'aderenza, quindi è un bersaglio
+ * grande e separato dal resto della riga: toccare il pasto apre i dettagli,
+ * toccare la spunta lo segna, e i due gesti non si devono confondere.
+ */
+.pasto-oggi {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 0.875rem;
+  padding: 0.875rem;
+  background: var(--superficie);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio-s);
+}
+
+.pasto-oggi.fatto {
+  border-color: var(--accento);
+  background: var(--accento-chiaro);
+}
+
+.pasto-oggi.saltato {
+  opacity: 0.7;
+}
+
+.pasto-oggi.saltato .nome-pasto-oggi {
+  text-decoration: line-through;
+  color: var(--testo-3);
+}
+
+.spunta {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  background: var(--superficie);
+  border: 2px solid var(--bordo-forte);
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: transparent;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+
+.spunta:hover {
+  border-color: var(--accento);
+}
+
+.spunta[aria-pressed='true'] {
+  background: var(--accento);
+  border-color: var(--accento);
+  color: #fff;
+}
+
+.nome-pasto-oggi {
+  font-weight: 600;
+  margin-bottom: 0.125rem;
+}
+
+.pasto-oggi .dettaglio {
+  font-size: 0.8125rem;
+  color: var(--testo-2);
+}
+
+.pasto-oggi .kcal-pasto {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--testo-2);
+  white-space: nowrap;
+}
+
+.pasto-oggi .azioni-pasto {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+}
+
+/* Il grafico dei passi: barre, nessuna libreria. */
+.barre {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.25rem;
+  height: 3rem;
+  margin-top: 0.75rem;
+}
+
+.barre i {
+  flex: 1;
+  min-height: 2px;
+  background: var(--accento-chiaro);
+  border-radius: 2px 2px 0 0;
+}
+
+.barre i.raggiunto {
+  background: var(--accento);
+}
+
+/* L'aderenza accanto al nome di un cliente, nella tabella dello studio. */
+.aderenza {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  font-family: var(--mono);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.aderenza .pallina {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--testo-3);
+}
+
+.aderenza.buona .pallina {
+  background: var(--ok);
+}
+.aderenza.parziale .pallina {
+  background: var(--avviso);
+}
+.aderenza.scarsa .pallina {
+  background: var(--errore);
+}
+.aderenza.ignota {
+  color: var(--testo-3);
+  font-family: var(--font);
+  font-weight: 400;
+}
+
+/* Il riquadro per trascinare il PDF. */
+.zona-pdf {
+  padding: 1.75rem 1.25rem;
+  background: var(--superficie-2);
+  border: 2px dashed var(--bordo-forte);
+  border-radius: var(--raggio);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.zona-pdf:hover,
+.zona-pdf.sopra {
+  border-color: var(--accento);
+  background: var(--accento-chiaro);
+}
+
+.zona-pdf input[type='file'] {
+  display: none;
+}
+
+/* Il testo estratto dal PDF, accanto a quello che il software ne ha capito. */
+.testo-estratto {
+  max-height: 22rem;
+  overflow: auto;
+  padding: 0.875rem;
+  background: var(--superficie-2);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio-s);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 40rem) {
+  .riquadri {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .riquadro {
+    padding: 0.75rem;
+  }
+
+  .riquadro .cifra {
+    font-size: 1.375rem;
+  }
+
+  .pasto-oggi {
+    gap: 0.625rem;
+    padding: 0.75rem;
+  }
+
+  .spunta {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+/*
+ * La conversazione incassata in una linguetta, non più a tutto schermo.
+ *
+ * Altezza calcolata invece che `100dvh`: sopra ci sono la barra e le linguette,
+ * e prendersi tutto lo schermo farebbe sparire proprio la navigazione con cui si
+ * è arrivati qui.
+ */
+.chat-incassata {
+  display: flex;
+  flex-direction: column;
+  height: min(34rem, 70vh);
+  background: var(--superficie);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio);
+  overflow: hidden;
+}
+
+.chat-incassata .filo {
+  padding: 1rem;
+  max-width: none;
+}
+
+.chat-incassata .scrivi,
+.chat-incassata .suggerimenti {
+  max-width: none;
+  padding-left: 0.875rem;
+  padding-right: 0.875rem;
+}
+
+@media (max-width: 40rem) {
+  .chat-incassata {
+    height: min(30rem, 66vh);
+  }
+}
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────
+ * IL PIANO A SOSTITUZIONE
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * Il pannello che il professionista apre sotto un alimento per dire con cosa
+ * si può sostituire. Sta INCASSATO nella riga da cui esce, con un rientro e un
+ * filo verticale sul bordo: è un dettaglio di quell'alimento, non un'altra
+ * sezione della dieta, e se galleggiasse a sé si perderebbe di vista a quale
+ * riga appartiene.
+ */
+.piano-alimento {
+  margin: 0 0 0.625rem 0.75rem;
+  padding: 0.75rem;
+  border-left: 2px solid var(--accento);
+  background: var(--superficie-2);
+  border-radius: 0 var(--raggio-s) var(--raggio-s) 0;
+}
+
+.piano-alimento .campi {
+  margin-bottom: 0.5rem;
+}
+
+.piano-alimento label {
+  margin-bottom: 0;
+}
+
+/* Stessa griglia della riga di un alimento: le due si leggono in colonna, e
+   la quantità dell'alternativa sta sotto quella dell'alimento che sostituisce. */
+.riga-alternativa {
+  display: grid;
+  grid-template-columns: 1fr 5rem 4.5rem auto;
+  gap: 0.375rem;
+  align-items: center;
+  margin-bottom: 0.375rem;
+}
+
+.riga-alternativa input,
+.riga-alternativa select {
+  margin: 0;
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* La riga dell'alimento ha un bottone in più — il piano — e senza questo la
+   griglia a quattro colonne lo spingerebbe fuori dal contenitore. */
+.riga-alimento {
+  grid-template-columns: 1fr 5rem 4.5rem auto auto;
+}
+
+/*
+ * Il filo dei messaggi dentro una scheda, per il professionista.
+ *
+ * Ha un'altezza sua e scorre da solo: la scheda di un cliente è già lunga —
+ * dieta, aderenza, variazioni — e una conversazione di trenta messaggi che si
+ * srotola dentro la pagina renderebbe irraggiungibile tutto quello che sta
+ * sotto.
+ */
+.filo.incassato {
+  max-height: 22rem;
+  padding: 0.875rem;
+  margin: 0;
+  background: var(--superficie-2);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio-s) var(--raggio-s) 0 0;
+  max-width: none;
+}
+
+.filo.incassato + .scrivi {
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--bordo);
+  border-top: 0;
+  border-radius: 0 0 var(--raggio-s) var(--raggio-s);
+  max-width: none;
+}
+
+/*
+ * Le opzioni del piano, come le vede il cliente.
+ *
+ * Quelle previste dal suo nutrizionista e quelle che invece sono una
+ * deviazione non possono avere lo stesso aspetto: la prima scelta non gli
+ * costa niente, la seconda gli costa aderenza, e l'interfaccia deve dirlo
+ * prima che tocchi, non dopo.
+ */
+.opzione.prevista {
+  /* Tutta la larghezza: è un bersaglio da pollice davanti al frigorifero, e
+     una pillola larga quanto il suo testo si sbaglia. La porzione, allineata
+     a destra, resta incolonnata da una riga all'altra. */
+  width: 100%;
+  border: 1px solid var(--bordo);
+  margin-bottom: 0.375rem;
+  padding: 0.625rem 0.5rem;
+}
+
+.opzione.prevista.scelta {
+  border-color: var(--accento);
+  background: var(--accento-chiaro);
+}
+
+.opzione.fuori {
+  opacity: 0.9;
+}
+
+/* Le basi fra cui il cliente sceglie: isocalorica, isoproteica. Pillole, non
+   un menù a tendina — sono due o tre e si toccano con il pollice. */
+.basi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-bottom: 0.625rem;
+}
+
+.basi button {
+  padding: 0.375rem 0.75rem;
+  min-height: 2.25rem;
+  border: 1px solid var(--bordo);
+  border-radius: 999px;
+  background: var(--superficie);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.basi button[aria-pressed='true'] {
+  border-color: var(--accento);
+  background: var(--accento-chiaro);
+  color: var(--accento);
+  font-weight: 600;
+}
+
+/* L'alimento toccabile nella schermata di oggi: è il gesto principale del
+   prodotto — «questo lo cambio» — quindi ha l'altezza di un bersaglio da
+   pollice e non quella di una parola in una frase. */
+.alimento-scelta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.25rem;
+  padding: 0.25rem 0.625rem;
+  margin: 0 0.25rem 0.25rem 0;
+  border: 1px solid var(--bordo);
+  border-radius: 999px;
+  background: var(--superficie);
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.alimento-scelta:hover {
+  border-color: var(--accento);
+}
+
+.alimento-scelta .segno {
+  color: var(--accento);
+  font-weight: 700;
+}
+
+.alimento-scelta.con-piano {
+  border-color: var(--accento);
+  background: var(--accento-chiaro);
+}
+
+@media (max-width: 40rem) {
+  .riga-alternativa {
+    grid-template-columns: 1fr 4.5rem 3.75rem auto;
+  }
+
+  .filo.incassato {
+    max-height: 18rem;
+  }
+}
+
+/* Porzione e scostamento stanno nella stessa cella dell'opzione: la griglia ha
+   tre colonne, e una quarta cosa andrebbe a capo sotto il nome dell'alimento. */
+.opzione .fine {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}

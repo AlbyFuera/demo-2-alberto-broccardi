@@ -1,0 +1,4694 @@
+{
+  "plans": [
+    {
+      "key": "demarco",
+      "plan": {
+        "id": "demarco-2026-02",
+        "patient": {
+          "name": "Luca De Marco",
+          "goal": "Aumento di massa muscolare",
+          "trainingDays": [
+            0,
+            2,
+            4
+          ]
+        },
+        "professional": {
+          "id": "digiusto",
+          "name": "dott. Giovanni Di Giusto",
+          "register": "Albo Biologi n. Tri A3252"
+        },
+        "issuedAt": "2026-02-18",
+        "weighingNote": "Tutte le quantità sono a crudo e senza scarti.",
+        "generalRules": [
+          "Il piano comprende 1 pasto libero settimanale.",
+          "Alcol: max 2 unità alcoliche/settimana (1 unità = 1 calice di vino, 1 birra 330ml o 1 superalcolico 40ml).",
+          "Bere almeno 2 L di acqua al giorno, 2,5 L nei giorni di allenamento.",
+          "L'olio assegnato va usato sia per condire che per cucinare.",
+          "Tè, caffè, tisane e infusi non zuccherati a piacere.",
+          "È possibile invertire le fonti proteiche del pranzo con quelle della cena.",
+          "Condimenti verdure: aceto, balsamico, limone, sale moderato, senape (1 cucchiaino), spezie.",
+          "Condimenti pasta: salsa di pomodoro (~100g) e verdure; pesto ~30g o ragù ~60g riducendo o togliendo l'olio. Evitare sughi pronti e panna."
+        ],
+        "supplements": [
+          {
+            "name": "Creatina monoidrato",
+            "dose": "5 g",
+            "when": "a colazione",
+            "brands": [
+              "Bulk",
+              "Named 100% Creatine Creapure",
+              "+Watt Creatina Extra Gold"
+            ]
+          }
+        ],
+        "meals": [
+          {
+            "id": "colazione",
+            "label": "Colazione",
+            "slots": [
+              {
+                "id": "base",
+                "label": "Base",
+                "options": [
+                  {
+                    "id": "col-cereali",
+                    "label": "cereali da colazione",
+                    "qty": 100,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-avena",
+                    "label": "farina di avena",
+                    "qty": 100,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "cereale-integrale"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-pane-bianco",
+                    "label": "pane bianco",
+                    "qty": 100,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-pane-integrale",
+                    "label": "pane integrale",
+                    "qty": 100,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "cereale-integrale"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-gallette",
+                    "label": "gallette",
+                    "qty": 100,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-fette-biscottate",
+                    "label": "fette biscottate",
+                    "qty": 100,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-wasa",
+                    "label": "fette wasa",
+                    "qty": 100,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "cereale-integrale"
+                    ],
+                    "cook": "none"
+                  }
+                ]
+              },
+              {
+                "id": "zuccheri",
+                "label": "Zuccheri / frutta",
+                "options": [
+                  {
+                    "id": "col-banana",
+                    "label": "banana",
+                    "qty": 100,
+                    "unit": "g",
+                    "shoppingCategory": "Frutta e verdura",
+                    "tags": [
+                      "frutta"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-frutta",
+                    "label": "frutta fresca",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Frutta e verdura",
+                    "tags": [
+                      "frutta"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-marmellata",
+                    "label": "marmellata",
+                    "qty": 40,
+                    "unit": "g",
+                    "shoppingCategory": "Dispensa",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-miele",
+                    "label": "miele",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Dispensa",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-agave",
+                    "label": "sciroppo d'agave",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Dispensa",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-acero",
+                    "label": "sciroppo d'acero",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Dispensa",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-succo",
+                    "label": "succo di frutta",
+                    "qty": 200,
+                    "unit": "ml",
+                    "shoppingCategory": "Dispensa",
+                    "cook": "none"
+                  }
+                ]
+              },
+              {
+                "id": "proteine",
+                "label": "Proteine",
+                "options": [
+                  {
+                    "id": "col-yogurt",
+                    "label": "yogurt (tradizionale/greco/skyr/kefir)",
+                    "qty": 125,
+                    "unit": "g",
+                    "shoppingCategory": "Latticini",
+                    "qtyMax": 150,
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-budino-prot",
+                    "label": "budino o mousse proteica",
+                    "qty": 170,
+                    "unit": "g",
+                    "shoppingCategory": "Latticini",
+                    "qtyMax": 200,
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-uova",
+                    "label": "uova",
+                    "qty": 2,
+                    "unit": "pz",
+                    "shoppingCategory": "Uova",
+                    "cook": "quick"
+                  },
+                  {
+                    "id": "col-albume",
+                    "label": "albume",
+                    "qty": 200,
+                    "unit": "ml",
+                    "shoppingCategory": "Uova",
+                    "cook": "quick"
+                  },
+                  {
+                    "id": "col-salmone-aff",
+                    "label": "salmone affumicato",
+                    "qty": 60,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-fesa",
+                    "label": "fesa di tacchino",
+                    "qty": 80,
+                    "unit": "g",
+                    "shoppingCategory": "Salumi",
+                    "tags": [
+                      "affettato"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-cotto",
+                    "label": "prosciutto cotto",
+                    "qty": 80,
+                    "unit": "g",
+                    "shoppingCategory": "Salumi",
+                    "tags": [
+                      "affettato"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-proteine-polvere",
+                    "label": "proteine in polvere",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Integratori",
+                    "cook": "none"
+                  }
+                ]
+              },
+              {
+                "id": "grassi",
+                "label": "Grassi",
+                "options": [
+                  {
+                    "id": "col-frutta-secca",
+                    "label": "frutta secca",
+                    "qty": 20,
+                    "unit": "g",
+                    "shoppingCategory": "Frutta secca",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-crema-fs",
+                    "label": "crema di frutta secca",
+                    "qty": 20,
+                    "unit": "g",
+                    "shoppingCategory": "Dispensa",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-crema-prot",
+                    "label": "crema proteica",
+                    "qty": 20,
+                    "unit": "g",
+                    "shoppingCategory": "Integratori",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-cioccolato",
+                    "label": "cioccolato fondente",
+                    "qty": 20,
+                    "unit": "g",
+                    "shoppingCategory": "Dispensa",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-avocado",
+                    "label": "avocado",
+                    "qty": 80,
+                    "unit": "g",
+                    "shoppingCategory": "Frutta e verdura",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-sottiletta",
+                    "label": "sottiletta",
+                    "qty": 1,
+                    "unit": "pz",
+                    "shoppingCategory": "Latticini",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-grana",
+                    "label": "grana",
+                    "qty": 20,
+                    "unit": "g",
+                    "shoppingCategory": "Latticini",
+                    "cook": "none"
+                  }
+                ]
+              },
+              {
+                "id": "liquido",
+                "label": "Facoltativo",
+                "optional": true,
+                "options": [
+                  {
+                    "id": "col-latte",
+                    "label": "latte scremato o parz. scremato",
+                    "qty": 200,
+                    "unit": "ml",
+                    "shoppingCategory": "Latticini",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "col-veg",
+                    "label": "bevanda vegetale",
+                    "qty": 200,
+                    "unit": "ml",
+                    "shoppingCategory": "Latticini",
+                    "cook": "none"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "spuntino-mattina",
+            "label": "Spuntino mattina",
+            "slots": [
+              {
+                "id": "base",
+                "label": "Base",
+                "options": [
+                  {
+                    "id": "sp-banana",
+                    "label": "banana",
+                    "qty": 100,
+                    "unit": "g",
+                    "shoppingCategory": "Frutta e verdura",
+                    "tags": [
+                      "frutta"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-frutta",
+                    "label": "frutta fresca",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Frutta e verdura",
+                    "tags": [
+                      "frutta"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-yogurt",
+                    "label": "yogurt",
+                    "qty": 125,
+                    "unit": "g",
+                    "shoppingCategory": "Latticini",
+                    "qtyMax": 150,
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-crackers",
+                    "label": "crackers",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-gallette",
+                    "label": "gallette",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-fette-bisc",
+                    "label": "fette biscottate",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-wasa",
+                    "label": "fette wasa",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "cereale-integrale"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-pavesini",
+                    "label": "pavesini",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-pane",
+                    "label": "pane",
+                    "qty": 50,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "none"
+                  }
+                ]
+              },
+              {
+                "id": "aggiunta",
+                "label": "Aggiunta",
+                "optional": true,
+                "options": [
+                  {
+                    "id": "sp-frutta-secca",
+                    "label": "frutta secca",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Frutta secca",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-crema-fs",
+                    "label": "crema di frutta secca",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Dispensa",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-fesa",
+                    "label": "fesa di tacchino",
+                    "qty": 60,
+                    "unit": "g",
+                    "shoppingCategory": "Salumi",
+                    "tags": [
+                      "affettato"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-bresaola",
+                    "label": "bresaola",
+                    "qty": 60,
+                    "unit": "g",
+                    "shoppingCategory": "Salumi",
+                    "tags": [
+                      "affettato"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-crudo",
+                    "label": "prosciutto crudo",
+                    "qty": 60,
+                    "unit": "g",
+                    "shoppingCategory": "Salumi",
+                    "tags": [
+                      "affettato"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-cotto",
+                    "label": "prosciutto cotto",
+                    "qty": 60,
+                    "unit": "g",
+                    "shoppingCategory": "Salumi",
+                    "tags": [
+                      "affettato"
+                    ],
+                    "cook": "none"
+                  }
+                ]
+              }
+            ],
+            "combos": [
+              {
+                "id": "spuntino-mattina-barretta",
+                "label": "Barretta proteica / a zona",
+                "replaces": [
+                  "base",
+                  "aggiunta"
+                ],
+                "parts": [
+                  {
+                    "slotId": "base",
+                    "options": [
+                      {
+                        "id": "sp-barretta",
+                        "label": "barretta proteica o a zona",
+                        "qty": 50,
+                        "unit": "g",
+                        "shoppingCategory": "Integratori",
+                        "cook": "none"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "pranzo",
+            "label": "Pranzo",
+            "slots": [
+              {
+                "id": "carbo",
+                "label": "Carboidrati",
+                "options": [
+                  {
+                    "id": "carbo-riso",
+                    "label": "riso",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "carbo-riso-integrale",
+                    "label": "riso integrale",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "cereale-integrale"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "carbo-pasta",
+                    "label": "pasta",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "pasta"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "carbo-pasta-integrale",
+                    "label": "pasta integrale",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "pasta",
+                      "cereale-integrale"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "carbo-cous-cous",
+                    "label": "cous cous",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "carbo-quinoa",
+                    "label": "quinoa",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "cereale-integrale"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "carbo-farro",
+                    "label": "farro",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "cereale-integrale"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "carbo-orzo",
+                    "label": "orzo",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "cereale-integrale"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "carbo-piadina",
+                    "label": "piadina",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "quick"
+                  },
+                  {
+                    "id": "carbo-pane",
+                    "label": "pane",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "carbo-pane-integrale",
+                    "label": "pane integrale",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "cereale-integrale"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "carbo-patate",
+                    "label": "patate",
+                    "qty": 450,
+                    "unit": "g",
+                    "shoppingCategory": "Frutta e verdura",
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "carbo-polenta",
+                    "label": "polenta",
+                    "qty": 450,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "carbo-gnocchi",
+                    "label": "gnocchi di patate",
+                    "qty": 350,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "quick"
+                  }
+                ]
+              },
+              {
+                "id": "proteine",
+                "label": "Proteine",
+                "options": [
+                  {
+                    "id": "pr-pollo",
+                    "label": "petto di pollo",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Carne",
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "pr-tacchino",
+                    "label": "petto di tacchino",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Carne",
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "pr-vitello",
+                    "label": "vitello",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Carne",
+                    "tags": [
+                      "carne-rossa"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 2
+                  },
+                  {
+                    "id": "pr-maiale",
+                    "label": "filetto di maiale",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Carne",
+                    "cook": "quick",
+                    "keepsDays": 2
+                  },
+                  {
+                    "id": "pr-fesa",
+                    "label": "fesa di tacchino",
+                    "qty": 140,
+                    "unit": "g",
+                    "shoppingCategory": "Salumi",
+                    "tags": [
+                      "affettato"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "pr-cotto",
+                    "label": "prosciutto cotto",
+                    "qty": 140,
+                    "unit": "g",
+                    "shoppingCategory": "Salumi",
+                    "tags": [
+                      "affettato"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "pr-bresaola",
+                    "label": "bresaola",
+                    "qty": 100,
+                    "unit": "g",
+                    "shoppingCategory": "Salumi",
+                    "tags": [
+                      "affettato"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "pr-crudo",
+                    "label": "prosciutto crudo",
+                    "qty": 100,
+                    "unit": "g",
+                    "shoppingCategory": "Salumi",
+                    "tags": [
+                      "affettato"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "pr-merluzzo",
+                    "label": "merluzzo",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "pr-platessa",
+                    "label": "platessa",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "pr-halibut",
+                    "label": "halibut",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "pr-nasello",
+                    "label": "nasello",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "pr-pangasio",
+                    "label": "pangasio",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "pr-sogliola",
+                    "label": "sogliola",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "pr-calamari",
+                    "label": "calamari",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "pr-seppie",
+                    "label": "seppie",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "pr-gamberi",
+                    "label": "gamberi",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "pr-polpo",
+                    "label": "polpo",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "pr-mozzarella",
+                    "label": "mozzarella light",
+                    "qty": 125,
+                    "unit": "g",
+                    "shoppingCategory": "Latticini",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "pr-stracchino",
+                    "label": "stracchino light",
+                    "qty": 125,
+                    "unit": "g",
+                    "shoppingCategory": "Latticini",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "pr-ricotta",
+                    "label": "ricotta",
+                    "qty": 150,
+                    "unit": "g",
+                    "shoppingCategory": "Latticini",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "pr-fiocchi",
+                    "label": "fiocchi di latte",
+                    "qty": 150,
+                    "unit": "g",
+                    "shoppingCategory": "Latticini",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "pr-tofu",
+                    "label": "tofu",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Vegetali",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "pr-tempeh",
+                    "label": "tempeh",
+                    "qty": 100,
+                    "unit": "g",
+                    "shoppingCategory": "Vegetali",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "legumi-ceci",
+                    "label": "ceci cotti",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Legumi",
+                    "tags": [
+                      "legumi"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 4,
+                    "purchaseFactor": 0.3333333333333333,
+                    "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                  },
+                  {
+                    "id": "legumi-fagioli",
+                    "label": "fagioli cotti",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Legumi",
+                    "tags": [
+                      "legumi"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 4,
+                    "purchaseFactor": 0.3333333333333333,
+                    "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                  },
+                  {
+                    "id": "legumi-lenticchie",
+                    "label": "lenticchie cotte",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Legumi",
+                    "tags": [
+                      "legumi"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 4,
+                    "purchaseFactor": 0.3333333333333333,
+                    "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                  },
+                  {
+                    "id": "legumi-fagioli-neri",
+                    "label": "fagioli neri cotti",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Legumi",
+                    "tags": [
+                      "legumi"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 4,
+                    "purchaseFactor": 0.3333333333333333,
+                    "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                  },
+                  {
+                    "id": "legumi-piselli",
+                    "label": "piselli",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Legumi",
+                    "tags": [
+                      "legumi"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 4,
+                    "purchaseFactor": 0.3333333333333333,
+                    "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                  }
+                ]
+              },
+              {
+                "id": "verdura",
+                "label": "Verdura",
+                "options": [
+                  {
+                    "id": "verdura-insalata",
+                    "label": "insalata mista",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-zucchine",
+                    "label": "zucchine",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-broccoli",
+                    "label": "broccoli",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-spinaci",
+                    "label": "spinaci",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-fagiolini",
+                    "label": "fagiolini",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-carote",
+                    "label": "carote",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-pomodorini",
+                    "label": "pomodorini",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-asparagi",
+                    "label": "asparagi",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-melanzane",
+                    "label": "melanzane",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-peperoni",
+                    "label": "peperoni",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-cavolfiore",
+                    "label": "cavolfiore",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-finocchi",
+                    "label": "finocchi",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-zucca",
+                    "label": "zucca",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-rucola",
+                    "label": "rucola",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-minestra",
+                    "label": "minestra di verdure",
+                    "qty": 300,
+                    "unit": "ml",
+                    "shoppingCategory": "Verdura",
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-passato",
+                    "label": "passato di verdure",
+                    "qty": 300,
+                    "unit": "ml",
+                    "shoppingCategory": "Verdura",
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-vellutata",
+                    "label": "vellutata di verdure",
+                    "qty": 300,
+                    "unit": "ml",
+                    "shoppingCategory": "Verdura",
+                    "cook": "batch",
+                    "keepsDays": 3
+                  }
+                ]
+              },
+              {
+                "id": "grassi",
+                "label": "Grassi",
+                "options": [
+                  {
+                    "id": "grasso-evo",
+                    "label": "olio extravergine d'oliva",
+                    "qty": 10,
+                    "unit": "g",
+                    "shoppingCategory": "Dispensa",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "grasso-burro",
+                    "label": "burro",
+                    "qty": 10,
+                    "unit": "g",
+                    "shoppingCategory": "Latticini",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "grasso-frutta-secca",
+                    "label": "frutta secca",
+                    "qty": 15,
+                    "unit": "g",
+                    "shoppingCategory": "Frutta secca",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "grasso-avocado",
+                    "label": "avocado",
+                    "qty": 50,
+                    "unit": "g",
+                    "shoppingCategory": "Frutta e verdura",
+                    "cook": "none"
+                  }
+                ]
+              }
+            ],
+            "combos": [
+              {
+                "id": "pranzo-cereali-legumi",
+                "label": "Cereali + legumi (sostituisce carbo e proteine)",
+                "replaces": [
+                  "carbo",
+                  "proteine"
+                ],
+                "parts": [
+                  {
+                    "slotId": "carbo",
+                    "options": [
+                      {
+                        "id": "combo-riso",
+                        "label": "riso",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "combo-riso-integrale",
+                        "label": "riso integrale",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "tags": [
+                          "cereale-integrale"
+                        ],
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "combo-pasta",
+                        "label": "pasta",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "tags": [
+                          "pasta"
+                        ],
+                        "cook": "quick",
+                        "keepsDays": 1
+                      },
+                      {
+                        "id": "combo-cous-cous",
+                        "label": "cous cous",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "cook": "quick",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "combo-farro",
+                        "label": "farro",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "tags": [
+                          "cereale-integrale"
+                        ],
+                        "cook": "batch",
+                        "keepsDays": 3
+                      }
+                    ]
+                  },
+                  {
+                    "slotId": "proteine",
+                    "options": [
+                      {
+                        "id": "combo-ceci",
+                        "label": "ceci cotti",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Legumi",
+                        "tags": [
+                          "legumi"
+                        ],
+                        "cook": "batch",
+                        "keepsDays": 4,
+                        "purchaseFactor": 0.3333333333333333,
+                        "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                      },
+                      {
+                        "id": "combo-fagioli",
+                        "label": "fagioli cotti",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Legumi",
+                        "tags": [
+                          "legumi"
+                        ],
+                        "cook": "batch",
+                        "keepsDays": 4,
+                        "purchaseFactor": 0.3333333333333333,
+                        "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                      },
+                      {
+                        "id": "combo-lenticchie",
+                        "label": "lenticchie cotte",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Legumi",
+                        "tags": [
+                          "legumi"
+                        ],
+                        "cook": "batch",
+                        "keepsDays": 4,
+                        "purchaseFactor": 0.3333333333333333,
+                        "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                      },
+                      {
+                        "id": "combo-piselli",
+                        "label": "piselli",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Legumi",
+                        "tags": [
+                          "legumi"
+                        ],
+                        "cook": "batch",
+                        "keepsDays": 4,
+                        "purchaseFactor": 0.3333333333333333,
+                        "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "spuntino-pomeriggio",
+            "label": "Spuntino pomeriggio",
+            "slots": [
+              {
+                "id": "base",
+                "label": "Base",
+                "options": [
+                  {
+                    "id": "sp-banana",
+                    "label": "banana",
+                    "qty": 100,
+                    "unit": "g",
+                    "shoppingCategory": "Frutta e verdura",
+                    "tags": [
+                      "frutta"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-frutta",
+                    "label": "frutta fresca",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Frutta e verdura",
+                    "tags": [
+                      "frutta"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-yogurt",
+                    "label": "yogurt",
+                    "qty": 125,
+                    "unit": "g",
+                    "shoppingCategory": "Latticini",
+                    "qtyMax": 150,
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-crackers",
+                    "label": "crackers",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-gallette",
+                    "label": "gallette",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-fette-bisc",
+                    "label": "fette biscottate",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-wasa",
+                    "label": "fette wasa",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "cereale-integrale"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-pavesini",
+                    "label": "pavesini",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-pane",
+                    "label": "pane",
+                    "qty": 50,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "none"
+                  }
+                ]
+              },
+              {
+                "id": "aggiunta",
+                "label": "Aggiunta",
+                "optional": true,
+                "options": [
+                  {
+                    "id": "sp-frutta-secca",
+                    "label": "frutta secca",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Frutta secca",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-crema-fs",
+                    "label": "crema di frutta secca",
+                    "qty": 30,
+                    "unit": "g",
+                    "shoppingCategory": "Dispensa",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-fesa",
+                    "label": "fesa di tacchino",
+                    "qty": 60,
+                    "unit": "g",
+                    "shoppingCategory": "Salumi",
+                    "tags": [
+                      "affettato"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-bresaola",
+                    "label": "bresaola",
+                    "qty": 60,
+                    "unit": "g",
+                    "shoppingCategory": "Salumi",
+                    "tags": [
+                      "affettato"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-crudo",
+                    "label": "prosciutto crudo",
+                    "qty": 60,
+                    "unit": "g",
+                    "shoppingCategory": "Salumi",
+                    "tags": [
+                      "affettato"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "sp-cotto",
+                    "label": "prosciutto cotto",
+                    "qty": 60,
+                    "unit": "g",
+                    "shoppingCategory": "Salumi",
+                    "tags": [
+                      "affettato"
+                    ],
+                    "cook": "none"
+                  }
+                ]
+              }
+            ],
+            "combos": [
+              {
+                "id": "spuntino-pomeriggio-barretta",
+                "label": "Barretta proteica / a zona",
+                "replaces": [
+                  "base",
+                  "aggiunta"
+                ],
+                "parts": [
+                  {
+                    "slotId": "base",
+                    "options": [
+                      {
+                        "id": "sp-barretta",
+                        "label": "barretta proteica o a zona",
+                        "qty": 50,
+                        "unit": "g",
+                        "shoppingCategory": "Integratori",
+                        "cook": "none"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "cena",
+            "label": "Cena",
+            "slots": [
+              {
+                "id": "carbo",
+                "label": "Carboidrati",
+                "options": [
+                  {
+                    "id": "carbo-riso",
+                    "label": "riso",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "carbo-riso-integrale",
+                    "label": "riso integrale",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "cereale-integrale"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "carbo-pasta",
+                    "label": "pasta",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "pasta"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "carbo-pasta-integrale",
+                    "label": "pasta integrale",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "pasta",
+                      "cereale-integrale"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "carbo-cous-cous",
+                    "label": "cous cous",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "carbo-quinoa",
+                    "label": "quinoa",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "cereale-integrale"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "carbo-farro",
+                    "label": "farro",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "cereale-integrale"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "carbo-orzo",
+                    "label": "orzo",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "cereale-integrale"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "carbo-piadina",
+                    "label": "piadina",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "quick"
+                  },
+                  {
+                    "id": "carbo-pane",
+                    "label": "pane",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "carbo-pane-integrale",
+                    "label": "pane integrale",
+                    "qty": 130,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "tags": [
+                      "cereale-integrale"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "carbo-patate",
+                    "label": "patate",
+                    "qty": 450,
+                    "unit": "g",
+                    "shoppingCategory": "Frutta e verdura",
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "carbo-polenta",
+                    "label": "polenta",
+                    "qty": 450,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "carbo-gnocchi",
+                    "label": "gnocchi di patate",
+                    "qty": 350,
+                    "unit": "g",
+                    "shoppingCategory": "Cereali e derivati",
+                    "cook": "quick"
+                  }
+                ]
+              },
+              {
+                "id": "proteine",
+                "label": "Proteine",
+                "options": [
+                  {
+                    "id": "ce-uova",
+                    "label": "2 uova + 150ml albume",
+                    "qty": 1,
+                    "unit": "pz",
+                    "shoppingCategory": "Uova",
+                    "cook": "quick"
+                  },
+                  {
+                    "id": "ce-hamburger-veg",
+                    "label": "hamburger vegetale",
+                    "qty": 150,
+                    "unit": "g",
+                    "shoppingCategory": "Vegetali",
+                    "cook": "quick"
+                  },
+                  {
+                    "id": "ce-seitan",
+                    "label": "seitan",
+                    "qty": 150,
+                    "unit": "g",
+                    "shoppingCategory": "Vegetali",
+                    "cook": "quick"
+                  },
+                  {
+                    "id": "ce-hamburger",
+                    "label": "hamburger di manzo",
+                    "qty": 150,
+                    "unit": "g",
+                    "shoppingCategory": "Carne",
+                    "tags": [
+                      "carne-rossa"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "ce-bistecca",
+                    "label": "bistecca",
+                    "qty": 150,
+                    "unit": "g",
+                    "shoppingCategory": "Carne",
+                    "tags": [
+                      "carne-rossa"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "ce-macinato",
+                    "label": "macinato magro",
+                    "qty": 150,
+                    "unit": "g",
+                    "shoppingCategory": "Carne",
+                    "tags": [
+                      "carne-rossa"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "ce-tartare",
+                    "label": "tartare di manzo magro",
+                    "qty": 150,
+                    "unit": "g",
+                    "shoppingCategory": "Carne",
+                    "tags": [
+                      "carne-rossa"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "ce-salmone",
+                    "label": "salmone",
+                    "qty": 150,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "ce-orata",
+                    "label": "orata",
+                    "qty": 150,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "ce-spada",
+                    "label": "pesce spada",
+                    "qty": 150,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "ce-branzino",
+                    "label": "branzino",
+                    "qty": 150,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "ce-tonno-fresco",
+                    "label": "tonno",
+                    "qty": 150,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "ce-sgombro",
+                    "label": "sgombro",
+                    "qty": 150,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick",
+                    "keepsDays": 1
+                  },
+                  {
+                    "id": "ce-tonno-olio",
+                    "label": "tonno sott'olio sgocciolato",
+                    "qty": 100,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "ce-trota",
+                    "label": "trota",
+                    "qty": 150,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "quick"
+                  },
+                  {
+                    "id": "ce-salmone-aff",
+                    "label": "salmone affumicato",
+                    "qty": 150,
+                    "unit": "g",
+                    "shoppingCategory": "Pesce",
+                    "tags": [
+                      "pesce"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "ce-grana",
+                    "label": "grana",
+                    "qty": 80,
+                    "unit": "g",
+                    "shoppingCategory": "Latticini",
+                    "tags": [
+                      "formaggio-grasso"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "ce-scamorza",
+                    "label": "scamorza",
+                    "qty": 80,
+                    "unit": "g",
+                    "shoppingCategory": "Latticini",
+                    "tags": [
+                      "formaggio-grasso"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "ce-emmental",
+                    "label": "emmental",
+                    "qty": 80,
+                    "unit": "g",
+                    "shoppingCategory": "Latticini",
+                    "tags": [
+                      "formaggio-grasso"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "ce-pecorino",
+                    "label": "pecorino",
+                    "qty": 80,
+                    "unit": "g",
+                    "shoppingCategory": "Latticini",
+                    "tags": [
+                      "formaggio-grasso"
+                    ],
+                    "cook": "none"
+                  },
+                  {
+                    "id": "legumi-ceci",
+                    "label": "ceci cotti",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Legumi",
+                    "tags": [
+                      "legumi"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 4,
+                    "purchaseFactor": 0.3333333333333333,
+                    "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                  },
+                  {
+                    "id": "legumi-fagioli",
+                    "label": "fagioli cotti",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Legumi",
+                    "tags": [
+                      "legumi"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 4,
+                    "purchaseFactor": 0.3333333333333333,
+                    "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                  },
+                  {
+                    "id": "legumi-lenticchie",
+                    "label": "lenticchie cotte",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Legumi",
+                    "tags": [
+                      "legumi"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 4,
+                    "purchaseFactor": 0.3333333333333333,
+                    "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                  },
+                  {
+                    "id": "legumi-fagioli-neri",
+                    "label": "fagioli neri cotti",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Legumi",
+                    "tags": [
+                      "legumi"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 4,
+                    "purchaseFactor": 0.3333333333333333,
+                    "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                  },
+                  {
+                    "id": "legumi-piselli",
+                    "label": "piselli",
+                    "qty": 250,
+                    "unit": "g",
+                    "shoppingCategory": "Legumi",
+                    "tags": [
+                      "legumi"
+                    ],
+                    "cook": "batch",
+                    "keepsDays": 4,
+                    "purchaseFactor": 0.3333333333333333,
+                    "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                  }
+                ]
+              },
+              {
+                "id": "verdura",
+                "label": "Verdura",
+                "options": [
+                  {
+                    "id": "verdura-insalata",
+                    "label": "insalata mista",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-zucchine",
+                    "label": "zucchine",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-broccoli",
+                    "label": "broccoli",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-spinaci",
+                    "label": "spinaci",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-fagiolini",
+                    "label": "fagiolini",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-carote",
+                    "label": "carote",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-pomodorini",
+                    "label": "pomodorini",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-asparagi",
+                    "label": "asparagi",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-melanzane",
+                    "label": "melanzane",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-peperoni",
+                    "label": "peperoni",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-cavolfiore",
+                    "label": "cavolfiore",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-finocchi",
+                    "label": "finocchi",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-zucca",
+                    "label": "zucca",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-rucola",
+                    "label": "rucola",
+                    "qty": 200,
+                    "unit": "g",
+                    "shoppingCategory": "Verdura",
+                    "cook": "quick",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-minestra",
+                    "label": "minestra di verdure",
+                    "qty": 300,
+                    "unit": "ml",
+                    "shoppingCategory": "Verdura",
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-passato",
+                    "label": "passato di verdure",
+                    "qty": 300,
+                    "unit": "ml",
+                    "shoppingCategory": "Verdura",
+                    "cook": "batch",
+                    "keepsDays": 3
+                  },
+                  {
+                    "id": "verdura-vellutata",
+                    "label": "vellutata di verdure",
+                    "qty": 300,
+                    "unit": "ml",
+                    "shoppingCategory": "Verdura",
+                    "cook": "batch",
+                    "keepsDays": 3
+                  }
+                ]
+              },
+              {
+                "id": "grassi",
+                "label": "Grassi",
+                "options": [
+                  {
+                    "id": "grasso-evo",
+                    "label": "olio extravergine d'oliva",
+                    "qty": 10,
+                    "unit": "g",
+                    "shoppingCategory": "Dispensa",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "grasso-burro",
+                    "label": "burro",
+                    "qty": 10,
+                    "unit": "g",
+                    "shoppingCategory": "Latticini",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "grasso-frutta-secca",
+                    "label": "frutta secca",
+                    "qty": 15,
+                    "unit": "g",
+                    "shoppingCategory": "Frutta secca",
+                    "cook": "none"
+                  },
+                  {
+                    "id": "grasso-avocado",
+                    "label": "avocado",
+                    "qty": 50,
+                    "unit": "g",
+                    "shoppingCategory": "Frutta e verdura",
+                    "cook": "none"
+                  }
+                ]
+              }
+            ],
+            "combos": [
+              {
+                "id": "cena-cereali-legumi",
+                "label": "Cereali + legumi (sostituisce carbo e proteine)",
+                "replaces": [
+                  "carbo",
+                  "proteine"
+                ],
+                "parts": [
+                  {
+                    "slotId": "carbo",
+                    "options": [
+                      {
+                        "id": "combo-riso",
+                        "label": "riso",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "combo-riso-integrale",
+                        "label": "riso integrale",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "tags": [
+                          "cereale-integrale"
+                        ],
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "combo-pasta",
+                        "label": "pasta",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "tags": [
+                          "pasta"
+                        ],
+                        "cook": "quick",
+                        "keepsDays": 1
+                      },
+                      {
+                        "id": "combo-cous-cous",
+                        "label": "cous cous",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "cook": "quick",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "combo-farro",
+                        "label": "farro",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "tags": [
+                          "cereale-integrale"
+                        ],
+                        "cook": "batch",
+                        "keepsDays": 3
+                      }
+                    ]
+                  },
+                  {
+                    "slotId": "proteine",
+                    "options": [
+                      {
+                        "id": "combo-ceci",
+                        "label": "ceci cotti",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Legumi",
+                        "tags": [
+                          "legumi"
+                        ],
+                        "cook": "batch",
+                        "keepsDays": 4,
+                        "purchaseFactor": 0.3333333333333333,
+                        "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                      },
+                      {
+                        "id": "combo-fagioli",
+                        "label": "fagioli cotti",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Legumi",
+                        "tags": [
+                          "legumi"
+                        ],
+                        "cook": "batch",
+                        "keepsDays": 4,
+                        "purchaseFactor": 0.3333333333333333,
+                        "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                      },
+                      {
+                        "id": "combo-lenticchie",
+                        "label": "lenticchie cotte",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Legumi",
+                        "tags": [
+                          "legumi"
+                        ],
+                        "cook": "batch",
+                        "keepsDays": 4,
+                        "purchaseFactor": 0.3333333333333333,
+                        "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                      },
+                      {
+                        "id": "combo-piselli",
+                        "label": "piselli",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Legumi",
+                        "tags": [
+                          "legumi"
+                        ],
+                        "cook": "batch",
+                        "keepsDays": 4,
+                        "purchaseFactor": 0.3333333333333333,
+                        "purchaseNote": "quantità a secco (50g secchi = 150g cotti)"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "frequencies": [
+          {
+            "tag": "pesce",
+            "min": 2,
+            "per": "week",
+            "label": "Pesce"
+          },
+          {
+            "tag": "legumi",
+            "min": 2,
+            "per": "week",
+            "label": "Legumi"
+          },
+          {
+            "tag": "cereale-integrale",
+            "min": 1,
+            "per": "day",
+            "label": "Cereali integrali"
+          },
+          {
+            "tag": "frutta",
+            "min": 1,
+            "per": "day",
+            "label": "Frutta"
+          },
+          {
+            "tag": "affettato",
+            "max": 2,
+            "per": "week",
+            "label": "Affettato"
+          },
+          {
+            "tag": "carne-rossa",
+            "max": 2,
+            "per": "week",
+            "label": "Carne rossa"
+          },
+          {
+            "tag": "formaggio-grasso",
+            "max": 2,
+            "per": "week",
+            "label": "Formaggi grassi"
+          }
+        ],
+        "structure": {
+          "fixedMeals": [
+            "colazione"
+          ],
+          "allDifferentMeals": [
+            "cena"
+          ],
+          "distinctWithinDay": [
+            [
+              "spuntino-mattina",
+              "spuntino-pomeriggio"
+            ]
+          ],
+          "repeatPatterns": [
+            {
+              "meal": "pranzo",
+              "pattern": [
+                2,
+                2,
+                2,
+                1
+              ]
+            }
+          ],
+          "freeMeals": 1,
+          "freeMealDefaultMeal": "cena",
+          "freeMealForbidden": [
+            {
+              "meal": "pranzo",
+              "days": [
+                6
+              ]
+            }
+          ],
+          "proteinSwap": {
+            "between": [
+              "pranzo",
+              "cena"
+            ],
+            "slot": "proteine"
+          },
+          "alcoholUnitsMax": 2,
+          "waterLitersPerDay": 2,
+          "waterLitersTrainingDay": 2.5,
+          "softPreferences": [
+            {
+              "id": "pasta-feriale",
+              "description": "Nei giorni feriali limitare la pasta a pranzo",
+              "kind": "avoid",
+              "days": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "tags": [
+                "pasta"
+              ],
+              "weight": 4
+            },
+            {
+              "id": "pasta-domenica",
+              "description": "La pasta preferibilmente la domenica",
+              "kind": "prefer",
+              "days": [
+                6
+              ],
+              "tags": [
+                "pasta"
+              ],
+              "weight": 3
+            }
+          ]
+        }
+      },
+      "builtin": true,
+      "createdAt": "2026-02-18",
+      "confirmedBy": "dott. Giovanni Di Giusto"
+    },
+    {
+      "key": "alim-ab",
+      "plan": {
+        "id": "alim-ab",
+        "patient": {
+          "name": "Paziente Alim A/B"
+        },
+        "professional": {
+          "id": "alim",
+          "name": "Nutrizionista (schema Alim A/B)"
+        },
+        "issuedAt": "2026-07-29",
+        "weighingNote": "Le quote di carboidrati sono espresse in grammi di nutriente: la quantità di alimento è calcolata di conseguenza.",
+        "variants": [
+          {
+            "id": "a",
+            "label": "Alim A",
+            "meals": [
+              {
+                "id": "pasto-1",
+                "label": "Pasto 1",
+                "slots": [
+                  {
+                    "id": "carbo",
+                    "label": "Carboidrati",
+                    "target": {
+                      "nutrient": "carboidrati",
+                      "qty": 50,
+                      "tolerance": 2
+                    },
+                    "options": [
+                      {
+                        "id": "carb-pane-azzimo",
+                        "label": "pane azzimo",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-riso-basmati",
+                        "label": "riso basmati",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-riso-venere",
+                        "label": "riso venere",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-cous-cous",
+                        "label": "cous cous",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 72
+                        },
+                        "cook": "quick",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-gallette-farro",
+                        "label": "gallette di farro",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-gallette-riso",
+                        "label": "gallette di riso",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 81
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-wasa",
+                        "label": "fette wasa integrali",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 63
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-fiocchi",
+                        "label": "avena in fiocchi",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-farina",
+                        "label": "farina di avena",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-patate-americane",
+                        "label": "patate americane",
+                        "qty": 250,
+                        "unit": "g",
+                        "shoppingCategory": "Frutta e verdura",
+                        "fixedQty": true,
+                        "cook": "batch",
+                        "keepsDays": 3
+                      }
+                    ]
+                  },
+                  {
+                    "id": "proteine",
+                    "label": "Proteine",
+                    "options": [
+                      {
+                        "id": "albume-150",
+                        "label": "albume",
+                        "qty": 150,
+                        "unit": "ml",
+                        "shoppingCategory": "Uova",
+                        "cook": "quick"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "tuorlo",
+                    "label": "Tuorlo",
+                    "options": [
+                      {
+                        "id": "tuorlo-1",
+                        "label": "tuorlo",
+                        "qty": 1,
+                        "unit": "pz",
+                        "shoppingCategory": "Uova",
+                        "cook": "quick"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "pasto-2",
+                "label": "Pasto 2",
+                "slots": [
+                  {
+                    "id": "carbo",
+                    "label": "Carboidrati",
+                    "target": {
+                      "nutrient": "carboidrati",
+                      "qty": 50,
+                      "tolerance": 2
+                    },
+                    "options": [
+                      {
+                        "id": "carb-pane-azzimo",
+                        "label": "pane azzimo",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-riso-basmati",
+                        "label": "riso basmati",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-riso-venere",
+                        "label": "riso venere",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-cous-cous",
+                        "label": "cous cous",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 72
+                        },
+                        "cook": "quick",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-gallette-farro",
+                        "label": "gallette di farro",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-gallette-riso",
+                        "label": "gallette di riso",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 81
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-wasa",
+                        "label": "fette wasa integrali",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 63
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-fiocchi",
+                        "label": "avena in fiocchi",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-farina",
+                        "label": "farina di avena",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-patate-americane",
+                        "label": "patate americane",
+                        "qty": 250,
+                        "unit": "g",
+                        "shoppingCategory": "Frutta e verdura",
+                        "fixedQty": true,
+                        "cook": "batch",
+                        "keepsDays": 3
+                      }
+                    ]
+                  },
+                  {
+                    "id": "proteine",
+                    "label": "Proteine",
+                    "options": [
+                      {
+                        "id": "tacchino-100",
+                        "label": "tacchino",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Carne",
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "tonno-160",
+                        "label": "tonno al naturale",
+                        "qty": 160,
+                        "unit": "g",
+                        "shoppingCategory": "Pesce",
+                        "tags": [
+                          "pesce"
+                        ],
+                        "cook": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "frutta-secca",
+                    "label": "Frutta secca",
+                    "options": [
+                      {
+                        "id": "noci",
+                        "label": "noci",
+                        "qty": 15,
+                        "unit": "g",
+                        "shoppingCategory": "Frutta secca",
+                        "cook": "none"
+                      },
+                      {
+                        "id": "mandorle",
+                        "label": "mandorle",
+                        "qty": 15,
+                        "unit": "g",
+                        "shoppingCategory": "Frutta secca",
+                        "cook": "none"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "pasto-3",
+                "label": "Pasto 3",
+                "slots": [
+                  {
+                    "id": "carbo",
+                    "label": "Carboidrati",
+                    "target": {
+                      "nutrient": "carboidrati",
+                      "qty": 50,
+                      "tolerance": 2
+                    },
+                    "options": [
+                      {
+                        "id": "carb-pane-azzimo",
+                        "label": "pane azzimo",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-riso-basmati",
+                        "label": "riso basmati",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-riso-venere",
+                        "label": "riso venere",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-cous-cous",
+                        "label": "cous cous",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 72
+                        },
+                        "cook": "quick",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-gallette-farro",
+                        "label": "gallette di farro",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-gallette-riso",
+                        "label": "gallette di riso",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 81
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-wasa",
+                        "label": "fette wasa integrali",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 63
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-fiocchi",
+                        "label": "avena in fiocchi",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-farina",
+                        "label": "farina di avena",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-patate-americane",
+                        "label": "patate americane",
+                        "qty": 250,
+                        "unit": "g",
+                        "shoppingCategory": "Frutta e verdura",
+                        "fixedQty": true,
+                        "cook": "batch",
+                        "keepsDays": 3
+                      }
+                    ]
+                  },
+                  {
+                    "id": "proteine",
+                    "label": "Proteine",
+                    "options": [
+                      {
+                        "id": "pollo-120",
+                        "label": "pollo",
+                        "qty": 120,
+                        "unit": "g",
+                        "shoppingCategory": "Carne",
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "lonza-120",
+                        "label": "lonza",
+                        "qty": 120,
+                        "unit": "g",
+                        "shoppingCategory": "Carne",
+                        "cook": "quick",
+                        "keepsDays": 2
+                      },
+                      {
+                        "id": "merluzzo-200",
+                        "label": "merluzzo",
+                        "qty": 200,
+                        "unit": "g",
+                        "shoppingCategory": "Pesce",
+                        "tags": [
+                          "pesce"
+                        ],
+                        "cook": "quick",
+                        "keepsDays": 1
+                      },
+                      {
+                        "id": "platessa-200",
+                        "label": "platessa",
+                        "qty": 200,
+                        "unit": "g",
+                        "shoppingCategory": "Pesce",
+                        "tags": [
+                          "pesce"
+                        ],
+                        "cook": "quick",
+                        "keepsDays": 1
+                      }
+                    ]
+                  },
+                  {
+                    "id": "verdura",
+                    "label": "Verdure",
+                    "options": [
+                      {
+                        "id": "verdure",
+                        "label": "verdure",
+                        "qty": 0,
+                        "unit": "g",
+                        "shoppingCategory": "Verdura",
+                        "freeQuantity": true,
+                        "cook": "quick"
+                      },
+                      {
+                        "id": "insalata",
+                        "label": "insalata",
+                        "qty": 0,
+                        "unit": "g",
+                        "shoppingCategory": "Verdura",
+                        "freeQuantity": true,
+                        "cook": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "grassi",
+                    "label": "Grassi",
+                    "options": [
+                      {
+                        "id": "evo-15",
+                        "label": "olio extravergine di oliva",
+                        "qty": 15,
+                        "unit": "g",
+                        "shoppingCategory": "Dispensa",
+                        "cook": "none"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "pasto-4",
+                "label": "Pasto 4",
+                "slots": [
+                  {
+                    "id": "carbo",
+                    "label": "Carboidrati",
+                    "target": {
+                      "nutrient": "carboidrati",
+                      "qty": 50,
+                      "tolerance": 2
+                    },
+                    "options": [
+                      {
+                        "id": "carb-pane-azzimo",
+                        "label": "pane azzimo",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-riso-basmati",
+                        "label": "riso basmati",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-riso-venere",
+                        "label": "riso venere",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-cous-cous",
+                        "label": "cous cous",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 72
+                        },
+                        "cook": "quick",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-gallette-farro",
+                        "label": "gallette di farro",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-gallette-riso",
+                        "label": "gallette di riso",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 81
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-wasa",
+                        "label": "fette wasa integrali",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 63
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-fiocchi",
+                        "label": "avena in fiocchi",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-farina",
+                        "label": "farina di avena",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-patate-americane",
+                        "label": "patate americane",
+                        "qty": 250,
+                        "unit": "g",
+                        "shoppingCategory": "Frutta e verdura",
+                        "fixedQty": true,
+                        "cook": "batch",
+                        "keepsDays": 3
+                      }
+                    ]
+                  },
+                  {
+                    "id": "proteine",
+                    "label": "Proteine",
+                    "options": [
+                      {
+                        "id": "pollo-100",
+                        "label": "pollo",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Carne",
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "albume-150-b",
+                        "label": "albume",
+                        "qty": 150,
+                        "unit": "ml",
+                        "shoppingCategory": "Uova",
+                        "cook": "quick"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "frutta",
+                    "label": "Frutta",
+                    "options": [
+                      {
+                        "id": "mela",
+                        "label": "mela",
+                        "qty": 1,
+                        "unit": "pz",
+                        "shoppingCategory": "Frutta e verdura",
+                        "tags": [
+                          "frutta"
+                        ],
+                        "cook": "none"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "pasto-5",
+                "label": "Pasto 5",
+                "slots": [
+                  {
+                    "id": "carbo",
+                    "label": "Carboidrati",
+                    "target": {
+                      "nutrient": "carboidrati",
+                      "qty": 50,
+                      "tolerance": 2
+                    },
+                    "options": [
+                      {
+                        "id": "carb-pane-azzimo",
+                        "label": "pane azzimo",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-riso-basmati",
+                        "label": "riso basmati",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-riso-venere",
+                        "label": "riso venere",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-cous-cous",
+                        "label": "cous cous",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 72
+                        },
+                        "cook": "quick",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-gallette-farro",
+                        "label": "gallette di farro",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-gallette-riso",
+                        "label": "gallette di riso",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 81
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-wasa",
+                        "label": "fette wasa integrali",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 63
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-fiocchi",
+                        "label": "avena in fiocchi",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-farina",
+                        "label": "farina di avena",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-patate-americane",
+                        "label": "patate americane",
+                        "qty": 250,
+                        "unit": "g",
+                        "shoppingCategory": "Frutta e verdura",
+                        "fixedQty": true,
+                        "cook": "batch",
+                        "keepsDays": 3
+                      }
+                    ]
+                  },
+                  {
+                    "id": "proteine",
+                    "label": "Proteine",
+                    "options": [
+                      {
+                        "id": "tacchino-120",
+                        "label": "tacchino",
+                        "qty": 120,
+                        "unit": "g",
+                        "shoppingCategory": "Carne",
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "lonza-120",
+                        "label": "lonza",
+                        "qty": 120,
+                        "unit": "g",
+                        "shoppingCategory": "Carne",
+                        "cook": "quick",
+                        "keepsDays": 2
+                      },
+                      {
+                        "id": "pollo-120",
+                        "label": "pollo",
+                        "qty": 120,
+                        "unit": "g",
+                        "shoppingCategory": "Carne",
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "equino-120",
+                        "label": "equino",
+                        "qty": 120,
+                        "unit": "g",
+                        "shoppingCategory": "Carne",
+                        "tags": [
+                          "equino"
+                        ],
+                        "cook": "quick",
+                        "keepsDays": 1
+                      }
+                    ]
+                  },
+                  {
+                    "id": "grassi",
+                    "label": "Grassi",
+                    "options": [
+                      {
+                        "id": "evo-15",
+                        "label": "olio extravergine di oliva",
+                        "qty": 15,
+                        "unit": "g",
+                        "shoppingCategory": "Dispensa",
+                        "cook": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "verdura",
+                    "label": "Verdure",
+                    "options": [
+                      {
+                        "id": "verdure",
+                        "label": "verdure",
+                        "qty": 0,
+                        "unit": "g",
+                        "shoppingCategory": "Verdura",
+                        "freeQuantity": true,
+                        "cook": "quick"
+                      },
+                      {
+                        "id": "insalata",
+                        "label": "insalata",
+                        "qty": 0,
+                        "unit": "g",
+                        "shoppingCategory": "Verdura",
+                        "freeQuantity": true,
+                        "cook": "none"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "pasto-6",
+                "label": "Pasto 6 (facoltativo)",
+                "optional": true,
+                "placementNote": "Come secondo spuntino di mattina o di pomeriggio, oppure prima di andare a letto. Senza carboidrati.",
+                "slots": [
+                  {
+                    "id": "proteine",
+                    "label": "Proteine",
+                    "options": [
+                      {
+                        "id": "prot-iso",
+                        "label": "proteine isolate",
+                        "qty": 20,
+                        "unit": "g",
+                        "shoppingCategory": "Integratori",
+                        "cook": "none"
+                      },
+                      {
+                        "id": "prot-idro",
+                        "label": "proteine idrolizzate",
+                        "qty": 20,
+                        "unit": "g",
+                        "shoppingCategory": "Integratori",
+                        "cook": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "grassi",
+                    "label": "Grassi",
+                    "options": [
+                      {
+                        "id": "burro-arachidi",
+                        "label": "burro di arachidi (1 cucchiaio)",
+                        "qty": 1,
+                        "unit": "pz",
+                        "shoppingCategory": "Dispensa",
+                        "cook": "none"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "b",
+            "label": "Alim B",
+            "meals": [
+              {
+                "id": "pasto-1",
+                "label": "Pasto 1",
+                "slots": [
+                  {
+                    "id": "carbo",
+                    "label": "Carboidrati",
+                    "target": {
+                      "nutrient": "carboidrati",
+                      "qty": 70,
+                      "tolerance": 2
+                    },
+                    "options": [
+                      {
+                        "id": "carb-pane-azzimo",
+                        "label": "pane azzimo",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-riso-basmati",
+                        "label": "riso basmati",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-riso-venere",
+                        "label": "riso venere",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-cous-cous",
+                        "label": "cous cous",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 72
+                        },
+                        "cook": "quick",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-gallette-farro",
+                        "label": "gallette di farro",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-gallette-riso",
+                        "label": "gallette di riso",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 81
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-wasa",
+                        "label": "fette wasa integrali",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 63
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-fiocchi",
+                        "label": "avena in fiocchi",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-farina",
+                        "label": "farina di avena",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "proteine",
+                    "label": "Proteine",
+                    "options": [
+                      {
+                        "id": "albume-250",
+                        "label": "albume",
+                        "qty": 250,
+                        "unit": "ml",
+                        "shoppingCategory": "Uova",
+                        "cook": "quick"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "tuorlo",
+                    "label": "Tuorlo",
+                    "options": [
+                      {
+                        "id": "tuorlo-1",
+                        "label": "tuorlo",
+                        "qty": 1,
+                        "unit": "pz",
+                        "shoppingCategory": "Uova",
+                        "cook": "quick"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "pasto-2",
+                "label": "Pasto 2",
+                "slots": [
+                  {
+                    "id": "carbo",
+                    "label": "Carboidrati",
+                    "target": {
+                      "nutrient": "carboidrati",
+                      "qty": 70,
+                      "tolerance": 2
+                    },
+                    "options": [
+                      {
+                        "id": "carb-pane-azzimo",
+                        "label": "pane azzimo",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-riso-basmati",
+                        "label": "riso basmati",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-riso-venere",
+                        "label": "riso venere",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-cous-cous",
+                        "label": "cous cous",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 72
+                        },
+                        "cook": "quick",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-gallette-farro",
+                        "label": "gallette di farro",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-gallette-riso",
+                        "label": "gallette di riso",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 81
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-wasa",
+                        "label": "fette wasa integrali",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 63
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-fiocchi",
+                        "label": "avena in fiocchi",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-farina",
+                        "label": "farina di avena",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "proteine",
+                    "label": "Proteine",
+                    "options": [
+                      {
+                        "id": "pollo-120",
+                        "label": "pollo",
+                        "qty": 120,
+                        "unit": "g",
+                        "shoppingCategory": "Carne",
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "bresaola-80",
+                        "label": "bresaola",
+                        "qty": 80,
+                        "unit": "g",
+                        "shoppingCategory": "Salumi",
+                        "tags": [
+                          "affettato"
+                        ],
+                        "cook": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "frutta",
+                    "label": "Frutta",
+                    "options": [
+                      {
+                        "id": "mela",
+                        "label": "mela",
+                        "qty": 1,
+                        "unit": "pz",
+                        "shoppingCategory": "Frutta e verdura",
+                        "tags": [
+                          "frutta"
+                        ],
+                        "cook": "none"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "pasto-3",
+                "label": "Pasto 3",
+                "slots": [
+                  {
+                    "id": "carbo",
+                    "label": "Carboidrati",
+                    "target": {
+                      "nutrient": "carboidrati",
+                      "qty": 70,
+                      "tolerance": 2
+                    },
+                    "options": [
+                      {
+                        "id": "carb-pane-azzimo",
+                        "label": "pane azzimo",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-riso-basmati",
+                        "label": "riso basmati",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-riso-venere",
+                        "label": "riso venere",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-cous-cous",
+                        "label": "cous cous",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 72
+                        },
+                        "cook": "quick",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-gallette-farro",
+                        "label": "gallette di farro",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-gallette-riso",
+                        "label": "gallette di riso",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 81
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-wasa",
+                        "label": "fette wasa integrali",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 63
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-fiocchi",
+                        "label": "avena in fiocchi",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-farina",
+                        "label": "farina di avena",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "proteine",
+                    "label": "Proteine",
+                    "options": [
+                      {
+                        "id": "pollo-120",
+                        "label": "pollo",
+                        "qty": 120,
+                        "unit": "g",
+                        "shoppingCategory": "Carne",
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "lonza-120",
+                        "label": "lonza",
+                        "qty": 120,
+                        "unit": "g",
+                        "shoppingCategory": "Carne",
+                        "cook": "quick",
+                        "keepsDays": 2
+                      },
+                      {
+                        "id": "merluzzo-200",
+                        "label": "merluzzo",
+                        "qty": 200,
+                        "unit": "g",
+                        "shoppingCategory": "Pesce",
+                        "tags": [
+                          "pesce"
+                        ],
+                        "cook": "quick",
+                        "keepsDays": 1
+                      },
+                      {
+                        "id": "platessa-200",
+                        "label": "platessa",
+                        "qty": 200,
+                        "unit": "g",
+                        "shoppingCategory": "Pesce",
+                        "tags": [
+                          "pesce"
+                        ],
+                        "cook": "quick",
+                        "keepsDays": 1
+                      }
+                    ]
+                  },
+                  {
+                    "id": "verdura",
+                    "label": "Verdure",
+                    "options": [
+                      {
+                        "id": "verdure",
+                        "label": "verdure",
+                        "qty": 0,
+                        "unit": "g",
+                        "shoppingCategory": "Verdura",
+                        "freeQuantity": true,
+                        "cook": "quick"
+                      },
+                      {
+                        "id": "insalata",
+                        "label": "insalata",
+                        "qty": 0,
+                        "unit": "g",
+                        "shoppingCategory": "Verdura",
+                        "freeQuantity": true,
+                        "cook": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "grassi",
+                    "label": "Grassi",
+                    "options": [
+                      {
+                        "id": "evo-10",
+                        "label": "olio extravergine di oliva",
+                        "qty": 10,
+                        "unit": "g",
+                        "shoppingCategory": "Dispensa",
+                        "cook": "none"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "pasto-4",
+                "label": "Pasto 4",
+                "slots": [
+                  {
+                    "id": "carbo",
+                    "label": "Carboidrati",
+                    "target": {
+                      "nutrient": "carboidrati",
+                      "qty": 70,
+                      "tolerance": 2
+                    },
+                    "options": [
+                      {
+                        "id": "carb-pane-azzimo",
+                        "label": "pane azzimo",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-riso-basmati",
+                        "label": "riso basmati",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-riso-venere",
+                        "label": "riso venere",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-cous-cous",
+                        "label": "cous cous",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 72
+                        },
+                        "cook": "quick",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-gallette-farro",
+                        "label": "gallette di farro",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-gallette-riso",
+                        "label": "gallette di riso",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 81
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-wasa",
+                        "label": "fette wasa integrali",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 63
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-fiocchi",
+                        "label": "avena in fiocchi",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-farina",
+                        "label": "farina di avena",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "proteine",
+                    "label": "Proteine",
+                    "options": [
+                      {
+                        "id": "albume-150-b",
+                        "label": "albume",
+                        "qty": 150,
+                        "unit": "ml",
+                        "shoppingCategory": "Uova",
+                        "cook": "quick"
+                      },
+                      {
+                        "id": "tacchino-100",
+                        "label": "tacchino",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Carne",
+                        "cook": "batch",
+                        "keepsDays": 3
+                      }
+                    ]
+                  },
+                  {
+                    "id": "frutta-secca",
+                    "label": "Frutta secca",
+                    "options": [
+                      {
+                        "id": "noci",
+                        "label": "noci",
+                        "qty": 15,
+                        "unit": "g",
+                        "shoppingCategory": "Frutta secca",
+                        "cook": "none"
+                      },
+                      {
+                        "id": "mandorle",
+                        "label": "mandorle",
+                        "qty": 15,
+                        "unit": "g",
+                        "shoppingCategory": "Frutta secca",
+                        "cook": "none"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "pasto-5",
+                "label": "Pasto 5",
+                "slots": [
+                  {
+                    "id": "carbo",
+                    "label": "Carboidrati",
+                    "target": {
+                      "nutrient": "carboidrati",
+                      "qty": 70,
+                      "tolerance": 2
+                    },
+                    "options": [
+                      {
+                        "id": "carb-pane-azzimo",
+                        "label": "pane azzimo",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-riso-basmati",
+                        "label": "riso basmati",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-riso-venere",
+                        "label": "riso venere",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 75
+                        },
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-cous-cous",
+                        "label": "cous cous",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 72
+                        },
+                        "cook": "quick",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "carb-gallette-farro",
+                        "label": "gallette di farro",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 78
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-gallette-riso",
+                        "label": "gallette di riso",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 81
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-wasa",
+                        "label": "fette wasa integrali",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 63
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-fiocchi",
+                        "label": "avena in fiocchi",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      },
+                      {
+                        "id": "carb-avena-farina",
+                        "label": "farina di avena",
+                        "qty": 100,
+                        "unit": "g",
+                        "shoppingCategory": "Cereali e derivati",
+                        "nutrients": {
+                          "carboidrati": 60
+                        },
+                        "cook": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "proteine",
+                    "label": "Proteine",
+                    "options": [
+                      {
+                        "id": "macinato-vitello-120",
+                        "label": "macinato di vitello",
+                        "qty": 120,
+                        "unit": "g",
+                        "shoppingCategory": "Carne",
+                        "cook": "quick",
+                        "keepsDays": 1
+                      },
+                      {
+                        "id": "lonza-120",
+                        "label": "lonza",
+                        "qty": 120,
+                        "unit": "g",
+                        "shoppingCategory": "Carne",
+                        "cook": "quick",
+                        "keepsDays": 2
+                      },
+                      {
+                        "id": "pollo-120",
+                        "label": "pollo",
+                        "qty": 120,
+                        "unit": "g",
+                        "shoppingCategory": "Carne",
+                        "cook": "batch",
+                        "keepsDays": 3
+                      },
+                      {
+                        "id": "merluzzo-200",
+                        "label": "merluzzo",
+                        "qty": 200,
+                        "unit": "g",
+                        "shoppingCategory": "Pesce",
+                        "tags": [
+                          "pesce"
+                        ],
+                        "cook": "quick",
+                        "keepsDays": 1
+                      },
+                      {
+                        "id": "platessa-200",
+                        "label": "platessa",
+                        "qty": 200,
+                        "unit": "g",
+                        "shoppingCategory": "Pesce",
+                        "tags": [
+                          "pesce"
+                        ],
+                        "cook": "quick",
+                        "keepsDays": 1
+                      }
+                    ]
+                  },
+                  {
+                    "id": "grassi",
+                    "label": "Grassi",
+                    "options": [
+                      {
+                        "id": "evo-10",
+                        "label": "olio extravergine di oliva",
+                        "qty": 10,
+                        "unit": "g",
+                        "shoppingCategory": "Dispensa",
+                        "cook": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "verdura",
+                    "label": "Verdure",
+                    "options": [
+                      {
+                        "id": "verdure",
+                        "label": "verdure",
+                        "qty": 0,
+                        "unit": "g",
+                        "shoppingCategory": "Verdura",
+                        "freeQuantity": true,
+                        "cook": "quick"
+                      },
+                      {
+                        "id": "insalata",
+                        "label": "insalata",
+                        "qty": 0,
+                        "unit": "g",
+                        "shoppingCategory": "Verdura",
+                        "freeQuantity": true,
+                        "cook": "none"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "pasto-6",
+                "label": "Pasto 6",
+                "placementNote": "Senza carboidrati.",
+                "slots": [
+                  {
+                    "id": "proteine",
+                    "label": "Proteine",
+                    "options": [
+                      {
+                        "id": "budino-proteico",
+                        "label": "budino proteico",
+                        "qty": 1,
+                        "unit": "pz",
+                        "shoppingCategory": "Latticini",
+                        "cook": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "grassi",
+                    "label": "Grassi",
+                    "options": [
+                      {
+                        "id": "cioccolato-70",
+                        "label": "cioccolato fondente 70%",
+                        "qty": 15,
+                        "unit": "g",
+                        "shoppingCategory": "Dispensa",
+                        "cook": "none"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "schedule": [
+          "a",
+          "a",
+          "a",
+          "a",
+          "b",
+          "b",
+          "a"
+        ],
+        "generalRules": [
+          "Acqua 3/4 litri al giorno.",
+          "Sale iodato, il giusto.",
+          "1 pasto libero a settimana, la domenica.",
+          "Il sesto pasto di Alim A è facoltativo e non prevede carboidrati: può essere collocato come secondo spuntino di mattina o di pomeriggio, oppure prima di andare a letto."
+        ],
+        "supplements": [],
+        "frequencies": [
+          {
+            "tag": "equino",
+            "max": 2,
+            "per": "week",
+            "label": "Equino"
+          }
+        ],
+        "structure": {
+          "fixedMeals": [],
+          "allDifferentMeals": [],
+          "repeatPatterns": [],
+          "freeMeals": 1,
+          "freeMealDefaultMeal": "pasto-5",
+          "freeMealForbidden": [
+            {
+              "days": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5
+              ]
+            }
+          ],
+          "alcoholUnitsMax": 0,
+          "waterLitersPerDay": 3,
+          "waterLitersTrainingDay": 4,
+          "softPreferences": []
+        }
+      },
+      "builtin": true,
+      "createdAt": "2026-07-29",
+      "confirmedBy": "Nutrizionista (schema Alim A/B)"
+    },
+    {
+      "key": "macro",
+      "plan": {
+        "id": "macro-6-settimane",
+        "patient": {
+          "name": "Paziente (piano a macronutrienti)"
+        },
+        "professional": {
+          "id": "ignoto",
+          "name": "Professionista non indicato nel documento"
+        },
+        "issuedAt": "2026-07-29",
+        "weighingNote": "Piano espresso in calorie e grammi di macronutrienti: gli alimenti sono a scelta del paziente.",
+        "macro": {
+          "bodyWeightKg": 76,
+          "durationWeeks": 6,
+          "tdeeStart": 2650,
+          "dailyKcal": [
+            1800,
+            1800,
+            1800,
+            1800,
+            1800,
+            1800,
+            1800
+          ],
+          "weeklyKcal": 12600,
+          "dayTypes": [
+            {
+              "id": "allenamento",
+              "label": "Allenamento",
+              "macros": [
+                {
+                  "nutrient": "proteine",
+                  "gramsPerKg": 1.8,
+                  "grams": 137,
+                  "kcal": 548,
+                  "kcalPerGram": 4
+                },
+                {
+                  "nutrient": "carboidrati",
+                  "gramsPerKg": 4.25,
+                  "grams": 323,
+                  "kcal": 1292,
+                  "kcalPerGram": 4
+                },
+                {
+                  "nutrient": "lipidi",
+                  "gramsPerKg": 1.2,
+                  "grams": 90,
+                  "kcal": 810,
+                  "kcalPerGram": 9
+                }
+              ]
+            },
+            {
+              "id": "riposo",
+              "label": "Rest day",
+              "macros": []
+            }
+          ],
+          "mealSplit": [
+            {
+              "id": "pasto-1",
+              "label": "Pasto 1",
+              "kcalMin": 600,
+              "kcalMax": 700,
+              "macroGrams": {
+                "carboidrati": {
+                  "max": 50
+                }
+              },
+              "note": "50 g di carbo o meno (meglio se integrali o da frutta), resto grassi e prevalentemente proteine."
+            },
+            {
+              "id": "pasto-2",
+              "label": "Pasto 2 (pre workout)",
+              "kcalMin": 400,
+              "kcalMax": 500,
+              "macroGrams": {
+                "carboidrati": {
+                  "value": 100
+                },
+                "lipidi": {
+                  "value": 10
+                },
+                "proteine": {
+                  "value": 10
+                }
+              },
+              "note": "Se mangiato circa un'ora prima dell'allenamento."
+            },
+            {
+              "id": "pasto-3",
+              "label": "Pasto 3 (post workout)",
+              "kcalMin": 200,
+              "kcalMax": 700,
+              "note": "Se cena 600/700 kcal, se spuntino 200 circa. Prediligi carboidrati semplici e proteine."
+            },
+            {
+              "id": "pasto-4",
+              "label": "Pasto 4",
+              "note": "Il restante: dipende se spuntino o più sostanzioso. Pasto per chiudere il bilancio giornaliero."
+            }
+          ]
+        },
+        "generalRules": [
+          "Durata: 6 settimane.",
+          "Creatina pre o post workout con una dose importante di carboidrati, anche semplici (caramelle, frutta, fette biscottate).",
+          "L'importante è raggiungere il fabbisogno proteico."
+        ],
+        "supplements": [
+          {
+            "name": "Creatina",
+            "dose": "non indicata",
+            "when": "pre o post workout"
+          }
+        ],
+        "frequencies": [],
+        "structure": {
+          "fixedMeals": [],
+          "allDifferentMeals": [],
+          "repeatPatterns": [],
+          "freeMeals": 0,
+          "freeMealDefaultMeal": "",
+          "alcoholUnitsMax": 0,
+          "waterLitersPerDay": 0,
+          "waterLitersTrainingDay": 0,
+          "softPreferences": []
+        }
+      },
+      "builtin": true,
+      "createdAt": "2026-07-29",
+      "confirmedBy": "Professionista non indicato nel documento"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "prova-1-0",
+      "professionalId": "dott-x",
+      "planId": "prova-1",
+      "at": "2026-07-29T14:54:45.582Z",
+      "scope": "preferenza",
+      "key": "legumi-cena",
+      "before": "pranzo",
+      "after": "cena"
+    },
+    {
+      "id": "test-flow-0",
+      "professionalId": "dott.-verdi",
+      "planId": "test-flow",
+      "at": "2026-07-29T15:42:43.521Z",
+      "scope": "terminologia",
+      "key": "alimento:tacchino",
+      "before": "tacchino",
+      "after": "petto di tacchino"
+    },
+    {
+      "id": "test-flow-2-0",
+      "professionalId": "dott.-verdi",
+      "planId": "test-flow-2",
+      "at": "2026-07-29T15:43:02.486Z",
+      "scope": "terminologia",
+      "key": "alimento:tacchino",
+      "before": "tacchino",
+      "after": "petto di tacchino"
+    },
+    {
+      "id": "test-flow-3-0",
+      "professionalId": "dott.-verdi",
+      "planId": "test-flow-3",
+      "at": "2026-07-29T15:43:02.496Z",
+      "scope": "terminologia",
+      "key": "alimento:tacchino",
+      "before": "tacchino",
+      "after": "petto di tacchino"
+    }
+  ],
+  "profiles": {
+    "dott-x": {
+      "professionalId": "dott-x",
+      "format": {
+        "terminology": {},
+        "confirmedPlans": 0
+      },
+      "rules": [],
+      "corrections": [
+        {
+          "id": "prova-1-0",
+          "professionalId": "dott-x",
+          "planId": "prova-1",
+          "at": "2026-07-29T14:54:45.582Z",
+          "scope": "preferenza",
+          "key": "legumi-cena",
+          "before": "pranzo",
+          "after": "cena"
+        }
+      ]
+    },
+    "digiusto": {
+      "professionalId": "digiusto",
+      "format": {
+        "terminology": {},
+        "confirmedPlans": 0
+      },
+      "rules": [],
+      "corrections": []
+    },
+    "dott.-verdi": {
+      "professionalId": "dott.-verdi",
+      "format": {
+        "terminology": {},
+        "confirmedPlans": 0
+      },
+      "rules": [
+        {
+          "id": "rule:alimento:tacchino",
+          "scope": "terminologia",
+          "description": "Hai corretto 3 volte \"tacchino\" in \"petto di tacchino\". Vuoi che diventi una tua regola fissa?",
+          "evidence": 3,
+          "status": "attiva",
+          "sourceCorrections": [
+            "test-flow-0",
+            "test-flow-2-0",
+            "test-flow-3-0"
+          ]
+        }
+      ],
+      "corrections": [
+        {
+          "id": "test-flow-0",
+          "professionalId": "dott.-verdi",
+          "planId": "test-flow",
+          "at": "2026-07-29T15:42:43.521Z",
+          "scope": "terminologia",
+          "key": "alimento:tacchino",
+          "before": "tacchino",
+          "after": "petto di tacchino"
+        },
+        {
+          "id": "test-flow-2-0",
+          "professionalId": "dott.-verdi",
+          "planId": "test-flow-2",
+          "at": "2026-07-29T15:43:02.486Z",
+          "scope": "terminologia",
+          "key": "alimento:tacchino",
+          "before": "tacchino",
+          "after": "petto di tacchino"
+        },
+        {
+          "id": "test-flow-3-0",
+          "professionalId": "dott.-verdi",
+          "planId": "test-flow-3",
+          "at": "2026-07-29T15:43:02.496Z",
+          "scope": "terminologia",
+          "key": "alimento:tacchino",
+          "before": "tacchino",
+          "after": "petto di tacchino"
+        }
+      ]
+    }
+  },
+  "flags": []
+}

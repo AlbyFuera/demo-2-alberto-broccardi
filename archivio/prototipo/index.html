@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Nutrizionista AI</title>
+    <link rel="stylesheet" href="/app.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥗</text></svg>"
+    />
+  </head>
+  <body>
+    <header class="top">
+      <div class="top-inner">
+        <div class="who">
+          <span class="avatar" aria-hidden="true">🥗</span>
+          <div>
+            <p class="who-name" id="who-name">Assistente</p>
+            <p class="who-sub" id="who-sub"></p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <select id="plan-select" aria-label="Piano"></select>
+          <button class="icon-btn" id="btn-panel" aria-label="Apri la settimana" title="Settimana, spesa, preparazione">☰</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="chat" id="chat">
+      <div class="thread" id="thread"></div>
+    </main>
+
+    <div class="suggestions" id="suggestions"></div>
+
+    <form class="composer" id="composer">
+      <input
+        id="input"
+        type="text"
+        autocomplete="off"
+        placeholder="Scrivi al tuo assistente…"
+        aria-label="Messaggio"
+      />
+      <button class="send" id="send" aria-label="Invia">↑</button>
+    </form>
+
+    <!-- Pannello: settimana, spesa, preparazione, studio -->
+    <div class="scrim" id="scrim" hidden></div>
+    <aside class="panel" id="panel" hidden aria-label="Dettagli">
+      <header class="panel-head">
+        <nav class="tabs" id="panel-tabs">
+          <button class="tab" data-tab="settimana">Settimana</button>
+          <button class="tab" data-tab="spesa">Spesa</button>
+          <button class="tab" data-tab="prep">Preparazione</button>
+          <button class="tab" data-tab="studio">Studio</button>
+        </nav>
+        <button class="icon-btn" id="panel-close" aria-label="Chiudi">✕</button>
+      </header>
+      <div class="panel-body" id="panel-body"></div>
+    </aside>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

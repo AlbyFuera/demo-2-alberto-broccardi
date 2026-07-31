@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>La mia dieta</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="stylesheet" href="/ui.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231f6b46'/><text x='16' y='23' font-family='-apple-system,Helvetica,Arial,sans-serif' font-size='20' font-weight='700' fill='%23ffffff' text-anchor='middle'>P</text></svg>"
+    />
+  </head>
+  <body>
+    <!--
+      L'applicazione del cliente.
+
+      La schermata principale è la DASHBOARD, non la conversazione. È il cambio
+      che conta: la chat risponde a una domanda, e una domanda non ce l'hai
+      tutti i giorni — la colazione sì. Chi apre l'applicazione vuole sapere
+      cosa mangia adesso, come sta andando e quanto gli manca, in quest'ordine e
+      senza doverlo chiedere a nessuno.
+
+      L'assistente resta, dietro una linguetta, e da lì risponde a tutto.
+    -->
+
+    <!-- Stato SOLO / IN ATTESA: non ha ancora un nutrizionista -->
+    <div id="ingresso" hidden>
+      <header class="barra">
+        <span class="segno" aria-hidden="true">P</span>
+        <div class="chi">
+          <strong id="ingresso-nome">La mia dieta</strong>
+          <span id="ingresso-email"></span>
+        </div>
+        <button class="btn neutra mini" id="ingresso-esci" type="button">Esci</button>
+      </header>
+      <main class="contenitore">
+        <div class="scheda primo-passo" id="primo-passo"></div>
+      </main>
+    </div>
+
+    <!-- Stato SEGUITO -->
+    <div id="app" hidden>
+      <header class="barra">
+        <span class="segno" aria-hidden="true">P</span>
+        <div class="chi">
+          <strong id="chi-nome">La mia dieta</strong>
+          <span id="chi-sotto"></span>
+        </div>
+      </header>
+
+      <main class="contenitore">
+        <div class="schede" id="schede" role="tablist">
+          <button role="tab" data-tab="oggi" aria-selected="true">Oggi</button>
+          <button role="tab" data-tab="settimana" aria-selected="false">Settimana</button>
+          <button role="tab" data-tab="assistente" aria-selected="false">Assistente</button>
+          <button role="tab" data-tab="dieta" aria-selected="false">La mia dieta</button>
+          <button role="tab" data-tab="conto" aria-selected="false">Il mio conto</button>
+        </div>
+
+        <div id="contenuto">
+          <div class="vuoto"><p class="grande">·</p><p>Caricamento…</p></div>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="/cliente.js"></script>
+  </body>
+</html>

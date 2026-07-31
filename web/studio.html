@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Studio — Pianificatore</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="stylesheet" href="/ui.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231f6b46'/><text x='16' y='23' font-family='-apple-system,Helvetica,Arial,sans-serif' font-size='20' font-weight='700' fill='%23ffffff' text-anchor='middle'>P</text></svg>"
+    />
+  </head>
+  <body>
+    <!--
+      La schermata del professionista.
+
+      La apre tra due visite, di corsa. La prima cosa che deve vedere non è un
+      grafico: è chi gli ha chiesto di essere seguito, cosa hanno cambiato i
+      suoi clienti e cosa gli hanno chiesto. Scrivere le diete — che è il lavoro
+      lungo — sta dietro un clic, perché si fa una volta ogni tanto e con calma.
+    -->
+    <header class="barra">
+      <span class="segno" aria-hidden="true">P</span>
+      <div class="chi">
+        <strong id="chi-nome">Studio</strong>
+        <span id="chi-sotto">caricamento…</span>
+      </div>
+      <span class="pallino" id="pallino" hidden>0</span>
+    </header>
+
+    <main class="contenitore">
+      <div class="schede" id="schede" role="tablist">
+        <button role="tab" data-tab="cruscotto" aria-selected="true">Dashboard</button>
+        <button role="tab" data-tab="clienti" aria-selected="false">Clienti</button>
+        <button role="tab" data-tab="libreria" aria-selected="false">Alimenti</button>
+        <button role="tab" data-tab="conto" aria-selected="false">Il mio studio</button>
+      </div>
+
+      <div id="contenuto">
+        <div class="vuoto"><p class="grande">·</p><p>Caricamento…</p></div>
+      </div>
+    </main>
+
+    <script type="module" src="/studio.js"></script>
+  </body>
+</html>
