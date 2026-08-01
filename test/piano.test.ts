@@ -158,6 +158,58 @@ describe('slot del piano a sostituzione', () => {
   });
 });
 
+/*
+ * La regola di pareggio è del PIANO, non del piatto e tanto meno di chi lo
+ * mangia. Questi tre controlli tengono ferma la gerarchia: eccezione
+ * sull'alimento, poi regola della dieta, poi 'auto'. Sono la garanzia che il
+ * nutrizionista scriva «isoproteica» una volta e valga dappertutto.
+ */
+describe('la base la decide il professionista', () => {
+  const senzaRegola = g('petto di pollo', 150, {
+    alternative: [{ nome: 'merluzzo' }],
+  });
+
+  it('senza niente di scritto pareggia sul macronutriente caratterizzante', () => {
+    assert.equal(slotDi(senzaRegola).base, 'auto');
+  });
+
+  it('la regola della dieta arriva a un alimento che non ne ha una sua', () => {
+    const s = slotDi(senzaRegola, undefined, undefined, 'proteine');
+    assert.equal(s.base, 'proteine');
+    assert.equal(s.nomeBase, 'isoproteica');
+  });
+
+  it('l’eccezione scritta sull’alimento vince sulla regola della dieta', () => {
+    const conEccezione = g('pasta', 90, {
+      base: 'carboidrati',
+      alternative: [{ nome: 'riso' }],
+    });
+    const s = slotDi(conEccezione, undefined, undefined, 'proteine');
+    assert.equal(s.base, 'carboidrati', 'la dieta non sovrascrive l’eccezione');
+    assert.equal(s.nomeBase, 'isoglucidica');
+  });
+
+  /*
+   * Il caso che ha motivato tutto: 90 g di pasta diventano ~85 g di riso
+   * pareggiando i carboidrati e quasi il doppio pareggiando le proteine.
+   * Entrambe le letture sono corrette, e proprio per questo la scelta non può
+   * stare dalla parte di chi ha fame.
+   */
+  it('due basi diverse danno porzioni diverse, ed è il motivo del vincolo', () => {
+    const pasta = g('pasta', 90, { alternative: [{ nome: 'riso' }] });
+    const suCarbo = slotDi(pasta, undefined, undefined, 'carboidrati').opzioni.find(
+      (o) => o.nome === 'riso',
+    )!;
+    const suProt = slotDi(pasta, undefined, undefined, 'proteine').opzioni.find(
+      (o) => o.nome === 'riso',
+    )!;
+    assert.ok(
+      suProt.quantita! > suCarbo.quantita! * 1.2,
+      'se il cliente potesse scegliere, sceglierebbe la più abbondante',
+    );
+  });
+});
+
 describe('dentro o fuori dal piano', () => {
   const con = g('petto di pollo', 150, { alternative: [{ nome: 'merluzzo' }, { nome: 'Tacchino' }] });
 

@@ -95,7 +95,7 @@ Per ogni alimento della dieta il professionista può scrivere:
 |---|---|
 | **le alternative ammesse** | un elenco chiuso, e sono quelle |
 | **come si chiama quel posto** | «fonte proteica»: è quello che legge il cliente |
-| **su cosa si pareggia** | isocalorica, isoproteica, o il caratterizzante |
+| **su cosa si pareggia** | solo se fa eccezione: di regola vale quella della dieta |
 
 Le **grammature non gliele si chiede**: le calcola il motore secondo la base che
 ha scelto. Ma il campo c'è, e quella singola alternativa che nella sua
@@ -135,11 +135,24 @@ isocalorica  →   85 g di pollo    stesse 128 kcal
 ```
 
 Quale delle due sia quella giusta è una decisione clinica, e **la prende il
-professionista** slot per slot. Il cliente può guardare l'altra lettura — serve
-a capire cosa sta cambiando — ma **la porzione che si applica segue sempre la
-regola scritta da lui**: senza questo vincolo, chi volesse mangiare di più
-cercherebbe la base che gli dà la porzione più grande, e la dieta la
-sceglierebbe il cliente.
+professionista** — una volta sola, in testa alla dieta:
+
+> **Le sostituzioni si pareggiano:** isocalorica · isoproteica · isoglucidica ·
+> isolipidica · sul macronutriente principale
+
+Vale per tutto il piano, che è il livello a cui la decisione appartiene: un piano
+ipocalorico si tiene sulle calorie, uno ipertrofico sulle proteine. Sul singolo
+alimento resta un campo per **derogare** — la fonte proteica isoproteica dentro
+un piano per il resto isocalorico — e il predefinito lì è «come dice la dieta».
+
+Il cliente **non la sceglie e non la vede come una scelta**: legge quale regola è
+in vigore sotto le porzioni, e basta. La base non viaggia più nelle richieste del
+browser, quindi non c'è niente da falsificare: senza questo vincolo chi volesse
+mangiare di più cercherebbe la base che gli dà la porzione più grande, e la dieta
+la sceglierebbe il cliente.
+
+L'ordine con cui si decide, in `core/piano.ts`, è: eccezione sull'alimento →
+regola della dieta → `auto`.
 
 Quando il pareggio chiesto non è possibile — una isoproteica verso il miele
 chiederebbe undici chili di miele — il motore **ripiega sulle calorie e lo
@@ -385,7 +398,7 @@ corrispondente.
 
 ## Stato e limiti dichiarati
 
-**Fatto e verificato.** 136 test sul motore e 123 controlli end-to-end, questi
+**Fatto e verificato.** 140 test sul motore e 127 controlli end-to-end, questi
 ultimi eseguiti **contro l'istanza pubblicata**, non solo in locale. Il giro
 completo: iscrizione dei due ruoli → il cliente cerca lo studio e manda
 la richiesta → il professionista accetta → scrive e pubblica una settimana → il
@@ -393,13 +406,15 @@ cliente la vede con i valori calcolati → sostituisce un alimento per equivalen
 → la variazione arriva al professionista → lui la annulla e il piatto torna
 quello prescritto.
 
-Il giro delle funzioni nuove, anch'esso coperto: il professionista scrive le
-sostituzioni ammesse su un alimento e sceglie la base → il cliente le vede con
-le porzioni già calcolate → sceglierne una non gli tocca l'aderenza, sceglierne
-una fuori elenco sì e glielo si dice prima → la porzione scritta a mano resta
-quella → il professionista spegne l'assistente per quel cliente → il messaggio
-successivo aspetta lui, che risponde di persona → riacceso, l'assistente torna
-a rispondere.
+Il giro delle funzioni nuove, anch'esso coperto: il professionista sceglie la
+regola di pareggio della dieta e scrive le sostituzioni ammesse su un alimento →
+gli alimenti senza eccezione seguono la regola del piano, quello con eccezione la
+sua → il cliente le vede con le porzioni già calcolate → chiedere un'altra base
+non sposta di un grammo, né guardando né applicando → sceglierne una dell'elenco
+non gli tocca l'aderenza, sceglierne una fuori sì e glielo si dice prima → la
+porzione scritta a mano resta quella → il professionista spegne l'assistente per
+quel cliente → il messaggio successivo aspetta lui, che risponde di persona →
+riacceso, l'assistente torna a rispondere.
 
 Le prove end-to-end sono state eseguite **anche contro l'istanza pubblicata**,
 dopo aver applicato la migrazione `0004`: 123 su 123.

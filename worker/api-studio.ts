@@ -489,12 +489,20 @@ function leggiPiano(a: any): { alternative?: Alternativa[]; base?: BaseSostituzi
     return true;
   });
 
+  /*
+   * L'assenza qui ha un significato preciso: «come dice la dieta».
+   *
+   * Per questo si conserva anche 'auto' quando arriva esplicito, mentre prima
+   * si scartava: su una dieta dichiarata isoproteica, «pareggia sul
+   * macronutriente principale» è un'eccezione vera per quell'alimento, e
+   * buttarla lo farebbe tornare sotto la regola generale.
+   */
   const base = BASI.includes(a?.base) ? (a.base as BaseSostituzione) : undefined;
   const gruppo = String(a?.gruppo ?? '').trim().slice(0, 40);
 
   return {
     ...(uniche.length ? { alternative: uniche } : {}),
-    ...(base && base !== 'auto' ? { base } : {}),
+    ...(base ? { base } : {}),
     ...(gruppo ? { gruppo } : {}),
   };
 }
@@ -546,9 +554,15 @@ function leggiDieta(grezza: any, precedente: Dieta): Dieta {
     };
   });
 
+  // La regola di sostituzione di tutta la dieta. 'auto' non si salva: è il
+  // comportamento predefinito, e scriverlo nel JSON di ogni dieta non
+  // aggiungerebbe niente a quello che l'assenza già dice.
+  const baseDieta = BASI.includes(grezza?.base) ? (grezza.base as BaseSostituzione) : undefined;
+
   return {
     id: precedente.id,
     titolo: testo(grezza?.titolo, 80) || precedente.titolo,
+    ...(baseDieta && baseDieta !== 'auto' ? { base: baseDieta } : {}),
     indicazioni: (Array.isArray(grezza?.indicazioni) ? grezza.indicazioni : [])
       .slice(0, 30)
       .map((r: unknown) => testo(r, 300))

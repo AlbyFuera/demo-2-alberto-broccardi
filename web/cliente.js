@@ -398,7 +398,7 @@ const NOME_BASE = {
  * Chi non ha un piano scritto dal suo professionista vede solo il secondo
  * elenco, che è il prodotto di prima e continua a funzionare uguale.
  */
-async function apriScelta(pastoId, indice, base) {
+async function apriScelta(pastoId, indice) {
   const giorno = stato.dati.oggi.indice;
   const zona = document.createElement('div');
   zona.className = 'scheda accesso stretto sotto';
@@ -418,7 +418,6 @@ async function apriScelta(pastoId, indice, base) {
     pasto: pastoId,
     indice: String(indice),
   });
-  if (base) parametri.set('base', base);
 
   try {
     const v = await leggi('/api/cliente/alternative', parametri);
@@ -475,22 +474,16 @@ async function apriScelta(pastoId, indice, base) {
           `<strong>scegliere fra queste non fa scendere la tua aderenza</strong>. ` +
           `Le porzioni sono equivalenti — sostituzione ${esc(p.nomeBase)}, ` +
           `${esc(NOME_BASE[p.base] ?? '')}.</p>`) +
-      `<div class="basi">` +
-      v.basi
-        .map(
-          (b) =>
-            `<button type="button" data-base="${b}" aria-pressed="${b === p.base}">` +
-            `${esc(b === 'auto' ? 'come da dieta' : b === 'kcal' ? 'isocalorica' : 'isoproteica')}</button>`,
-        )
-        .join('') +
-      `</div>` +
-      // Guardare una lettura diversa da quella prescritta è utile — dice di
-      // quanto cambia la porzione — ma va detto che è una lettura: quello che
-      // si mette nel piatto segue la regola scritta dal professionista.
-      (v.soloLettura
-        ? `<div class="avviso neutro sotto"><span class="segno" aria-hidden="true">i</span><span>` +
-          `Stai guardando le porzioni ${esc(NOME_BASE[p.base] ?? '')}. Se scegli, resta valida ` +
-          `la regola del tuo nutrizionista: ${esc(NOME_BASE[v.baseDelPiano] ?? '')}.</span></div>`
+      /*
+       * Qui c'erano i bottoni per guardare le porzioni isocaloriche o
+       * isoproteiche a scelta. Sono stati tolti, e non per fare pulizia: la
+       * base è una decisione clinica del nutrizionista, e mostrarla come una
+       * scelta — anche solo in lettura — insegnava che si può scegliere.
+       * L'unica regola in vigore è la sua, e la riga sopra la nomina.
+       */
+      (v.regola === 'alimento'
+        ? `<p class="piccolo muto sotto">Per questo alimento il tuo nutrizionista ha chiesto ` +
+          `una regola diversa dal resto della dieta.</p>`
         : '') +
       previste +
       (indicativi
@@ -507,20 +500,17 @@ async function apriScelta(pastoId, indice, base) {
 
     zona.querySelector('[data-chiudi]').addEventListener('click', () => zona.remove());
 
-    for (const b of zona.querySelectorAll('[data-base]')) {
-      b.addEventListener('click', () => apriScelta(pastoId, indice, b.dataset.base));
-    }
-
     for (const el of zona.querySelectorAll('[data-scegli]')) {
       el.addEventListener('click', async () => {
         el.disabled = true;
         try {
+          // Niente `base` nel corpo: la decide il server leggendo la dieta, e
+          // mandargliela da qui sarebbe solo un modo per farsela ignorare.
           await invia('/api/cliente/applica', {
             giorno,
             pasto: pastoId,
             indice,
             alimento: el.dataset.scegli,
-            base: p.base,
           });
           zona.remove();
           await ricarica();

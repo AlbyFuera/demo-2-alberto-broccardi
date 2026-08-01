@@ -44,6 +44,27 @@ const stato = {
 
 const contenuto = () => $('contenuto');
 
+/**
+ * Le basi di pareggio, dette come le direbbe lui.
+ *
+ * Il nome tecnico da solo non basta — «isoglucidica» non è di uso quotidiano
+ * nemmeno per chi la usa — e il nome comune da solo sarebbe impreciso: si
+ * scrivono tutti e due, e la scelta si fa leggendo la riga intera.
+ */
+const BASI_DIETA = [
+  ['auto', 'come viene: sul macronutriente principale'],
+  ['kcal', 'isocalorica: stesse calorie'],
+  ['proteine', 'isoproteica: stessi grammi di proteine'],
+  ['carboidrati', 'isoglucidica: stessi carboidrati'],
+  ['grassi', 'isolipidica: stessi grassi'],
+];
+
+/** Come si chiama, in breve, la regola in vigore sulla dieta aperta. */
+const nomeBaseDieta = () => {
+  const b = stato.editor?.dieta?.base ?? 'auto';
+  return { auto: 'sul macronutriente principale', kcal: 'isocalorica', proteine: 'isoproteica', carboidrati: 'isoglucidica', grassi: 'isolipidica' }[b];
+};
+
 /* ------------------------------------------------------------------ */
 /* Ricarica                                                            */
 /* ------------------------------------------------------------------ */
@@ -650,6 +671,17 @@ function disegnaEditor() {
     `<label><span>Acqua litri</span><input id="ob-acqua" type="number" min="0" step="0.1" value="${o.acqua ?? ''}"></label>` +
     `<label><span>Passi al giorno</span><input id="ob-passi" type="number" min="0" step="500" value="${o.passi ?? ''}"></label>` +
     `</div>` +
+    // La regola di sostituzione sta qui, in testa alla dieta e non dentro il
+    // singolo alimento, perché è una decisione clinica sul piano: la si prende
+    // una volta e vale per ogni sostituzione che il cliente farà. Il cliente
+    // non la può cambiare, e in fondo alla riga c'è scritto.
+    `<label><span>Le sostituzioni si pareggiano <span class="aiuto">vale per tutta la dieta — il cliente non la può cambiare</span></span>` +
+    `<select id="base-dieta">` +
+    BASI_DIETA.map(
+      ([v, t]) =>
+        `<option value="${v}"${(e.dieta.base ?? 'auto') === v ? ' selected' : ''}>${esc(t)}</option>`,
+    ).join('') +
+    `</select></label>` +
     `<label><span>Indicazioni generali <span class="aiuto">una per riga — le legge il cliente</span></span>` +
     `<textarea id="indicazioni">${esc(e.dieta.indicazioni.join('\n'))}</textarea></label>` +
     `<div class="giorni-nav" id="giorni-nav">` +
@@ -768,17 +800,15 @@ function disegnaPiano(a, i, j) {
     `<div class="campi">` +
     `<label><span>Come si chiama questo posto <span class="aiuto">lo legge il cliente</span></span>` +
     `<input type="text" value="${esc(a.gruppo ?? '')}" placeholder="fonte proteica" data-piano-campo="gruppo"></label>` +
-    `<label><span>Le porzioni si pareggiano</span><select data-piano-campo="base">` +
-    [
-      ['auto', 'come viene: sul macronutriente principale'],
-      ['kcal', 'isocalorica: stesse calorie'],
-      ['proteine', 'isoproteica: stessi grammi di proteine'],
-      ['carboidrati', 'isoglucidica: stessi carboidrati'],
-      ['grassi', 'isolipidica: stessi grassi'],
-    ]
+    // Solo per QUESTO alimento, e il predefinito è seguire la dieta: la regola
+    // si scrive una volta in testa al piano, qui si deroga. Senza il valore
+    // vuoto in cima, il professionista dovrebbe ripetere la stessa scelta su
+    // ogni alimento — che è esattamente la fatica che il campo sulla dieta
+    // toglie di mezzo.
+    `<label><span>Solo per questo alimento</span><select data-piano-campo="base">` +
+    [['', `come dice la dieta: ${nomeBaseDieta()}`], ...BASI_DIETA]
       .map(
-        ([v, t]) =>
-          `<option value="${v}"${(a.base ?? 'auto') === v ? ' selected' : ''}>${esc(t)}</option>`,
+        ([v, t]) => `<option value="${v}"${(a.base ?? '') === v ? ' selected' : ''}>${esc(t)}</option>`,
       )
       .join('') +
     `</select></label>` +
@@ -836,6 +866,7 @@ function leggiGiorno() {
   });
 
   e.dieta.titolo = $('titolo').value.trim() || e.dieta.titolo;
+  e.dieta.base = $('base-dieta').value;
   e.dieta.indicazioni = $('indicazioni')
     .value.split('\n')
     .map((r) => r.trim())
@@ -883,7 +914,11 @@ function leggiPannelloPiano(pannello) {
 
   return {
     alternative,
-    base: campo('base') || 'auto',
+    // Vuoto significa «come dice la dieta» e va mandato vuoto: forzarlo ad
+    // 'auto' — come faceva prima — scriverebbe su ogni alimento toccato
+    // un'eccezione che il professionista non ha chiesto, e la regola del piano
+    // non arriverebbe mai in fondo.
+    base: campo('base'),
     gruppo: campo('gruppo').trim(),
   };
 }
@@ -897,6 +932,21 @@ function collegaEditor() {
       stato.editor = null;
       await apriCliente(e.clienteId);
     });
+  });
+
+  /*
+   * Il pannello di un alimento può essere aperto proprio mentre si cambia la
+   * regola del piano, e lì dentro c'è scritto «come dice la dieta: isocalorica»
+   * — che da quel momento sarebbe una bugia. Si aggiorna la riga invece di
+   * ridisegnare tutto: un ridisegno chiuderebbe il pannello sotto le mani di
+   * chi ci stava scrivendo.
+   */
+  $('base-dieta').addEventListener('change', () => {
+    e.dieta.base = $('base-dieta').value;
+    e.sporca = true;
+    for (const o of contenuto().querySelectorAll('[data-piano-campo="base"] option[value=""]')) {
+      o.textContent = `come dice la dieta: ${nomeBaseDieta()}`;
+    }
   });
 
   for (const b of $('giorni-nav').querySelectorAll('button')) {

@@ -123,14 +123,25 @@ const scriviPorzione = (q: number | null, u: Unita): string =>
  * che era stato prescritto.
  *
  * `nomeInPiatto` serve solo a marcare quale opzione risulta scelta adesso.
+ *
+ * `baseDieta` è la regola scritta dal professionista per tutto il piano. La
+ * base con cui si pareggia si decide qui, e in QUESTO ordine:
+ *
+ *   1. l'eccezione scritta sull'alimento, se c'è;
+ *   2. altrimenti la regola della dieta;
+ *   3. altrimenti 'auto', sul macronutriente caratterizzante.
+ *
+ * Nell'elenco non c'è il cliente, e non è una dimenticanza: isocalorica o
+ * isoproteica è una decisione clinica: chi segue la dieta la legge, non la
+ * cambia.
  */
 export function slotDi(
   prescritto: Alimento,
   libreria?: Libreria,
   nomeInPiatto?: string,
-  baseVoluta?: BaseSostituzione,
+  baseDieta?: BaseSostituzione,
 ): Slot {
-  const base = baseVoluta ?? prescritto.base ?? 'auto';
+  const base = prescritto.base ?? baseDieta ?? 'auto';
   const alternative = prescritto.alternative ?? [];
   const inPiatto = normalizza(nomeInPiatto ?? prescritto.nome);
 

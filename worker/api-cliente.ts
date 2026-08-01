@@ -30,8 +30,7 @@
  * al professionista.
  */
 
-import type { Alimento, BaseSostituzione, Dieta } from '../src/types.ts';
-import { BASI } from '../src/types.ts';
+import type { Alimento, Dieta } from '../src/types.ts';
 import {
   alimentiDellaDieta,
   dietaVuotaDavvero,
@@ -354,9 +353,14 @@ function alimentoA(dieta: Dieta, pos: { giorno: number; pastoId: string; indice:
   return alimento;
 }
 
-/** La base chiesta dal browser, se è una di quelle che esistono. */
-const baseDa = (v: unknown): BaseSostituzione | undefined =>
-  BASI.includes(v as BaseSostituzione) ? (v as BaseSostituzione) : undefined;
+/*
+ * Qui stava `baseDa`, che leggeva dal browser la base con cui pareggiare.
+ *
+ * È stata tolta e non va rimessa: la base è una decisione clinica del
+ * professionista, e finché il cliente poteva mandarla poteva anche scegliersi
+ * la porzione più comoda fra due letture entrambe corrette. Ora la regola
+ * arriva dalla dieta e dall'alimento, e il corpo della richiesta non ha voce.
+ */
 
 /**
  * «Cosa posso mettere al posto di questo?»
@@ -386,10 +390,10 @@ export async function alternative(env: Env, utente: Utente, params: URLSearchPar
   // volta deve continuare a vedere tutto l'elenco, non quello che resta.
   const prescritto = cercaAlimento(ctx.originale, pos) ?? alimento;
 
-  // La base chiesta dal cliente serve a GUARDARE: le porzioni che si applicano
-  // restano quelle della regola del professionista (vedi `applica`).
-  const chiesta = baseDa(params.get('base'));
-  const slot = slotDi(prescritto, ctx.libreria, alimento.nome, chiesta);
+  // Una sola base, quella del professionista: l'eccezione sull'alimento se
+  // c'è, altrimenti la regola della dieta. Il parametro `base` che il browser
+  // mandava non esiste più — vedi `applica`.
+  const slot = slotDi(prescritto, ctx.libreria, alimento.nome, ctx.dieta.base);
 
   // I candidati sono gli alimenti che il professionista ha già usato altrove
   // nella STESSA dieta: cibi che lui ha già ritenuto adatti a questo cliente.
@@ -427,12 +431,14 @@ export async function alternative(env: Env, utente: Utente, params: URLSearchPar
         avvisi: o.avvisi,
       })),
     },
-    /** Le basi fra cui il cliente può guardare: isocalorica e isoproteica. */
-    basi: ['auto', 'kcal', 'proteine'] as BaseSostituzione[],
-    /** La regola scritta dal professionista, che è quella che si applica. */
-    baseDelPiano: prescritto.base ?? null,
-    /** Sta guardando una lettura diversa da quella che si applicherebbe. */
-    soloLettura: Boolean(prescritto.base && chiesta && chiesta !== prescritto.base),
+    /**
+     * Dove è stata scritta la regola in vigore su questo alimento.
+     *
+     * Serve solo a come si legge: «il tuo nutrizionista ha scelto per tutta la
+     * dieta» dice una cosa diversa da «per questo alimento in particolare», e
+     * la seconda è quella che merita una riga a parte.
+     */
+    regola: prescritto.base ? 'alimento' : ctx.dieta.base ? 'dieta' : 'nessuna',
     proposte: trovate.map((p) => ({
       nome: p.nome,
       quantita: p.quantita,
@@ -455,7 +461,11 @@ export async function verifica(env: Env, utente: Utente, body: any) {
 
   const alimento = alimentoA(ctx.dieta, pos);
   const prescritto = cercaAlimento(ctx.originale, pos) ?? alimento;
-  const base = baseDa(body?.base) ?? prescritto.base ?? 'auto';
+
+  // Stessa gerarchia di `applica`, e per la stessa ragione: una verifica che
+  // rispondesse su una base diversa da quella con cui poi si applica
+  // annuncerebbe una porzione e ne metterebbe nel piatto un'altra.
+  const base = prescritto.base ?? ctx.dieta.base ?? 'auto';
 
   // Si calcola sempre dal PRESCRITTO: sostituire il sostituto farebbe
   // accumulare le deviazioni una sull'altra.
@@ -499,18 +509,18 @@ export async function applica(env: Env, utente: Utente, body: any) {
   /*
    * LA BASE LA DECIDE IL PROFESSIONISTA, e questa riga è tutta la differenza.
    *
-   * Il cliente può guardare la stessa sostituzione isocalorica e isoproteica —
-   * serve a capire cosa sta cambiando — ma la porzione che finisce nel piatto
-   * si calcola sulla regola che ha scritto lui. Senza questo vincolo, chi
-   * volesse mangiare di più troverebbe la base che gli dà la porzione più
-   * grande: 90 g di pasta diventano 85 g di riso pareggiando i carboidrati e
-   * 165 g pareggiando le proteine, ed è la dieta che sceglie il cliente.
+   * Isocalorica o isoproteica è una scelta clinica: la fissa lui sulla dieta e
+   * la può derogare sul singolo alimento. Il corpo della richiesta non entra
+   * più in questo conto, ed è deliberato: senza il vincolo, chi volesse mangiare
+   * di più cercherebbe la base che gli dà la porzione più grande — 90 g di
+   * pasta diventano 85 g di riso pareggiando i carboidrati e 165 g pareggiando
+   * le proteine, e a scegliere la dieta finirebbe il cliente.
    *
-   * Dove lui non ha dichiarato nulla la scelta del cliente vale, perché lì non
-   * c'è nessuna regola da rispettare — ed è comunque una sostituzione fuori
-   * piano, che viene registrata come tale.
+   * Dove non è stato dichiarato niente resta 'auto', che pareggia sul
+   * macronutriente caratterizzante: nessuna regola da rispettare, quindi
+   * nessuna regola da aggirare.
    */
-  const base = prescritto.base ?? baseDa(body?.base) ?? 'auto';
+  const base = prescritto.base ?? ctx.dieta.base ?? 'auto';
 
   /*
    * La porzione di un'alternativa AMMESSA la decide il piano, non questa

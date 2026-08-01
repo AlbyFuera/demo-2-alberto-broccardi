@@ -2115,31 +2115,9 @@ label .aiuto {
   opacity: 0.9;
 }
 
-/* Le basi fra cui il cliente sceglie: isocalorica, isoproteica. Pillole, non
-   un menù a tendina — sono due o tre e si toccano con il pollice. */
-.basi {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-  margin-bottom: 0.625rem;
-}
-
-.basi button {
-  padding: 0.375rem 0.75rem;
-  min-height: 2.25rem;
-  border: 1px solid var(--bordo);
-  border-radius: 999px;
-  background: var(--superficie);
-  font-size: 0.8125rem;
-  cursor: pointer;
-}
-
-.basi button[aria-pressed='true'] {
-  border-color: var(--accento);
-  background: var(--accento-chiaro);
-  color: var(--accento);
-  font-weight: 600;
-}
+/* Qui stavano le pillole con cui il cliente sceglieva la base — isocalorica,
+   isoproteica. Tolte insieme al comando: la base la fissa il nutrizionista
+   sulla dieta, e un controllo che si può premere dice il contrario. */
 
 /* L'alimento toccabile nella schermata di oggi: è il gesto principale del
    prodotto — «questo lo cambio» — quindi ha l'altezza di un bersaglio da

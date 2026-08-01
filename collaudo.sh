@@ -315,6 +315,8 @@ printf '%s' "$R" > dieta-attuale.json
 python3 - "$DIETA" > dieta-piano.json <<'PY'
 import json, sys
 d = json.load(open('dieta-attuale.json'))['dieta']
+# La regola vale per tutta la dieta: si scrive una volta, in testa.
+d['base'] = 'kcal'
 for g in d['giorni']:
     for p in g['pasti']:
         if p['nome'] != 'Pranzo':
@@ -322,18 +324,25 @@ for g in d['giorni']:
         for a in p['alimenti']:
             if 'pollo' in a['nome']:
                 a['gruppo'] = 'fonte proteica'
+                # Eccezione per questo alimento: la fonte proteica si pareggia
+                # sulle proteine anche dentro un piano isocalorico.
                 a['base'] = 'proteine'
                 a['alternative'] = [
                     {'nome': 'merluzzo'},
                     {'nome': 'tacchino'},
                     {'nome': 'uova', 'quantita': 2, 'unita': 'pz'},
                 ]
+            if a['nome'] == 'pasta':
+                # Nessuna base propria: deve ereditare quella della dieta.
+                a['gruppo'] = 'fonte di carboidrati'
+                a['alternative'] = [{'nome': 'riso'}, {'nome': 'patate'}]
 print(json.dumps({'id': sys.argv[1], 'dieta': d}))
 PY
 post n.txt /api/studio/salva-dieta dieta-piano.json
 prova "dieta con le sostituzioni salvata" '"ok":true'
 prova "le alternative restano scritte nella dieta" '"alternative"'
 prova "con la base scelta dal professionista" '"base":"proteine"'
+prova "la regola di tutta la dieta resta scritta" '"base":"kcal"'
 
 get c.txt /api/cliente/scheda
 SCHEDA="$R"
@@ -348,19 +357,29 @@ prova "l'elenco non è libero: c'è un piano" '"libero":false'
 prova "le porzioni sono isoproteiche" '"nomeBase":"isoproteica"'
 prova "la porzione scritta a mano resta quella" '"fissata":true'
 
-# Isocalorica e isoproteica non sono la stessa domanda e non danno la stessa
-# porzione: è il punto per cui il professionista può sceglierle.
-ISOP=$(curl -s -b c.txt "$B/api/cliente/alternative?giorno=0&pasto=$PASTO&indice=1&base=proteine" | python3 -c "import json,sys; o=json.load(sys.stdin)['piano']['opzioni']; print([x['quantita'] for x in o if x['nome']=='merluzzo'][0])")
-ISOK=$(curl -s -b c.txt "$B/api/cliente/alternative?giorno=0&pasto=$PASTO&indice=1&base=kcal" | python3 -c "import json,sys; o=json.load(sys.stdin)['piano']['opzioni']; print([x['quantita'] for x in o if x['nome']=='merluzzo'][0])")
-if [ "$ISOP" != "$ISOK" ]; then
-  printf '  \033[32m✓\033[0m isoproteica (%s g) e isocalorica (%s g) danno porzioni diverse\n' "$ISOP" "$ISOK"; ok=$((ok+1))
+prova "l'eccezione dell'alimento è dichiarata come tale" '"regola":"alimento"'
+
+# La pasta non ha una base sua: deve prendere quella della dieta, che è
+# isocalorica. È la funzione per cui il campo sul piano esiste — scriverla una
+# volta invece che su trenta alimenti.
+get c.txt "/api/cliente/alternative?giorno=0&pasto=$PASTO&indice=0"
+prova "l'alimento senza eccezione segue la regola della dieta" '"nomeBase":"isocalorica"'
+prova "e si sa da dove viene quella regola" '"regola":"dieta"'
+
+# Il parametro `base` nella richiesta non esiste più. Chiederne una diversa non
+# cambia una virgola: senza questo vincolo, chi vuole mangiare di più sceglie la
+# lettura che gli dà la porzione più grande, ed è la dieta che sceglie il cliente.
+UNO=$(curl -s -b c.txt "$B/api/cliente/alternative?giorno=0&pasto=$PASTO&indice=0&base=proteine" | python3 -c "import json,sys; o=json.load(sys.stdin)['piano']['opzioni']; print([x['quantita'] for x in o if x['nome']=='riso'][0])")
+DUE=$(curl -s -b c.txt "$B/api/cliente/alternative?giorno=0&pasto=$PASTO&indice=0&base=kcal" | python3 -c "import json,sys; o=json.load(sys.stdin)['piano']['opzioni']; print([x['quantita'] for x in o if x['nome']=='riso'][0])")
+if [ "$UNO" = "$DUE" ]; then
+  printf '  \033[32m✓\033[0m la base chiesta dal cliente non cambia la porzione (%s g in entrambi i casi)\n' "$UNO"; ok=$((ok+1))
 else
-  printf '  \033[31m✗\033[0m isoproteica e isocalorica danno la stessa porzione (%s)\n' "$ISOP"; ko=$((ko+1))
+  printf '  \033[31m✗\033[0m il cliente ha cambiato la porzione chiedendo un'\''altra base (%s vs %s)\n' "$UNO" "$DUE"; ko=$((ko+1))
 fi
 
-# La base la decide il professionista: il cliente può guardare l'altra lettura,
-# ma la porzione che finisce nel piatto segue la regola scritta da lui. Senza
-# questo vincolo, chi vuole mangiare di più sceglie la base che gli conviene.
+# E lo stesso quando applica davvero: 205 g è la porzione isoproteica di
+# merluzzo, quella della regola scritta sul pollo. Chiedere «kcal» nel corpo
+# della richiesta non la sposta.
 json "{\"giorno\":0,\"pasto\":\"$PASTO\",\"indice\":1,\"alimento\":\"merluzzo\",\"base\":\"kcal\"}"
 post c.txt /api/cliente/applica corpo.json
 prova "il cliente non può cambiare la regola di pareggio" '"quantita":"205g"'

@@ -86,7 +86,15 @@ export interface Alimento {
    * chiederne una, ma sarà FUORI PIANO e come tale viene contata.
    */
   alternative?: Alternativa[];
-  /** Come si pareggiano le porzioni delle alternative. Predefinita: 'auto'. */
+  /**
+   * Eccezione alla regola della dieta, per QUESTO alimento.
+   *
+   * Assente è il caso normale e significa «come dice la dieta»: la regola la
+   * fissa il professionista una volta sola in `Dieta.base`, non trenta volte.
+   * Qui si scrive solo quando quel singolo alimento va pareggiato in un altro
+   * modo — la fonte proteica isoproteica dentro un piano per il resto
+   * isocalorico.
+   */
   base?: BaseSostituzione;
   /**
    * Come si chiama questo posto nel pasto: «fonte proteica», «carboidrato».
@@ -143,6 +151,21 @@ export interface Dieta {
   indicazioni: string[];
   obiettivi: Obiettivi;
   giorni: Giorno[];
+
+  /**
+   * Come si pareggiano le sostituzioni in TUTTA la dieta. Predefinita: 'auto'.
+   *
+   * È una decisione clinica e sta qui perché è del piano, non del singolo
+   * piatto: un piano ipocalorico si tiene sulle calorie, uno ipertrofico sulle
+   * proteine, e quella scelta vale per ogni sostituzione che il cliente farà.
+   * Il professionista la scrive una volta; `Alimento.base` esiste solo per le
+   * eccezioni.
+   *
+   * Il cliente NON la sceglie e non la può cambiare: guardando può leggere
+   * quale regola è in vigore, ma le porzioni che finiscono nel suo piatto
+   * seguono sempre questa. Vedi `core/piano.ts`.
+   */
+  base?: BaseSostituzione;
 }
 
 export const NOMI_GIORNI = [
