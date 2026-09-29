@@ -1,14 +1,3 @@
-/**
- * Persistenza minima su file JSON.
- *
- * Non è un database e non finge di esserlo: serve perché l'onboarding, il
- * registro delle correzioni e il profilo di stile abbiano senso: uno strumento
- * che dimentica tutto a ogni riavvio non può imparare il metodo di nessuno.
- *
- * Quando si passerà a un database vero cambia solo questo file — il resto del
- * codice non sa dove finiscono i dati.
- */
-
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,20 +15,12 @@ const FILE = join(DATA_DIR, 'store.json');
 export interface StoredPlan {
   key: string;
   plan: NutritionPlan;
-  /** I tre piani di collaudo non si cancellano né si modificano. */
   builtin: boolean;
   /** ISO. Fornito dal chiamante: il modulo non inventa timestamp. */
   createdAt: string;
   confirmedBy: string | null;
 }
 
-/**
- * Domanda che l'assistente non ha saputo risolvere dal piano.
- *
- * È il canale che riporta il paziente al professionista invece di lasciarlo
- * a un modello che improvvisa — e per lo studio è il segnale che qualcosa nel
- * piano non è chiaro.
- */
 export interface Flag {
   id: string;
   planKey: string;
@@ -88,8 +69,6 @@ export async function load(): Promise<Store> {
     const raw = await readFile(FILE, 'utf8');
     const parsed = JSON.parse(raw) as Store;
 
-    // I piani di collaudo vengono sempre riallineati al codice: sono dati di
-    // prova, non contenuto dell'utente, e devono seguire le modifiche allo schema.
     const custom = parsed.plans.filter((p) => !p.builtin);
     cache = { ...seed(), ...parsed, plans: [...seed().plans, ...custom] };
   } catch {
@@ -102,7 +81,6 @@ export async function save(store: Store): Promise<void> {
   cache = store;
   await mkdir(dirname(FILE), { recursive: true });
 
-  // Scrittura in due tempi: un crash a metà non lascia un file monco.
   const tmp = `${FILE}.tmp`;
   await writeFile(tmp, JSON.stringify(store, null, 2), 'utf8');
   await rename(tmp, FILE);
@@ -146,8 +124,6 @@ export async function addCorrections(items: Correction[]): Promise<void> {
   const store = await load();
   store.corrections.push(...items);
 
-  // Il profilo raccoglie le correzioni del suo professionista: è da lì che
-  // nascono le proposte di regola.
   for (const c of items) {
     const profile = store.profiles[c.professionalId] ?? emptyProfile(c.professionalId);
     profile.corrections = [...profile.corrections, c];
@@ -173,7 +149,6 @@ export async function putProfile(profile: StyleProfile): Promise<void> {
 
 export async function addFlag(flag: Flag): Promise<void> {
   const store = await load();
-  // Stessa domanda già aperta: non la si duplica, allo studio non serve rumore.
   const gia = store.flags.some(
     (f) => f.status === 'aperta' && f.planKey === flag.planKey && f.question === flag.question,
   );

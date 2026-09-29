@@ -1,51 +1,12 @@
-/**
- * Accesso, sessioni, ruoli.
- *
- * Una schermata sola per due mestieri: professionista e cliente entrano dallo
- * stesso form e finiscono in due applicazioni diverse. Il ruolo NON viene mai
- * dal client — arriva dalla riga in `users`, che il client non può toccare.
- *
- * Scelte di sicurezza, tutte deliberate:
- *
- *  · password: PBKDF2-SHA256, 600.000 iterazioni effettive, sale casuale per
- *    utente. WebCrypto è l'unica primitiva disponibile nel runtime dei Worker
- *    (niente scrypt, niente argon2), e le iterazioni sono salvate per utente
- *    così alzarle domani non invalida le password di oggi.
- *  · sessione: token casuale da 256 bit consegnato in un cookie HttpOnly +
- *    Secure + SameSite=Lax. In tabella finisce solo il suo SHA-256: chi legge
- *    il database non può impersonare nessuno.
- *  · confronti: `crypto.subtle.timingSafeEqual` dove disponibile, altrimenti
- *    confronto a tempo costante scritto a mano.
- *  · errori di accesso: un messaggio unico. Distinguere "email sconosciuta" da
- *    "password sbagliata" regala a chi prova un elenco di clienti dello studio.
- */
-
 import type { Env, Ruolo, Utente } from './types.ts';
 
-/**
- * Il tetto di WebCrypto nei Worker: oltre le 100.000 iterazioni per singola
- * chiamata, `deriveBits` rifiuta con `NotSupportedError`.
- *
- * ATTENZIONE, è un difetto trovato in produzione e invisibile in sviluppo: il
- * runtime locale di wrangler accetta valori più alti, quello vero no. Un numero
- * più grande qui non fallisce in fase di collaudo — fallisce quando si iscrive
- * il primo utente.
- */
+/** Oltre 100.000 `deriveBits` fallisce in produzione, non in locale. */
 const TETTO_PER_CHIAMATA = 100_000;
 
-/**
- * Iterazioni effettive. Le 100.000 di una chiamata sola sono sotto le
- * raccomandazioni correnti per PBKDF2-SHA256, e qui si custodiscono password
- * legate a dati sanitari: si arriva a 600.000 concatenando i giri.
- */
 const ITERAZIONI = 600_000;
 
 const DURATA_SESSIONE_MS = 12 * 60 * 60 * 1000; // 12 ore
 const COOKIE = 'sessione';
-
-/* ------------------------------------------------------------------ */
-/* Password                                                            */
-/* ------------------------------------------------------------------ */
 
 const b64 = (buf: ArrayBuffer): string =>
   btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -53,19 +14,7 @@ const b64 = (buf: ArrayBuffer): string =>
 const fromB64 = (s: string): Uint8Array =>
   Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 
-/**
- * PBKDF2 a giri concatenati.
- *
- * Ogni giro fa al massimo `TETTO_PER_CHIAMATA` iterazioni e prende come
- * ingresso l'uscita del giro precedente. Non è una costruzione inventata: è
- * PBKDF2 applicato più volte, quindi il fattore di lavoro si somma e non si
- * indebolisce nulla — chi vuole provare una password deve rifare tutti i giri
- * nell'ordine, senza scorciatoie.
- *
- * `iterazioniTotali` si legge dalla riga dell'utente, non da questa costante:
- * è ciò che permette di alzare il numero domani senza invalidare le password
- * salvate oggi, e di verificare quelle salvate con valori diversi.
- */
+/** PBKDF2 a giri concatenati; le iterazioni si leggono dalla riga utente. */
 async function pbkdf2(
   password: string,
   salt: Uint8Array,
@@ -111,7 +60,7 @@ export async function hashPassword(password: string): Promise<PasswordHash> {
   };
 }
 
-/** Confronto a tempo costante: la durata non deve dipendere dal contenuto. */
+/** Confronto a tempo costante. */
 function equalConstantTime(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
@@ -127,22 +76,13 @@ export async function verifyPassword(
   return equalConstantTime(candidate, stored.hash);
 }
 
-/**
- * Requisiti minimi della password.
- *
- * Lunghezza sopra ogni altra regola: 10 caratteri battono "una maiuscola e un
- * numero" su ogni misura reale, e non spingono l'utente verso Password1!.
- */
+/** Requisiti minimi della password. */
 export function passwordDebole(password: string): string | null {
   if (password.length < 10) return 'La password deve avere almeno 10 caratteri.';
   if (/^\d+$/.test(password)) return 'Una password di soli numeri non va bene.';
   if (/^(.)\1+$/.test(password)) return 'Scegli una password meno prevedibile.';
   return null;
 }
-
-/* ------------------------------------------------------------------ */
-/* Sessioni                                                           */
-/* ------------------------------------------------------------------ */
 
 async function sha256(text: string): Promise<string> {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -175,8 +115,7 @@ export async function apriSessione(
     .bind(await sha256(token), userId, ora.toISOString(), expiresAt, userAgent?.slice(0, 200) ?? null)
     .run();
 
-  // Pulizia opportunistica: senza un cron, le sessioni scadute le raccoglie
-  // chi passa. Costa una DELETE per accesso e tiene la tabella onesta.
+  // Pulizia delle sessioni scadute.
   await env.DB.prepare(`DELETE FROM sessions WHERE expires_at < ?`)
     .bind(ora.toISOString())
     .run();
@@ -189,10 +128,6 @@ export async function chiudiSessione(env: Env, token: string): Promise<void> {
     .bind(await sha256(token))
     .run();
 }
-
-/* ------------------------------------------------------------------ */
-/* Cookie                                                             */
-/* ------------------------------------------------------------------ */
 
 export function leggiCookie(request: Request): string | null {
   const header = request.headers.get('cookie');
@@ -213,8 +148,7 @@ export function cookieDiSessione(sessione: Sessione, sicuro: boolean): string {
     'SameSite=Lax',
     `Expires=${new Date(sessione.expiresAt).toUTCString()}`,
   ];
-  // In sviluppo locale il Worker gira su http://localhost: con Secure il
-  // browser scarterebbe il cookie e l'accesso non funzionerebbe mai.
+  // In locale si gira su http: con Secure il cookie verrebbe scartato.
   if (sicuro) attributi.push('Secure');
   return attributi.join('; ');
 }
@@ -225,10 +159,6 @@ export function cookieScaduto(sicuro: boolean): string {
   return attributi.join('; ');
 }
 
-/* ------------------------------------------------------------------ */
-/* Chi sta chiamando                                                  */
-/* ------------------------------------------------------------------ */
-
 interface RigaUtente {
   id: string;
   email: string;
@@ -237,13 +167,7 @@ interface RigaUtente {
   goal: string | null;
 }
 
-/**
- * L'utente della richiesta, o null.
- *
- * Una sola query con JOIN: la sessione da sola non basta, serve il ruolo, e
- * leggerli in due passaggi apre la porta a una sessione valida per un utente
- * cancellato.
- */
+/** L'utente della richiesta, o null. */
 export async function utenteCorrente(env: Env, request: Request): Promise<Utente | null> {
   const token = leggiCookie(request);
   if (!token) return null;
@@ -270,14 +194,7 @@ export async function utenteCorrente(env: Env, request: Request): Promise<Utente
 
 export class ErroreHttp extends Error {
   status: number;
-  /**
-   * Codice leggibile dal browser.
-   *
-   * Serve a distinguere i due 401 che significano cose opposte: «la tua
-   * sessione è finita, torna all'accesso» e «la password che hai appena
-   * scritto è sbagliata, riprova qui». Senza, l'interfaccia butterebbe fuori
-   * chi ha solo sbagliato a digitare.
-   */
+  /** Distingue la sessione scaduta dalla password sbagliata. */
   codice?: string;
 
   constructor(status: number, message: string, codice?: string) {
@@ -289,14 +206,7 @@ export class ErroreHttp extends Error {
 
 export const SESSIONE_SCADUTA = 'sessione-scaduta';
 
-/**
- * Credenziali finte con cui verificare la password di un'email inesistente.
- *
- * Serve a far costare lo stesso i due casi: senza, la risposta immediata su
- * un'email sconosciuta direbbe a chi prova quali indirizzi hanno un account.
- * Il numero di iterazioni viene da qui e non è scritto a mano nel chiamante,
- * o al primo cambio i due percorsi tornerebbero a durare tempi diversi.
- */
+/** Per far durare uguale il login di un'email inesistente. */
 export const CREDENZIALI_FINTE: PasswordHash = {
   hash: 'x'.repeat(44),
   salt: 'AAAAAAAAAAAAAAAAAAAAAA==',
@@ -312,27 +222,11 @@ export function esigi(utente: Utente | null, ...ruoli: Ruolo[]): Utente {
   return utente;
 }
 
-/* ------------------------------------------------------------------ */
-/* Registrazione                                                       */
-/* ------------------------------------------------------------------ */
-
-/**
- * La registrazione è APERTA, per entrambi i ruoli, con sola email e password.
- *
- * Non c'è più un codice di attivazione, ed è una scelta, non una dimenticanza:
- * la barriera non sta all'ingresso ma nel COLLEGAMENTO. Un account appena
- * creato — di qualunque ruolo — non vede i dati di nessuno. Un cliente resta
- * davanti a una schermata vuota finché un professionista non lo accetta; un
- * professionista non ha clienti finché non ne accetta uno.
- *
- * Mettere una barriera all'iscrizione avrebbe protetto un elenco di account
- * vuoti, al prezzo di un codice da distribuire a ogni paziente.
- */
 export function ruoloValido(valore: unknown): valore is Ruolo {
   return valore === 'nutrizionista' || valore === 'cliente';
 }
 
-/** True se la richiesta arriva su HTTPS: decide l'attributo Secure del cookie. */
+/** True se la richiesta arriva su HTTPS. */
 export function inHttps(request: Request): boolean {
   return new URL(request.url).protocol === 'https:';
 }

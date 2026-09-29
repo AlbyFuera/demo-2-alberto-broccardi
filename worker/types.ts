@@ -1,21 +1,9 @@
-/**
- * Tipi del livello Cloudflare.
- *
- * Restano separati da `src/types.ts`: quello descrive una dieta e non deve
- * sapere che esistono utenti, sessioni o database. Il motore è portabile e
- * testabile senza un database proprio perché non conosce nulla di tutto questo.
- */
-
 export type Ruolo = 'nutrizionista' | 'cliente';
 
 export interface Env {
   /** Database D1. */
   DB: D1Database;
-  /**
-   * Workers AI. La quota gratuita del piano Free copre l'uso di uno studio
-   * senza carta di credito; se il binding manca, l'assistente resta
-   * deterministico invece di spegnersi.
-   */
+  /** Workers AI. Se manca, l'assistente resta deterministico. */
   AI?: Ai;
   /** Modello da usare, per poterlo cambiare senza toccare il codice. */
   MODELLO_AI?: string;

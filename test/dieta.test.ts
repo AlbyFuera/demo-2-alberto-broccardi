@@ -29,12 +29,6 @@ describe('conti di una dieta', () => {
     assert.ok(t.proteine > 30);
   });
 
-  /*
-   * La distinzione che regge tutto il file: «q.b.» è una prescrizione, un
-   * alimento sconosciuto è ignoranza. Confonderli farebbe apparire incompleta
-   * ogni dieta con delle verdure a volontà, e il professionista smetterebbe di
-   * guardare l'avviso.
-   */
   it('una quantità libera non rende il conto incompleto', () => {
     const t = totaleGiorno(giornoDi(dieta, LUN)!);
     assert.deepEqual(t.mancanti, []);
@@ -81,11 +75,6 @@ describe('conti di una dieta', () => {
     assert.deepEqual(t.stimati, []);
   });
 
-  /*
-   * Dividere per sette una dieta compilata a metà darebbe un numero
-   * rassicurante e falso: «800 kcal al giorno» quando in realtà sono 1600 nei
-   * due giorni scritti e zero negli altri cinque.
-   */
   it('REGRESSIONE: la media si calcola sui giorni SCRITTI, non su sette', () => {
     const { media, giorniScritti, totale } = totaleSettimana(dieta);
     assert.equal(giorniScritti, 2);
@@ -107,11 +96,6 @@ describe('conti di una dieta', () => {
 });
 
 describe('navigazione nella dieta', () => {
-  /*
-   * Il professionista scrive «petto di pollo», il cliente chiede «il pollo». Se
-   * questa ricerca non lo trova, la sostituzione finisce sul primo alimento del
-   * pasto — cioè su un piatto a cui il cliente non stava pensando.
-   */
   it('REGRESSIONE: trova «petto di pollo» cercando «pollo»', () => {
     const pos = trovaAlimento(dieta, 'pollo', LUN);
     assert.ok(pos);
@@ -120,8 +104,7 @@ describe('navigazione nella dieta', () => {
   });
 
   it('preferisce il giorno indicato quando l’alimento compare in più giorni', () => {
-    // "riso" sta solo lunedì; si verifica che il giorno preferito venga
-    // esplorato per primo anche quando il bersaglio è altrove.
+    // Il giorno preferito si esplora per primo.
     const pos = trovaAlimento(dieta, 'riso', MAR);
     assert.ok(pos);
     assert.equal(pos.giorno, LUN);
@@ -189,10 +172,6 @@ describe('lista della spesa', () => {
     assert.equal(riga.ricorrenze, 2);
   });
 
-  /*
-   * «Verdure q.b.» va comprata. Farla sparire dalla lista perché non ha un
-   * numero è il modo più diretto di far tornare il cliente a casa senza verdure.
-   */
   it('tiene gli alimenti a quantità libera, senza un peso', () => {
     const riga = listaSpesa(dieta).find((l) => l.nome === 'zucchine');
     assert.ok(riga);

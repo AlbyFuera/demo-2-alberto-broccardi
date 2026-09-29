@@ -1,12 +1,3 @@
-/**
- * Accesso al piano.
- *
- * Un piano può avere un regime unico (`meals`) oppure più regimi alternati
- * (`variants` + `schedule`): "lunedì-giovedì schema A, venerdì-sabato schema B".
- * Tutto il resto del motore passa da qui e non deve sapere quale dei due casi
- * ha davanti.
- */
-
 import type { FoodOption, MealTemplate, NutritionPlan, NutrientTarget, Slot } from '../types.ts';
 
 /** I pasti previsti per un dato giorno della settimana. */
@@ -34,11 +25,6 @@ export function mealTemplate(
   return mealsForDay(plan, day).find((m) => m.id === mealId);
 }
 
-/**
- * Tutti i pasti che compaiono almeno una volta nella settimana, nell'ordine in
- * cui si presentano. Serve alle intestazioni: con due regimi alternati le
- * colonne devono essere l'unione, non quelle di un giorno solo.
- */
 export function allMealTemplates(plan: NutritionPlan): MealTemplate[] {
   const seen = new Map<string, MealTemplate>();
   for (let day = 0; day < 7; day++) {
@@ -54,15 +40,12 @@ export function mealLabel(plan: NutritionPlan, mealId: string): string {
   return allMealTemplates(plan).find((m) => m.id === mealId)?.label ?? mealId;
 }
 
-/** Il regime applicato a un giorno, se il piano ne ha più di uno. */
 export function variantLabelForDay(plan: NutritionPlan, day: number): string | undefined {
   if (!plan.variants || plan.variants.length === 0) return undefined;
   return plan.variants.find((v) => v.id === plan.schedule?.[day])?.label;
 }
 
-/* ------------------------------------------------------------------ */
-/* Porzioni espresse in nutriente                                      */
-/* ------------------------------------------------------------------ */
+/* Porzioni espresse in nutriente */
 
 export interface ResolvedPortion {
   qty: number;
@@ -73,13 +56,6 @@ export interface ResolvedPortion {
   explanation?: string;
 }
 
-/**
- * Quanto alimento serve per coprire la quota di nutriente dello slot.
- *
- * Il calcolo è banale; ciò che conta è che sia SEMPRE visibile. Il paziente
- * deve poter leggere "riso basmati 63 g (= 50 g di carboidrati)" e il
- * professionista deve poter controllare il valore che l'ha prodotto.
- */
 export function resolvePortion(food: FoodOption, target?: NutrientTarget): ResolvedPortion {
   if (!target || food.fixedQty) {
     return { qty: food.qty, unit: food.unit, derived: false };
@@ -121,18 +97,9 @@ export interface DerivationGroup {
   rows: DerivationRow[];
 }
 
-/**
- * Conversioni porzione ↔ nutriente, come dati.
- *
- * Vive qui e non nel renderer perché serve identica al Markdown, alla
- * dashboard e alla stampa: il calcolo che decide quanto finisce nel piatto
- * non va riscritto tre volte.
- */
 export function portionDerivations(plan: NutritionPlan): DerivationGroup[] {
   const groups = new Map<string, DerivationGroup>();
 
-  // Tutti i regimi, non l'unione deduplicata: due schemi alternati hanno
-  // quote diverse e una delle due sparirebbe.
   for (let day = 0; day < 7; day++) {
     for (const tpl of mealsForDay(plan, day)) {
       for (const slot of tpl.slots) {
@@ -160,9 +127,7 @@ export function portionDerivations(plan: NutritionPlan): DerivationGroup[] {
   return [...groups.values()].sort((a, b) => a.qty - b.qty);
 }
 
-/* ------------------------------------------------------------------ */
-/* Verifica di coerenza del piano                                      */
-/* ------------------------------------------------------------------ */
+/* Verifica di coerenza del piano */
 
 export interface PlanIssue {
   severity: 'errore' | 'avviso';
@@ -171,26 +136,11 @@ export interface PlanIssue {
 
 export type PlanMode = 'prescrittivo' | 'macro';
 
-/**
- * Che tipo di piano è.
- *
- *  - `prescrittivo`: elenca alimenti e quantità. È pianificabile: c'è qualcosa
- *    da comporre.
- *  - `macro`: fissa solo quantità di macronutrienti. Non c'è nulla da
- *    scegliere, quindi non è pianificabile — ma è verificabile.
- */
 export function planMode(plan: NutritionPlan): PlanMode {
   const hasFoods = (plan.variants?.length ?? 0) > 0 || (plan.meals?.length ?? 0) > 0;
   return hasFoods ? 'prescrittivo' : 'macro';
 }
 
-/**
- * Se il motore può comporre una settimana da questo piano.
- *
- * Un "no" qui non è un difetto del piano: è una constatazione. Un piano a
- * macronutrienti non elenca alimenti, e inventarli significherebbe che il
- * software si mette a decidere la dieta al posto del professionista.
- */
 export function canGenerateWeek(plan: NutritionPlan): { ok: boolean; reason?: string } {
   if (planMode(plan) === 'prescrittivo') return { ok: true };
   return {
@@ -203,11 +153,6 @@ export function canGenerateWeek(plan: NutritionPlan): { ok: boolean; reason?: st
   };
 }
 
-/**
- * Controlli sul piano stesso, da eseguire quando il professionista lo conferma.
- * Un piano incoerente deve fallire subito e a voce alta, non produrre settimane
- * silenziosamente sbagliate.
- */
 export function checkPlanIntegrity(plan: NutritionPlan): PlanIssue[] {
   const issues: PlanIssue[] = [];
   const problems: string[] = [];
@@ -235,7 +180,6 @@ export function checkPlanIntegrity(plan: NutritionPlan): PlanIssue[] {
     }
   }
 
-  // Ogni slot a quota di nutriente deve avere il dato su TUTTE le sue opzioni.
   for (let day = 0; day < 7; day++) {
     let meals: MealTemplate[];
     try {
@@ -265,21 +209,11 @@ export function checkPlanIntegrity(plan: NutritionPlan): PlanIssue[] {
   return issues;
 }
 
-/* ------------------------------------------------------------------ */
-/* Verifica dei piani a macronutrienti                                 */
-/* ------------------------------------------------------------------ */
+/* Verifica dei piani a macronutrienti */
 
 /** Scarto tollerato sugli arrotondamenti del professionista. */
 const KCAL_SLACK = 5;
 
-/**
- * Controlla che i conti di un piano a macro tornino.
- *
- * È il caso in cui il software vale di più: questi documenti sono compilati a
- * mano, spesso dentro un foglio di calcolo, e un macronutriente non ricalcolato
- * dopo un cambio di calorie non si vede a occhio. Al paziente arriva un
- * obiettivo matematicamente irraggiungibile.
- */
 export function checkMacroPlan(plan: NutritionPlan): PlanIssue[] {
   const issues: PlanIssue[] = [];
   const m = plan.macro;
@@ -334,7 +268,7 @@ export function checkMacroPlan(plan: NutritionPlan): PlanIssue[] {
           `${somma - obiettivo}).`,
       );
 
-      // Il caso peggiore: obiettivo matematicamente irraggiungibile.
+      // Obiettivo matematicamente irraggiungibile.
       const senzaGrassi = dt.macros
         .filter((x) => x.kcalPerGram === 4)
         .reduce((acc, x) => acc + (x.kcal ?? (x.grams ?? 0) * x.kcalPerGram), 0);
@@ -346,7 +280,7 @@ export function checkMacroPlan(plan: NutritionPlan): PlanIssue[] {
         );
       }
 
-      // Indizio utile: spesso i macro sono rimasti quelli del TDEE di partenza.
+      // Spesso i macro sono rimasti quelli del TDEE di partenza.
       if (m.tdeeStart !== undefined && Math.abs(somma - m.tdeeStart) <= KCAL_SLACK) {
         warn(
           `I macronutrienti di "${dt.label}" coincidono con il TDEE iniziale ` +
@@ -399,7 +333,6 @@ export function checkMacroPlan(plan: NutritionPlan): PlanIssue[] {
   return issues;
 }
 
-/** Il valore comune di una serie, se tutti i giorni hanno lo stesso obiettivo. */
 function unicoValore(values?: (number | undefined)[]): number | undefined {
   const noti = values?.filter((v): v is number => v !== undefined) ?? [];
   if (noti.length === 0) return undefined;

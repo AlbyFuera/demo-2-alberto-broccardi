@@ -1,22 +1,3 @@
-/**
- * Profilo di stile del professionista.
- *
- * Il valore commerciale del prodotto sta qui: più il nutrizionista lo usa, più
- * lo strumento assomiglia al suo metodo. È anche la risposta alla domanda
- * "non mi basta caricare il PDF su un assistente generico?" — un assistente
- * generico non conserva nulla tra una volta e l'altra.
- *
- * Tre vincoli di progetto, non negoziabili:
- *
- *  1. NIENTE SCATOLA NERA. Ogni regola appresa è una frase leggibile, con
- *     l'evidenza che l'ha generata, e il professionista può disattivarla.
- *  2. LO STILE NON TOCCA LA SOSTANZA. Una regola appresa può influenzare
- *     distribuzione, presentazione e terminologia. Non può mai cambiare
- *     alimenti ammessi o quantità: quelli restano sotto il validatore.
- *  3. NESSUNA CONTAMINAZIONE TRA STUDI. Un profilo appartiene a un solo
- *     professionista. Il suo metodo è la sua proprietà intellettuale.
- */
-
 import type { SoftPreference } from '../types.ts';
 
 /** Ambiti su cui una regola appresa può legittimamente intervenire. */
@@ -29,10 +10,6 @@ export const SCOPI_AMMESSI = [
 
 export type ScopoRegola = (typeof SCOPI_AMMESSI)[number];
 
-/**
- * Ambiti VIETATI: se una correzione tocca questi, non diventa mai una regola
- * di stile. Deve passare da una modifica esplicita del piano.
- */
 export const SCOPI_VIETATI = ['quantita', 'alimento-ammesso', 'frequenza'] as const;
 export type ScopoVietato = (typeof SCOPI_VIETATI)[number];
 
@@ -40,7 +17,6 @@ export interface Correction {
   id: string;
   professionalId: string;
   planId: string;
-  /** ISO date: il chiamante fornisce il timestamp, il modulo non lo inventa. */
   at: string;
   scope: ScopoRegola | ScopoVietato;
   /** Chiave di raggruppamento: correzioni "uguali" hanno la stessa chiave. */
@@ -93,12 +69,6 @@ export function isStyleScope(scope: string): scope is ScopoRegola {
   return (SCOPI_AMMESSI as readonly string[]).includes(scope);
 }
 
-/**
- * Registra una correzione fatta in fase di conferma del piano.
- *
- * Va chiamata SEMPRE, fin dalla prima versione del prodotto, anche prima di
- * saper usare i dati: le correzioni non registrate sono perse per sempre.
- */
 export function recordCorrection(profile: StyleProfile, correction: Correction): StyleProfile {
   if (correction.professionalId !== profile.professionalId) {
     throw new Error(
@@ -113,12 +83,6 @@ export interface ProposalOptions {
   threshold?: number;
 }
 
-/**
- * Trasforma le correzioni ricorrenti in proposte di regola.
- *
- * Non attiva nulla da sola: produce una proposta che il professionista deve
- * confermare. È la differenza tra uno strumento che impara e uno che indovina.
- */
 export function proposeRules(
   profile: StyleProfile,
   opts: ProposalOptions = {},
@@ -158,7 +122,6 @@ export function proposeRules(
   return proposals.sort((a, b) => b.evidence - a.evidence);
 }
 
-/** Conferma una proposta: da qui in poi il generatore ne terrà conto. */
 export function activateRule(
   profile: StyleProfile,
   ruleId: string,
@@ -183,19 +146,12 @@ export function upsertRules(profile: StyleProfile, incoming: LearnedRule[]): Sty
   const byId = new Map(profile.rules.map((r) => [r.id, r]));
   for (const rule of incoming) {
     const existing = byId.get(rule.id);
-    // Una regola disattivata a mano non torna da sola: la scelta del
-    // professionista vince sempre sull'inferenza.
     if (existing?.status === 'disattivata') continue;
     byId.set(rule.id, { ...existing, ...rule });
   }
   return { ...profile, rules: [...byId.values()] };
 }
 
-/**
- * Preferenze morbide derivate dalle regole attive, da iniettare nel piano
- * prima della generazione. Solo `SoftPreference`: per costruzione non possono
- * alterare alimenti né quantità.
- */
 export function activePreferences(profile: StyleProfile): SoftPreference[] {
   return profile.rules
     .filter((r) => r.status === 'attiva' && r.preference)

@@ -1,60 +1,10 @@
-/**
- * Sostituzioni per equivalenza nutrizionale.
- *
- * Nel sistema precedente una sostituzione era ammessa se il piano la elencava.
- * Qui la dieta la scrive il professionista giorno per giorno e non contiene un
- * elenco di alternative: la domanda «posso mettere X al posto di Y?» va quindi
- * risolta con un calcolo, non con un'appartenenza.
- *
- * LA REGOLA PREDEFINITA, che è quella che usano i nutrizionisti a mano:
- *
- *   si pareggia il MACRONUTRIENTE CARATTERIZZANTE dell'alimento che esce.
- *
- * 100 g di pasta si sostituiscono con la quantità di riso che porta gli stessi
- * carboidrati, non le stesse calorie. Pareggiare le kcal tra una fonte di
- * carboidrati e una di grassi darebbe un numero giusto e una dieta sbagliata:
- * stesse calorie, macronutrienti stravolti.
- *
- * MA LA REGOLA SI PUÒ FISSARE, ed è il professionista a farlo per ogni alimento
- * (`Alimento.base`): isocalorica o isoproteica sono due domande diverse e su un
- * piano danno due porzioni diverse. 180 g di merluzzo portano 31 g di proteine
- * e 128 kcal: la sostituzione ISOPROTEICA è quella che porta 31 g di proteine —
- * 135 g di petto di pollo — e la ISOCALORICA quella che porta 128 kcal — 85 g.
- * Quale delle due sia quella giusta lo decide chi ha firmato la dieta, non
- * questo modulo; qui si calcolano entrambe e si dice sempre quale si è usata.
- *
- * TRE COSE CHE QUESTO MODULO NON FA, per scelta:
- *
- *  · non decide se la sostituzione è opportuna. Dice di quanto sposta la
- *    giornata e lo manda al professionista, che ha l'ultima parola;
- *  · non inventa composizioni. Se non conosce uno dei due alimenti si ferma e
- *    lo dice — un'equivalenza calcolata su valori inventati è peggio di nessuna
- *    equivalenza;
- *  · non arrotonda in silenzio verso il basso o l'alto. La quantità consigliata
- *    è arrotondata a 5 g e lo scostamento è calcolato SULLA QUANTITÀ
- *    ARROTONDATA, cioè su quello che il cliente si metterà davvero nel piatto.
- */
-
 import type { Alimento, BaseSostituzione, Macro, Unita, Valori } from '../types.ts';
 import { kcalDi, valoriDi } from '../types.ts';
 import { composizioneDi, macroDi, type Composizione, type Libreria } from './composizione.ts';
 
-/* ------------------------------------------------------------------ */
-/* Che tipo di alimento è                                              */
-/* ------------------------------------------------------------------ */
-
 export type Caratterizzante = 'proteine' | 'carboidrati' | 'grassi' | 'nessuno';
 
-/**
- * Il macronutriente che caratterizza un alimento.
- *
- * Si guarda la ripartizione delle CALORIE, non dei grammi: 100 g di olio sono
- * 100 g di grassi e nessun dubbio, ma 100 g di pasta sono 75 g di carboidrati e
- * 13 di proteine — a grammi sembrerebbe meno sbilanciata di quanto sia.
- *
- * `nessuno` per gli alimenti che non caratterizzano niente (le verdure): lì la
- * sostituzione si fa a peso, ed è giusto così.
- */
+/** Si guarda la ripartizione delle calorie, non dei grammi. */
 export function caratterizzante(c: Macro): Caratterizzante {
   const kcal = kcalDi(c);
   if (kcal < 25) return 'nessuno'; // per 100 g: verdure, brodi, bevande
@@ -70,8 +20,7 @@ export function caratterizzante(c: Macro): Caratterizzante {
     number,
   ];
 
-  // Sotto il 40% nessun macronutriente comanda davvero: è un alimento misto
-  // (un piatto pronto, un gelato) e si pareggiano le calorie.
+  // Sotto il 40% è un alimento misto: si pareggiano le kcal.
   return quota >= 0.4 ? nome : 'nessuno';
 }
 
@@ -82,7 +31,6 @@ const ETICHETTA: Record<Caratterizzante, string> = {
   nessuno: 'alimento misto o a basso apporto',
 };
 
-/** «le proteine» ma «i carboidrati»: il genere cambia, e le frasi si leggono. */
 const ARTICOLO: Record<Caratterizzante, string> = {
   proteine: 'le proteine',
   carboidrati: 'i carboidrati',
@@ -105,27 +53,15 @@ export const NOME_BASE: Record<Caratterizzante, string> = {
   nessuno: 'isocalorica',
 };
 
-/**
- * Dalla base chiesta al macronutriente su cui si pareggia.
- *
- * `auto` guarda l'alimento che esce e sceglie il suo caratterizzante: è il
- * comportamento storico, e resta quello che si usa quando nessuno ha deciso
- * altro. `kcal` diventa 'nessuno', che in questo modulo significa da sempre
- * «pareggia le calorie».
- */
 function baseRichiesta(base: BaseSostituzione, composizioneUscente: Macro): Caratterizzante {
   if (base === 'auto') return caratterizzante(composizioneUscente);
   return base === 'kcal' ? 'nessuno' : base;
 }
 
-/* ------------------------------------------------------------------ */
-/* L'equivalenza                                                       */
-/* ------------------------------------------------------------------ */
-
 export type EsitoEquivalenza =
   /** Calcolata: c'è una quantità consigliata. */
   | 'calcolata'
-  /** Non si conosce la composizione di uno dei due: decide il professionista. */
+  /** Composizione di uno dei due ignota. */
   | 'sconosciuta'
   /** L'alimento che esce è a quantità libera: non c'è niente da pareggiare. */
   | 'quantita-libera';
@@ -140,13 +76,6 @@ export interface Equivalenza {
   entra?: Alimento;
   /** Su quale macronutriente è stato fatto il pareggio. */
   base: Caratterizzante;
-  /**
-   * Come si chiama il pareggio fatto: «isoproteica», «isocalorica».
-   *
-   * Sta accanto a `base` e non al posto suo perché sono due letture della
-   * stessa cosa e servono a due lettori diversi: il professionista legge «su
-   * proteine», il cliente legge «isoproteica».
-   */
   nomeBase: string;
   /** Quella che era stata chiesta: 'auto' quando la sceglie il motore. */
   baseChiesta: BaseSostituzione;
@@ -164,14 +93,10 @@ export interface Equivalenza {
   daCompletare?: { nome: string; unita: Unita };
 }
 
-/**
- * Quanto può crescere una porzione rispetto a quella prescritta prima di
- * smettere di essere una porzione. Cinque volte: 100 g di pasta possono
- * diventare 500 g di patate — che è tanto ma esiste — non un chilo e mezzo.
- */
+/** Una porzione può crescere al massimo di 5 volte. */
 const PORZIONE_MASSIMA = 5;
 
-/** Le porzioni si arrotondano a 5: nessuno pesa 137 g di riso. */
+/** Porzioni arrotondate a 5. */
 const arrotondaPorzione = (q: number, unita: Unita): number => {
   if (unita === 'pz') return Math.max(0.5, Math.round(q * 2) / 2);
   const passo = q < 30 ? 1 : 5;
@@ -187,18 +112,7 @@ const macroDaComposizione = (c: Composizione, quantita: number, unita: Unita): M
   };
 };
 
-/**
- * Calcola con quanto di `nomeEntra` si sostituisce `esce`.
- *
- * `unitaEntra` si eredita da chi esce quando è compatibile: se il cliente
- * sostituisce 130 g di pasta chiede grammi, non pezzi. Per gli alimenti che si
- * contano a pezzo la tabella lo sa già e l'unità la decide lei.
- *
- * `baseVoluta` è la scelta del professionista — isocalorica, isoproteica — e
- * quando non è applicabile (si chiede una isoproteica verso un alimento che di
- * proteine non ne ha) NON si finge di averla rispettata: si ripiega sulle
- * calorie, `baseRipiegata` diventa vero e l'avviso lo dice.
- */
+/** Con quanto di `nomeEntra` si sostituisce `esce`. */
 export function equivalenza(
   esce: Alimento,
   nomeEntra: string,
@@ -242,8 +156,6 @@ export function equivalenza(
     };
   }
 
-  // L'unità di chi entra: quella della tabella se è un alimento a pezzo,
-  // altrimenti si eredita da chi esce.
   const provaG = composizioneDi(nomeEntra, esce.unita, libreria);
   const provaPz = provaG ? null : composizioneDi(nomeEntra, 'pz', libreria);
   const entrante = provaG ?? provaPz;
@@ -266,8 +178,6 @@ export function equivalenza(
   const macroUscente = uscente.macro;
   const su = baseRichiesta(baseVoluta, uscente.composizione);
 
-  // Per 100 g/ml (o per pezzo) di chi entra, quanto c'è del macronutriente su
-  // cui si pareggia. Se è zero non si può pareggiare su quello.
   const resaEntrante =
     su === 'nessuno'
       ? kcalDi({
@@ -285,10 +195,7 @@ export function equivalenza(
   let ripiegata = false;
 
   if (resaEntrante <= 0.01 || daPareggiare <= 0.01) {
-    // Non si può pareggiare sul macronutriente voluto (es. pasta → petto di
-    // pollo, che di carboidrati non ne ha). Si ripiega sulle calorie e lo si
-    // dice: è una sostituzione che cambia la forma della giornata, non solo un
-    // ingrediente, e chi la fa deve saperlo.
+    // Non si può pareggiare sul macronutriente voluto: si ripiega sulle kcal.
     const kcalEntrante = kcalDi({
       proteine: entrante.proteine,
       carboidrati: entrante.carboidrati,
@@ -319,19 +226,6 @@ export function equivalenza(
   } else {
     quantita = (daPareggiare / resaEntrante) * (entrante.per === 'pz' ? 1 : 100);
 
-    /*
-     * La porzione uscita dal pareggio è fuori scala.
-     *
-     * Succede quando l'alimento che entra contiene il macronutriente voluto
-     * solo in tracce: il miele ha 0,3 g di proteine per 100 g, e pareggiare i
-     * 34 g di proteine di un petto di pollo chiede undici chili di miele. Il
-     * conto è giusto, la porzione non esiste, e stamparla sarebbe peggio che
-     * non rispondere — qualcuno potrebbe seguirla.
-     *
-     * Si ripiega sulle calorie E LO SI DICE. Il limite è cinque volte la
-     * porzione prescritta, e vale solo a unità confrontabili: «cinque volte»
-     * fra grammi e pezzi non significa niente.
-     */
     const smisurata =
       unitaEntra === esce.unita &&
       esce.quantita !== null &&
@@ -363,9 +257,7 @@ export function equivalenza(
     unita: unitaEntra,
   };
 
-  // Lo scostamento si calcola sulla quantità ARROTONDATA: è quella che il
-  // cliente si mette nel piatto, e un delta calcolato sul numero esatto
-  // descriverebbe un pasto che nessuno mangerà.
+  // Delta calcolato sulla quantità arrotondata.
   const macroEntrante = macroDaComposizione(entrante, arrotondata, unitaEntra);
   const delta: Valori = {
     kcal: kcalDi(macroEntrante) - kcalDi(macroUscente),
@@ -418,10 +310,6 @@ export function equivalenza(
   };
 }
 
-/* ------------------------------------------------------------------ */
-/* Proposte, quando il cliente non nomina il sostituto                 */
-/* ------------------------------------------------------------------ */
-
 export interface Proposta {
   nome: string;
   quantita: number;
@@ -431,29 +319,10 @@ export interface Proposta {
   scarto: number;
 }
 
-/**
- * Quanto un candidato può essere più diluito o più concentrato dell'originale.
- *
- * Tre volte. È il limite che tiene fuori le proposte aritmeticamente corrette e
- * praticamente assurde: 100 g di pasta portano 75 g di carboidrati, e il latte
- * ne ha 5 per 100 ml — il pareggio esiste, ed è un litro e mezzo di latte.
- * Nessun nutrizionista lo scriverebbe, e proporlo fa perdere fiducia in tutte
- * le altre proposte, comprese quelle buone.
- *
- * Chi vuole comunque quella sostituzione può nominarla: `equivalenza` la
- * calcola e la dichiara, con i suoi avvisi. Qui si scelgono i suggerimenti, e
- * un suggerimento assurdo è peggio di un suggerimento in meno.
- */
+/** Rapporto massimo di concentrazione rispetto all'originale. */
 const DILUIZIONE_MASSIMA = 3;
 
-/**
- * «Cosa posso mettere al posto del pollo?»
- *
- * Le proposte si cercano tra gli alimenti che il professionista ha già usato
- * ALTROVE nella stessa dieta. È una scelta deliberata: sono cibi che lui ha già
- * ritenuto adatti a questo cliente, e proporre invece tutto il contenuto della
- * tabella significherebbe suggerire alimenti che nessuno ha approvato.
- */
+/** Proposte tra gli alimenti già usati altrove nella dieta. */
 export function proposte(
   esce: Alimento,
   candidati: string[],
@@ -484,22 +353,15 @@ export function proposte(
     const e = equivalenza(esce, nome, libreria, baseVoluta);
     if (e.esito !== 'calcolata' || !e.entra || !e.delta) continue;
 
-    // Stessa unità di misura dell'originale. Sostituire 150 g di pollo con
-    // «5,5 uova» è un conto giusto e un consiglio che nessuno seguirebbe: chi
-    // vuole le uova le nomina, e allora l'equivalenza gliele calcola con i
-    // suoi avvisi.
+    // Stessa unità dell'originale.
     if (e.entra.unita !== esce.unita) continue;
 
-    // Solo alimenti della stessa famiglia: proporre le zucchine al posto del
-    // pollo è aritmeticamente possibile e nutrizionalmente assurdo. La famiglia
-    // si guarda SEMPRE sul caratterizzante dell'alimento che esce, anche quando
-    // il pareggio è isocalorico: «stesse calorie» non autorizza a mettere
-    // dell'olio al posto della pasta.
+    // Stessa famiglia dell'alimento che esce.
     const c = composizioneDi(nome, e.entra.unita, libreria);
     if (!c) continue;
     if (caratterizzante(c) !== famiglia) continue;
 
-    // E con una concentrazione confrontabile, o la porzione esce di scala.
+    // Serve anche una concentrazione confrontabile.
     const resa = su === 'nessuno' ? kcalDi(c) : c[su];
     if (resa <= 0) continue;
     if (resa > resaUscente * DILUIZIONE_MASSIMA) continue;

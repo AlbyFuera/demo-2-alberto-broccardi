@@ -1,23 +1,3 @@
-/**
- * Livello Claude — opzionale.
- *
- * Fa due cose, entrambe di LINGUA, nessuna di sostanza:
- *
- *  1. capisce la domanda del paziente meglio delle espressioni regolari;
- *  2. dice la risposta del motore con la voce del professionista.
- *
- * Quello che NON fa, e che il prompt di sistema gli vieta esplicitamente:
- * aggiungere alimenti, cambiare quantità, dare consigli nutrizionali propri.
- * I fatti arrivano già decisi da `assistant.ts`, che li ha ottenuti dal
- * validatore. Il modello li riscrive, non li rivede.
- *
- * Senza chiave API o senza SDK installato, tutto continua a funzionare in
- * modalità deterministica: le stesse risposte, scritte dal codice.
- *
- *   npm install @anthropic-ai/sdk
- *   export ANTHROPIC_API_KEY=...
- */
-
 import type { AssistantReply, Intent } from './assistant.ts';
 
 const MODEL = 'claude-opus-5';
@@ -60,9 +40,7 @@ export async function status(): Promise<LlmStatus> {
   return checked;
 }
 
-/* ------------------------------------------------------------------ */
-/* 1. Comprensione della domanda                                       */
-/* ------------------------------------------------------------------ */
+/* 1. Comprensione della domanda */
 
 const SYSTEM_INTENT = `Classifichi le domande di un paziente sul suo piano alimentare.
 
@@ -128,9 +106,7 @@ export async function interpretWithAi(
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* 2. Voce del professionista                                          */
-/* ------------------------------------------------------------------ */
+/* 2. Voce del professionista */
 
 const SYSTEM_VOICE = `Sei l'assistente che parla al paziente per conto del suo nutrizionista.
 

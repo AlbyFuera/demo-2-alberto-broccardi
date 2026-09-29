@@ -1,13 +1,5 @@
 {
-  // Non c'è un passo di build: Node ≥ 22.6 esegue TypeScript nativamente e
-  // wrangler lo compila da sé. Questo file serve al controllo dei tipi e
-  // all'editor — `npm run tipi` è l'unico modo in cui viene usato.
-  //
-  // Controlla il PRODOTTO: il Worker e il motore che il Worker importa.
-  // Restano fuori i quattro file che girano solo su Node e che il Worker non
-  // importa mai (`cli.ts`, `server.ts`, `store.ts`, `core/llm.ts`): mescolare i
-  // globali di Node e quelli di Cloudflare nello stesso programma produce
-  // conflitti su `URL` e `fetch` che non dicono niente di vero sul codice.
+  // Solo per il controllo dei tipi: `npm run tipi`.
   "compilerOptions": {
     "target": "es2023",
     "module": "esnext",
@@ -18,10 +10,9 @@
     "strict": true,
     "skipLibCheck": true,
     "lib": ["es2023"],
-    // I tipi di D1, Workers AI e Fetcher arrivano da qui: senza, `env.DB` e
-    // `env.AI` sarebbero `any` e il controllo non direbbe nulla.
     "types": ["@cloudflare/workers-types"]
   },
   "include": ["worker/**/*.ts", "src/**/*.ts"],
+  // File solo Node: i loro globali vanno in conflitto con quelli di Cloudflare.
   "exclude": ["src/cli.ts", "src/server.ts", "src/store.ts", "src/core/llm.ts"]
 }

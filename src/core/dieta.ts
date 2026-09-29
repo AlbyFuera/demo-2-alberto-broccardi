@@ -1,27 +1,6 @@
-/**
- * I conti di una dieta scritta a mano.
- *
- * Il professionista scrive alimenti e grammature; questo modulo dice quanto
- * fanno. È l'unico posto in cui si sommano macronutrienti, e ogni totale porta
- * con sé la propria incertezza: quali alimenti non sono stati contati e perché.
- *
- * La distinzione tra i due modi di stare fuori da un conto è tutto il valore di
- * questo file:
- *
- *   MANCANTE  non si conosce la composizione        → il totale è incompleto
- *   LIBERA    il professionista ha scritto «q.b.»   → il totale è corretto così
- *
- * Confonderli farebbe apparire incompleta ogni dieta con delle verdure a
- * volontà, e il professionista smetterebbe di guardare l'avviso.
- */
-
 import type { Alimento, Dieta, Giorno, Pasto, Totale, Valori } from '../types.ts';
 import { NOMI_GIORNI, TOTALE_ZERO, sommaTotali, valoriDi } from '../types.ts';
 import { macroDi, type Libreria } from './composizione.ts';
-
-/* ------------------------------------------------------------------ */
-/* Totali                                                              */
-/* ------------------------------------------------------------------ */
 
 export function totaleAlimento(alimento: Alimento, libreria?: Libreria): Totale {
   if (alimento.libera || alimento.quantita === null) {
@@ -45,13 +24,7 @@ export const totalePasto = (pasto: Pasto, libreria?: Libreria): Totale =>
 export const totaleGiorno = (giorno: Giorno, libreria?: Libreria): Totale =>
   giorno.pasti.reduce((acc, p) => sommaTotali(acc, totalePasto(p, libreria)), TOTALE_ZERO);
 
-/**
- * La media giornaliera, calcolata sui SOLI giorni in cui c'è qualcosa scritto.
- *
- * Dividere per sette una dieta compilata a metà darebbe un numero
- * rassicurante e falso — «1100 kcal al giorno» quando in realtà sono 2200 nei
- * tre giorni scritti e zero negli altri quattro.
- */
+/** Media sui soli giorni compilati. */
 export function totaleSettimana(dieta: Dieta, libreria?: Libreria): {
   totale: Totale;
   media: Valori;
@@ -73,27 +46,17 @@ export function totaleSettimana(dieta: Dieta, libreria?: Libreria): {
   };
 }
 
-/* ------------------------------------------------------------------ */
-/* Scostamento dagli obiettivi                                         */
-/* ------------------------------------------------------------------ */
-
 export interface Scostamento {
   /** null quando il professionista non ha dichiarato quell'obiettivo. */
   kcal: number | null;
   proteine: number | null;
   carboidrati: number | null;
   grassi: number | null;
-  /** Il conto del giorno è incompleto: lo scostamento va letto come indicativo. */
+  /** Conto incompleto: scostamento indicativo. */
   parziale: boolean;
 }
 
-/**
- * Di quanto un giorno si scosta dagli obiettivi.
- *
- * Positivo = sopra l'obiettivo. Restituisce `null` per gli obiettivi non
- * dichiarati invece di zero: «nessun obiettivo» e «obiettivo centrato» sono
- * cose diverse, e un grafico che le confonde mente.
- */
+/** Positivo = sopra l'obiettivo; null se l'obiettivo non è dichiarato. */
 export function scostamento(dieta: Dieta, giorno: Giorno, libreria?: Libreria): Scostamento {
   const t = totaleGiorno(giorno, libreria);
   const o = dieta.obiettivi;
@@ -108,10 +71,6 @@ export function scostamento(dieta: Dieta, giorno: Giorno, libreria?: Libreria): 
     parziale: t.mancanti.length > 0,
   };
 }
-
-/* ------------------------------------------------------------------ */
-/* Navigazione                                                         */
-/* ------------------------------------------------------------------ */
 
 export const giornoDi = (dieta: Dieta, indice: number): Giorno | undefined =>
   dieta.giorni.find((g) => g.indice === indice);
@@ -130,13 +89,7 @@ export function alimentoIn(dieta: Dieta, pos: Posizione): Alimento | undefined {
   return pastoDi(dieta, pos.giorno, pos.pastoId)?.alimenti[pos.indice];
 }
 
-/**
- * Dove sta un alimento nominato, cercando prima nel giorno indicato.
- *
- * Preferire il giorno corrente non è un dettaglio: «posso cambiare il pollo?»
- * significa quasi sempre quello di oggi, e trovare per primo quello di giovedì
- * porta a proporre una sostituzione su un pasto a cui il cliente non pensava.
- */
+/** Cerca prima nel giorno indicato. */
 export function trovaAlimento(
   dieta: Dieta,
   nome: string,
@@ -153,9 +106,7 @@ export function trovaAlimento(
     ...dieta.giorni.map((g) => g.indice).filter((i) => i !== giornoPreferito),
   ];
 
-  // Due passate: prima le corrispondenze esatte su tutti i giorni, poi quelle
-  // parziali. Senza, «riso» in un giorno lontano vincerebbe su «riso integrale»
-  // nel giorno di oggi.
+  // Prima le corrispondenze esatte, poi le parziali.
   for (const esatta of [true, false]) {
     for (const indice of ordine) {
       const giorno = giornoDi(dieta, indice);
@@ -191,10 +142,6 @@ export function nomiDeiPasti(dieta: Dieta): { id: string; nome: string; giorno: 
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Presentazione                                                       */
-/* ------------------------------------------------------------------ */
-
 export function scriviQuantita(a: Alimento): string {
   if (a.libera || a.quantita === null) return 'q.b.';
   const n = Math.round(a.quantita * 10) / 10;
@@ -205,16 +152,11 @@ export const scriviAlimento = (a: Alimento): string => `${a.nome} ${scriviQuanti
 
 export const nomeGiorno = (indice: number): string => NOMI_GIORNI[indice] ?? '—';
 
-/** Vuota davvero: nessun alimento in nessun giorno. Non basta avere dei pasti. */
+/** Nessun alimento in nessun giorno. */
 export const dietaVuotaDavvero = (dieta: Dieta): boolean =>
   !dieta.giorni.some((g) => g.pasti.some((p) => p.alimenti.length > 0));
 
-/**
- * Gli alimenti di cui manca la composizione, con dove compaiono.
- *
- * È l'elenco che l'editor mostra al professionista perché li completi: finché
- * non lo fa, i totali della dieta restano incompleti e lui lo vede scritto.
- */
+/** Alimenti senza composizione, con dove compaiono. */
 export function alimentiDaCompletare(
   dieta: Dieta,
   libreria?: Libreria,

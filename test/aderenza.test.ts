@@ -1,13 +1,3 @@
-/**
- * L'aderenza, e la promessa che regge il piano a sostituzione:
- *
- *   CHI RISPETTA LE SOSTITUZIONI PREVISTE NON PERDE ADERENZA.
- *
- * È una promessa che si fa al cliente nell'interfaccia, quindi va verificata
- * qui: se scendesse comunque, l'applicazione direbbe una cosa e ne farebbe
- * un'altra, e il cliente smetterebbe di fidarsi anche del resto.
- */
-
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
@@ -116,20 +106,13 @@ describe('aderenza e piano a sostituzione', () => {
     assert.equal(a.pastiFuoriPiano, 1);
   });
 
-  /*
-   * Una sostituzione vive sull'indice del giorno (tutti i martedì), non su una
-   * data: senza il vincolo sulla data in cui è stata fatta, quella di oggi
-   * riscriverebbe all'indietro le settimane già passate e l'aderenza di ieri
-   * cambierebbe per una scelta di domani.
-   */
   it('non si applica ai giorni precedenti a quando è stata fatta', () => {
     const spunte = tuttoFatto(dieta, [1, 8]);
     const soloDaIeri: SostituzioneAttiva[] = [
       { giorno: indiceIeri, pastoId: pranzoIeri, dal: ieri, nelPiano: false },
     ];
 
-    // Finestra di quindici giorni: comprende sia ieri sia otto giorni fa, che
-    // cadono nello stesso giorno della settimana e sullo stesso pasto.
+    // Ieri e otto giorni fa: stesso giorno della settimana e pasto.
     const a = calcolaAderenza(dieta, spunte, OGGI, 15, soloDaIeri);
     assert.equal(a.pastiFuoriPiano, 1, 'solo il pasto di ieri è deviato');
   });

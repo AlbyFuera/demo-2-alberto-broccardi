@@ -1,35 +1,3 @@
-/**
- * Secondo piano di collaudo — schema "Alim A / Alim B".
- *
- * Serve a verificare che lo schema dati sia GENERICO e non modellato sul primo
- * caso. Questo piano è strutturalmente diverso dall'altro:
- *
- *  - le porzioni di carboidrati sono espresse in grammi di NUTRIENTE
- *    ("50 g carb per pasto"), non in grammi di alimento;
- *  - ci sono due regimi alternati con un calendario fisso (lun-gio A,
- *    ven-sab B, dom A);
- *  - i pasti sono 5 o 6, con un sesto pasto facoltativo a collocazione libera;
- *  - le verdure non hanno peso;
- *  - non ci sono pasti fissi, pasti "tutti diversi" né pattern di ripetizione.
- *
- * ─────────────────────────────────────────────────────────────────────────
- * DA CONFERMARE DAL PROFESSIONISTA — il software non può decidere al posto suo:
- *
- *  1. VALORI DI CARBOIDRATI. Sono il dato che determina quanto il paziente si
- *     mette nel piatto. Quelli qui sotto sono valori di composizione tipici e
- *     vanno confermati uno per uno. Riscontro incoraggiante: il piano dice
- *     "patate americane 250 g", e 250 g × ~20 g/100 g = 50 g di carboidrati,
- *     coerente con la quota di Alim A.
- *  2. LA MELA nei pasti 4-A e 2-B: è IN AGGIUNTA alla quota di carboidrati
- *     (interpretazione adottata) oppure ne fa le veci?
- *  3. PATATE AMERICANE: indicate solo sotto Alim A a 250 g. In Alim B la quota
- *     è 70 g di carboidrati: la porzione andrebbe a ~350 g. Sono ammesse?
- *  4. PASTO LIBERO della domenica: sostituisce un pasto (interpretazione
- *     adottata) o si aggiunge ai cinque?
- *  5. QUALE PASTO sostituisce il pasto libero. Qui è impostato il pasto 5.
- *  6. "Acqua 3/4 LT" è stato letto come 3 litri, 4 nei giorni di allenamento.
- */
-
 import type { FoodOption, MealTemplate, NutritionPlan, Slot } from '../types.ts';
 
 type Extra = Partial<Omit<FoodOption, 'id' | 'label' | 'qty' | 'unit'>>;
@@ -48,7 +16,6 @@ const f = (
 /*                                                                     */
 /* `qty` è irrilevante: la porzione vera la calcola il motore dalla    */
 /* quota di nutriente dello slot. `nutrients.carboidrati` è il valore  */
-/* DA CONFERMARE.                                                      */
 /* ------------------------------------------------------------------ */
 
 const carb = (
@@ -145,7 +112,6 @@ const PLATESSA_200 = f('platessa-200', 'platessa', 200, 'g', 'Pesce', {
 });
 
 /* ------------------------------------------------------------------ */
-/* ALIM A — 50 g di carboidrati per pasto, 5 pasti (+1 facoltativo)    */
 /* ------------------------------------------------------------------ */
 
 const A_CARBO = () => slotCarbo(50, true);
@@ -238,7 +204,6 @@ const ALIM_A: MealTemplate[] = [
 ];
 
 /* ------------------------------------------------------------------ */
-/* ALIM B — 70 g di carboidrati per pasto, 5 pasti + 6° senza carbo    */
 /* ------------------------------------------------------------------ */
 
 const B_CARBO = () => slotCarbo(70, false);
@@ -337,7 +302,7 @@ export const pianoAlimAB: NutritionPlan = {
     { id: 'a', label: 'Alim A', meals: ALIM_A },
     { id: 'b', label: 'Alim B', meals: ALIM_B },
   ],
-  // Lun A · Mar A · Mer A · Gio A · Ven B · Sab B · Dom A
+  // Lun-Gio e Dom: Alim A. Ven-Sab: Alim B.
   schedule: ['a', 'a', 'a', 'a', 'b', 'b', 'a'],
 
   generalRules: [
@@ -357,7 +322,6 @@ export const pianoAlimAB: NutritionPlan = {
     repeatPatterns: [],
     freeMeals: 1,
     freeMealDefaultMeal: 'pasto-5',
-    // "Dom a + 1 pasto libero": il pasto libero cade di domenica.
     freeMealForbidden: [{ days: [0, 1, 2, 3, 4, 5] }],
     alcoholUnitsMax: 0,
     waterLitersPerDay: 3,

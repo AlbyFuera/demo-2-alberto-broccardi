@@ -1,22 +1,3 @@
-/**
- * Cambio di un pasto intero, a calorie invariate.
- *
- * L'equivalenza (`equivalenza.ts`) sostituisce UN alimento. Qui si sostituisce
- * un PASTO: il cliente non ha voglia del pranzo di oggi e ne vuole un altro che
- * non gli sfasi la giornata.
- *
- * DA DOVE ESCONO I PASTI PROPOSTI, ed è la scelta che regge tutto: dagli ALTRI
- * GIORNI DELLA SUA STESSA DIETA. Non da una tabella di ricette, non
- * dall'invenzione di un modello. Sono pasti che il suo nutrizionista ha già
- * scritto per lui, quindi già adatti alle sue intolleranze, ai suoi gusti e ai
- * suoi obiettivi — e lo scambio si limita a spostarli di giorno.
- *
- * Questo è ciò che permette al cambio di avvenire SENZA approvazione: non si sta
- * concedendo niente di nuovo, si sta permettendo al cliente di mangiare giovedì
- * quello che avrebbe mangiato sabato. Un motore che inventasse pasti nuovi
- * dovrebbe invece passare dal professionista, perché starebbe scrivendo dieta.
- */
-
 import type { Dieta, Pasto, Valori } from '../types.ts';
 import type { Libreria } from './composizione.ts';
 import { nomeGiorno, totalePasto } from './dieta.ts';
@@ -34,13 +15,7 @@ export interface PastoAlternativo {
   parziale: boolean;
 }
 
-/**
- * Quanto un pasto alternativo può discostarsi, in percentuale sulle calorie.
- *
- * Il quindici per cento su un pranzo da 600 kcal sono novanta: una differenza
- * che si assorbe nella giornata. Oltre non è più «lo stesso pranzo di un altro
- * giorno», è un'altra dieta, e quella la scrive il professionista.
- */
+/** Scostamento massimo sulle kcal del pasto. */
 const SCOSTAMENTO_MASSIMO = 0.15;
 
 /** Perché due pasti siano confrontabili devono avere lo stesso ruolo. */
@@ -49,13 +24,7 @@ const stessoRuolo = (a: string, b: string): boolean => {
   return n(a) === n(b);
 };
 
-/**
- * I pasti con cui si può scambiare quello di oggi.
- *
- * Solo pasti con lo STESSO NOME: si scambia un pranzo con un pranzo. Scambiare
- * il pranzo con una colazione rispetterebbe le calorie e produrrebbe fette
- * biscottate alle tredici — aritmeticamente giusto, umanamente assurdo.
- */
+/** Solo pasti con lo stesso nome. */
 export function pastiAlternativi(
   dieta: Dieta,
   giorno: number,
@@ -77,9 +46,6 @@ export function pastiAlternativi(
       .join('+');
 
   const trovati: PastoAlternativo[] = [];
-  // La firma del pasto ATTUALE entra subito fra quelle già viste: due giorni
-  // diversi possono avere lo stesso identico pranzo, e proporre al cliente
-  // quello che ha già nel piatto è peggio che non proporgli niente.
   const visti = new Set<string>([firmaDi(attuale)]);
 
   for (const g of dieta.giorni) {
@@ -88,8 +54,6 @@ export function pastiAlternativi(
       if (!stessoRuolo(p.nome, attuale.nome)) continue;
       if (p.alimenti.length === 0) continue;
 
-      // Due giorni possono avere lo stesso identico pasto: proporlo due volte
-      // fa sembrare che ci sia più scelta di quanta ce ne sia.
       const firma = firmaDi(p);
       if (visti.has(firma)) continue;
       visti.add(firma);

@@ -1,30 +1,4 @@
-/**
- * Dal PDF del nutrizionista alla dieta strutturata.
- *
- * Due passaggi, entrambi su Workers AI e senza dipendenze da installare:
- *
- *   1. `AI.toMarkdown` converte il PDF in testo. Non è un modello linguistico,
- *      è un convertitore: legge il documento e restituisce quello che c'è
- *      scritto, senza interpretarlo.
- *   2. un modello legge quel testo e ne trascrive i pasti, una riga per alimento.
- *
- * IL PUNTO CHE CONTA, e che vale la pena leggere prima di toccare questo file:
- * quello che esce dal passo 2 è una PROPOSTA DI LETTURA, non una dieta. Il
- * professionista la vede nell'editor e la corregge dove il modello ha sbagliato.
- * Non c'è modo di saltare quel passaggio, ed è deliberato: un modello che legge
- * «150 g» dove c'era scritto «15 g» produce una dieta plausibile e sbagliata, e
- * nessuno se ne accorgerebbe più.
- *
- * Il PDF originale resta comunque scaricabile dal cliente. Se la lettura ha
- * sbagliato qualcosa, la carta del suo nutrizionista è sempre lì.
- *
- * ATTENZIONE, costa mezz'ora a chi non lo sa: WORKERS AI METTE IN CACHE le
- * risposte. Caricando due volte lo STESSO PDF si riceve la stessa risposta,
- * anche se nel frattempo il prompt è cambiato — durante lo sviluppo di questo
- * file sembrava che il modello ignorasse le istruzioni nuove, e invece stava
- * rispondendo la cache. Per provare una modifica al prompt serve un documento
- * diverso, non lo stesso.
- */
+// Workers AI mette in cache le risposte: per provare un prompt nuovo usa un PDF diverso.
 
 import type { Dieta, Giorno, Pasto, Unita } from '../src/types.ts';
 import { dietaVuota } from '../src/types.ts';
@@ -33,31 +7,19 @@ import type { Env } from './types.ts';
 /** Oltre questa dimensione il PDF non entra in una riga di D1. */
 export const LIMITE_PDF = 700 * 1024;
 
-/**
- * Il modello che trascrive il PDF.
- *
- * NON è quello che parla al cliente. Qui serve un modello VELOCE: la lettura
- * avviene dentro una richiesta HTTP, e il modello da 70 miliardi di parametri —
- * ottimo per scrivere una frase — impiegava troppo e faceva terminare il Worker
- * prima di rispondere. Trascrivere un elenco di alimenti è un lavoro meccanico,
- * e un modello più piccolo lo fa bene e in un paio di secondi.
- */
+// Modello piccolo: quello da 70B supera il tempo limite del Worker.
 const MODELLO_LETTURA = '@cf/meta/llama-3.1-8b-instruct-fast';
 
 export interface EsitoLettura {
   ok: boolean;
-  /** Il testo estratto dal PDF, mostrato al professionista per il confronto. */
+  /** Il testo estratto dal PDF. */
   testo?: string;
   /** I giorni ricavati, da confermare. */
   giorni?: Giorno[];
-  /** Quello che la lettura non ha capito, da dire a voce alta. */
+  /** Quello che la lettura non ha capito. */
   avvisi: string[];
   motivo?: string;
 }
-
-/* ------------------------------------------------------------------ */
-/* 1 · Dal PDF al testo                                                */
-/* ------------------------------------------------------------------ */
 
 export async function testoDelPdf(
   env: Env,
@@ -75,28 +37,12 @@ export async function testoDelPdf(
     const testo = typeof primo?.data === 'string' ? primo.data : null;
     return testo?.trim() || null;
   } catch {
-    // Convertitore non disponibile, PDF illeggibile, quota: si dirà al
-    // professionista che deve scrivere la dieta a mano, non si tirerà a indovinare.
+    // Senza testo il professionista scrive la dieta a mano.
     return null;
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* 2 · Dal testo ai pasti                                              */
-/* ------------------------------------------------------------------ */
-
-/**
- * Si chiede al modello UNA RIGA per alimento, non un JSON annidato.
- *
- * Prima era JSON, e il modello lo sbagliava in un modo istruttivo: produceva
- * `},"nome":"Pranzo"` invece di `},{"nome":"Pranzo"` — una graffa mancante su
- * duemila caratteri, e tutta la lettura da buttare.
- *
- * Un formato piatto non ha annidamento da sbagliare. Se una riga esce storta si
- * scarta quella riga e le altre restano buone, mentre una parentesi fuori posto
- * annulla l'intero documento. Per un lavoro di trascrizione conta più questo che
- * l'eleganza del formato.
- */
+// Formato a righe invece di JSON: il modello sbagliava le graffe.
 const SYSTEM_LETTURA = `Trascrivi una dieta scritta da un nutrizionista.
 
 Rispondi SOLO con delle righe, una per alimento, in questo formato esatto:
@@ -129,12 +75,7 @@ commento, nessun blocco di codice.`;
 
 const UNITA_AMMESSE = new Set(['g', 'ml', 'pz']);
 
-/**
- * Dalle righe del modello ai giorni. Niente entra senza passare da qui.
- *
- * Una riga che non torna si SCARTA e si dichiara: meglio sei pasti letti bene e
- * un avviso su una riga saltata, che sette pasti di cui uno inventato.
- */
+/** Dalle righe del modello ai giorni; le righe storte si scartano. */
 function daRighe(
   risposta: string,
   nuovoId: () => string,
@@ -179,7 +120,7 @@ function daRighe(
     const chiave = (nomePasto || 'Pasto').toLowerCase();
 
     const pasto: Pasto = pasti.get(chiave) ?? {
-      // Gli id li fa il server, sempre: ci puntano le spunte e le variazioni.
+      // Id generati dal server: li usano spunte e variazioni.
       id: nuovoId(),
       nome: (nomePasto || 'Pasto').slice(0, 40),
       orario: orario ? orario.slice(0, 10) : undefined,
@@ -213,13 +154,7 @@ function daRighe(
   return { giorni, avvisi };
 }
 
-/**
- * Legge il PDF e restituisce i giorni da far confermare.
- *
- * Ogni fallimento è dichiarato e non silenzioso: se la lettura non riesce, il
- * professionista lo sa e scrive la dieta a mano — che è come funzionava prima e
- * funziona ancora.
- */
+/** Legge il PDF e restituisce i giorni da far confermare. */
 export async function leggiPdf(
   env: Env,
   nome: string,
@@ -239,22 +174,12 @@ export async function leggiPdf(
 
   if (!env.AI) return { ok: false, avvisi: [], motivo: 'Lettura automatica non disponibile.' };
 
-  // Via l'intestazione che il convertitore mette davanti: versione del PDF, data
-  // di creazione, produttore. Non c'entra nulla con la dieta e occupa il
-  // contesto del modello con roba che lo distrae.
+  // Toglie l'intestazione del convertitore (versione, data, produttore).
   const soloContenuto = testo.includes('## Contents')
     ? testo.slice(testo.indexOf('## Contents') + '## Contents'.length)
     : testo;
 
-  /*
-   * UNA SOLA chiamata, e con l'ingresso tagliato.
-   *
-   * Un secondo tentativo c'era e faceva più danni del problema che risolveva:
-   * due generazioni dentro la stessa richiesta superavano il tempo massimo di un
-   * Worker, che veniva terminato — e il professionista si ritrovava un errore
-   * interno invece di una bozza. Meglio una lettura che a volte non riesce, con
-   * il testo estratto pronto da incollare.
-   */
+  // Una sola chiamata: due superano il tempo limite del Worker.
   let risposta: string | null = null;
   try {
     const esito = (await env.AI.run(MODELLO_LETTURA, {

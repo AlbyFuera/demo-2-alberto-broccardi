@@ -1,21 +1,3 @@
-/**
- * Generatore della settimana.
- *
- * Non usa modelli linguistici: comporre una settimana rispettando alimenti,
- * quantità, pattern di ripetizione e frequenze è un problema di soddisfacimento
- * di vincoli. In codice è istantaneo, riproducibile e verificabile.
- *
- * Strategia:
- *  1. la settimana viene divisa in "unità di composizione" (un pasto fisso vale
- *     per 7 giorni, una coppia di pranzi per 2, una cena per 1);
- *  2. le frequenze minime vengono PRE-ASSEGNATE alle unità che possono ospitarle,
- *     invece di sperare che escano a caso;
- *  3. le frequenze massime sono un contatore che vieta le scelte in eccesso;
- *  4. si compone, si valida, e se qualcosa non torna si ritenta con un altro seed.
- *
- * Il risultato passa comunque dal validatore prima di essere restituito.
- */
-
 import type {
   ComboRule,
   FoodOption,
@@ -32,9 +14,7 @@ import { DAY_NAMES } from '../types.ts';
 import { expectedPortion, mealsForDay } from './plan.ts';
 import { validate } from './validator.ts';
 
-/* ------------------------------------------------------------------ */
-/* PRNG deterministico: stesso seed -> stessa settimana.               */
-/* ------------------------------------------------------------------ */
+/* PRNG deterministico: stesso seed -> stessa settimana. */
 
 export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
@@ -75,21 +55,12 @@ export function signatureOf(items: PlannedItem[]): string {
     .join('|');
 }
 
-/**
- * Fissa la porzione effettiva di un alimento.
- *
- * Negli slot espressi in nutriente ("50 g di carboidrati") il peso non sta nel
- * piano: va calcolato. Qui viene inciso nell'alimento scelto, così che lista
- * della spesa, tabella e validatore lavorino tutti sullo stesso numero.
- */
 function materialize(slot: Slot, food: FoodOption): FoodOption {
   const portion = expectedPortion(slot, food);
   return portion.derived ? { ...food, qty: portion.qty } : food;
 }
 
-/* ------------------------------------------------------------------ */
-/* Unità di composizione                                               */
-/* ------------------------------------------------------------------ */
+/* Unità di composizione */
 
 interface CompositionUnit {
   id: string;
@@ -122,8 +93,6 @@ function buildUnits(plan: NutritionPlan, includeOptional: Set<string>): Composit
       if (tpl.optional && !includeOptional.has(tpl.id)) continue;
 
       const made: CompositionUnit[] = [];
-      // Ogni unità deve avere i PROPRI array: condividerli via spread
-      // significherebbe che assegnare "pesce" a una cena lo assegna a tutte.
       const unit = (id: string, unitDays: number[]): CompositionUnit => ({
         id,
         mealId: tpl.id,
@@ -134,8 +103,6 @@ function buildUnits(plan: NutritionPlan, includeOptional: Set<string>): Composit
       });
 
       if (S.fixedMeals.includes(tpl.id)) {
-        // Un pasto "identico tutti i giorni" lo è all'interno del suo regime:
-        // due regimi diversi hanno per definizione pasti diversi.
         made.push(unit(`${variantKey}:${tpl.id}#fisso`, days));
       } else {
         const rp = S.repeatPatterns.find((r) => r.meal === tpl.id);
@@ -160,8 +127,6 @@ function buildUnits(plan: NutritionPlan, includeOptional: Set<string>): Composit
     }
   }
 
-  // I pasti "tutti diversi" lo sono sull'intera settimana, anche a cavallo di
-  // regimi; i gruppi di un pattern devono differire tra loro.
   for (const [mealId, made] of byMeal) {
     const unique =
       S.allDifferentMeals.includes(mealId) || S.repeatPatterns.some((r) => r.meal === mealId);
@@ -172,22 +137,15 @@ function buildUnits(plan: NutritionPlan, includeOptional: Set<string>): Composit
   return units;
 }
 
-/**
- * Giorni che condividono la stessa composizione di un pasto.
- * Serve alle sostituzioni: cambiare il pranzo del lunedì significa
- * cambiare anche quello del martedì, se il piano li tiene appaiati.
- */
 export function unitDaysFor(plan: NutritionPlan, mealId: string, day: number): number[] {
-  // Il pasto va incluso anche se facoltativo: se è nel piatto, esiste.
+  // Il pasto va incluso anche se facoltativo.
   const unit = buildUnits(plan, new Set([mealId])).find(
     (u) => u.mealId === mealId && u.days.includes(day),
   );
   return unit ? unit.days.slice() : [day];
 }
 
-/* ------------------------------------------------------------------ */
-/* Capacità: quali unità possono ospitare un certo tag                 */
-/* ------------------------------------------------------------------ */
+/* Capacità: quali unità possono ospitare un certo tag */
 
 function foodsOfMeal(tpl: MealTemplate): FoodOption[] {
   const out = tpl.slots.flatMap((s) => s.options);
@@ -199,11 +157,6 @@ function canHost(tpl: MealTemplate, tag: string): boolean {
   return foodsOfMeal(tpl).some((f) => f.tags?.includes(tag));
 }
 
-/**
- * Pre-assegna i tag necessari a soddisfare le frequenze minime.
- * Senza questo passaggio "pesce almeno 2 volte" verrebbe soddisfatto solo
- * per fortuna, e il generatore passerebbe il tempo a ritentare.
- */
 function assignRequiredTags(plan: NutritionPlan, units: CompositionUnit[], rng: Rng): void {
   for (const rule of plan.frequencies) {
     if (rule.min === undefined || rule.min <= 0) continue;
@@ -212,8 +165,6 @@ function assignRequiredTags(plan: NutritionPlan, units: CompositionUnit[], rng: 
     if (hosts.length === 0) continue;
 
     if (rule.per === 'week') {
-      // Copertura settimanale: sommo i giorni finché raggiungo il minimo.
-      // Preferisco le unità "leggere" (1 giorno) per non saturare la settimana.
       const pool = shuffled(hosts, rng).sort((a, b) => a.days.length - b.days.length);
       let covered = 0;
       for (const u of pool) {
@@ -231,8 +182,6 @@ function assignRequiredTags(plan: NutritionPlan, units: CompositionUnit[], rng: 
       }
       for (let d = 0; d < 7; d++) {
         while ((perDay.get(d) ?? 0) < rule.min) {
-          // Preferisco l'unità che copre più giorni: una sola scelta risolve
-          // il vincolo per l'intera settimana (es. la colazione fissa).
           const cand = shuffled(
             hosts.filter((u) => u.days.includes(d) && !u.requiredTags.includes(rule.tag)),
             rng,
@@ -246,9 +195,7 @@ function assignRequiredTags(plan: NutritionPlan, units: CompositionUnit[], rng: 
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* Composizione di un singolo pasto                                    */
-/* ------------------------------------------------------------------ */
+/* Composizione di un singolo pasto */
 
 interface Ctx {
   plan: NutritionPlan;
@@ -312,8 +259,6 @@ function composeUnit(ctx: Ctx, unit: CompositionUnit): PlannedItem[] | null {
   const coveredSlots = new Set<string>();
   const slotById = new Map(tpl.slots.map((s) => [s.id, s]));
 
-  /* 1. Le combo (es. "cereali + legumi" al posto di carbo+proteine) sono il
-        modo più naturale di soddisfare certi tag: le provo per prime. */
   const combos = tpl.combos ?? [];
   const viableParts = (c: ComboRule) =>
     c.parts.map((p) => p.options.filter((o) => !wouldExceedMax(ctx, o, mult)));
@@ -326,8 +271,6 @@ function composeUnit(ctx: Ctx, unit: CompositionUnit): PlannedItem[] | null {
   if (helpful.length > 0 && ctx.rng() < 0.85) {
     combo = shuffled(helpful.filter(usable), ctx.rng)[0] ?? null;
   } else if (combos.length > 0 && pending.size === 0) {
-    // La probabilità cala man mano che la combo viene riutilizzata: senza
-    // questo smorzamento la stessa sostituzione comparirebbe tutta la settimana.
     const used = ctx.usage.get(`combo:${combos[0].id}`) ?? 0;
     if (ctx.rng() < 0.18 / (1 + used)) {
       combo = shuffled(combos.filter(usable), ctx.rng)[0] ?? null;
@@ -337,8 +280,6 @@ function composeUnit(ctx: Ctx, unit: CompositionUnit): PlannedItem[] | null {
   if (combo) {
     ctx.usage.set(`combo:${combo.id}`, (ctx.usage.get(`combo:${combo.id}`) ?? 0) + 1);
     for (const part of combo.parts) {
-      // Anche dentro la combo si sceglie: "cereali + legumi" non significa
-      // sempre lo stesso cereale e sempre gli stessi legumi.
       let pool = part.options.filter((o) => !wouldExceedMax(ctx, o, mult));
       const needed = pool.filter((o) => [...pending].some((t) => o.tags?.includes(t)));
       if (needed.length > 0) pool = needed;
@@ -358,8 +299,6 @@ function composeUnit(ctx: Ctx, unit: CompositionUnit): PlannedItem[] | null {
     for (const s of combo.replaces) coveredSlots.add(s);
   }
 
-  /* 2. Assegno i tag ancora scoperti agli slot che possono ospitarli,
-        partendo da quelli con meno alternative (più vincolati). */
   const openSlots = tpl.slots.filter((s) => !coveredSlots.has(s.id));
   const slotTag = new Map<string, string>();
   for (const tag of pending) {
@@ -384,8 +323,6 @@ function composeUnit(ctx: Ctx, unit: CompositionUnit): PlannedItem[] | null {
 
     if (pool.length === 0) {
       if (slot.optional && !needTag) continue;
-      // Il vincolo di massimale ha svuotato lo slot: questa unità non è
-      // componibile in questo stato. Si ritenta con un altro seed.
       return null;
     }
 
@@ -406,9 +343,7 @@ function composeUnit(ctx: Ctx, unit: CompositionUnit): PlannedItem[] | null {
   return items;
 }
 
-/* ------------------------------------------------------------------ */
-/* Generazione della settimana                                         */
-/* ------------------------------------------------------------------ */
+/* Generazione della settimana */
 
 export interface ExternalMeal {
   day: number;
@@ -426,10 +361,6 @@ export interface GenerateOptions {
   alcoholUnits?: number;
   /** Pasti facoltativi che il paziente ha scelto di fare. */
   includeOptional?: string[];
-  /**
-   * Ripianificazione: mantiene invariati i pasti già consumati.
-   * Richiede `previous`.
-   */
   keep?: { day: number; meals?: string[] }[];
   previous?: WeekPlan;
 }
@@ -477,8 +408,6 @@ function attemptWeek(plan: NutritionPlan, seed: number, opts: GenerateOptions): 
   const frozen = frozenCompositions(units, opts);
   const composed = new Map<string, PlannedItem[]>();
 
-  // Le unità congelate vanno registrate per prime, così i contatori dei
-  // massimali tengono conto di ciò che è già stato mangiato.
   for (const unit of units) {
     const items = frozen.get(unit.id);
     if (!items) continue;
@@ -521,9 +450,6 @@ function attemptWeek(plan: NutritionPlan, seed: number, opts: GenerateOptions): 
       const unit = units.find((u) => u.mealId === tpl.id && u.days.includes(d));
       if (!unit) continue;
       const source = composed.get(unit.id)!;
-      // Ogni giorno riceve la PROPRIA copia: un'unità copre più giorni, e
-      // condividere l'array significherebbe che modificare il pranzo di lunedì
-      // cambia in silenzio anche quello di martedì.
       const items = source.map((it) => ({ ...it }));
       meals.push({ mealId: tpl.id, kind: 'plan', items, signature: signatureOf(items) });
     }
@@ -581,7 +507,7 @@ function applyFreeMeal(
 
   let day: number | undefined = request.day;
   if (day === undefined) {
-    // Di default il pasto libero sta nel fine settimana, dove è più realistico.
+    // Di default il pasto libero sta nel fine settimana.
     const preferred = shuffled([5, 6, 4], rng).filter((d) => !forbidden(d) && isFree(d));
     const fallback = shuffled([0, 1, 2, 3], rng).filter((d) => !forbidden(d) && isFree(d));
     day = preferred[0] ?? fallback[0];

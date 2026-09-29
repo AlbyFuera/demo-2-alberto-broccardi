@@ -1,21 +1,4 @@
-/**
- * Accesso ai dati su D1.
- *
- * Tutto il SQL del prodotto sta qui. Il resto del Worker chiama funzioni con
- * nomi in italiano e non sa che esiste un database.
- *
- * Tre regole rispettate in ogni query:
- *
- *  1. **Sempre parametri**, mai concatenazione di stringhe. Nessuna eccezione,
- *     nemmeno per i numeri.
- *  2. **Sempre il filtro sul proprietario.** Ogni lettura porta nel WHERE
- *     `nutritionist_id` o `client_id` dell'utente della sessione. Non si
- *     recupera una dieta per chiave e poi si controlla a chi appartiene: il
- *     controllo sta nella query, così non lo si può dimenticare.
- *  3. **Sempre il collegamento attivo.** Un professionista tocca i dati di un
- *     cliente solo se esiste una riga in `links` con status 'attivo'. È la
- *     differenza tra «ho ricevuto una richiesta» e «sono il suo nutrizionista».
- */
+// Ogni query: parametri, filtro sul proprietario, collegamento attivo.
 
 import type { Dieta } from '../src/types.ts';
 import { normalizza } from '../src/core/composizione.ts';
@@ -25,17 +8,15 @@ import { hashPassword, type PasswordHash } from './auth.ts';
 
 const oraISO = () => new Date().toISOString();
 
-/** Identificativi leggibili: in un log, `cli_9f3a…` dice più di un UUID nudo. */
+/** Identificativi con prefisso leggibile. */
 function nuovoId(prefisso: string): string {
   return `${prefisso}_${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`;
 }
 
-/** Le email si confrontano normalizzate, o "Mario@X.it" e "mario@x.it" sono due account. */
+/** Email normalizzate per il confronto. */
 export const normEmail = (email: string) => email.trim().toLowerCase();
 
-/* ------------------------------------------------------------------ */
-/* Utenti                                                             */
-/* ------------------------------------------------------------------ */
+// Utenti
 
 export interface RigaCredenziali extends PasswordHash {
   id: string;
@@ -75,13 +56,7 @@ export async function credenzialiPerEmail(
   };
 }
 
-/**
- * Crea un account.
- *
- * Solo email, password e ruolo: nome e tutto il resto arrivano dalle
- * impostazioni. Chiedere meno all'iscrizione è ciò che permette al cliente di
- * arrivare alla schermata «aggiungi il tuo nutrizionista» in venti secondi.
- */
+/** Crea un account. */
 export async function creaUtente(
   env: Env,
   dati: { email: string; password: string; ruolo: Ruolo },
@@ -128,8 +103,7 @@ export async function cambiaPassword(env: Env, userId: string, password: string)
     .bind(pw.hash, pw.salt, pw.iterations, userId)
     .run();
 
-  // Cambiata la password, le altre sessioni cadono: è ciò che un utente si
-  // aspetta quando la cambia perché teme che qualcuno sia entrato.
+  // Cambiata la password, le altre sessioni vengono chiuse.
   await env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(userId).run();
 }
 
@@ -137,9 +111,7 @@ export async function eliminaAccount(env: Env, userId: string): Promise<void> {
   await env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(userId).run();
 }
 
-/* ------------------------------------------------------------------ */
-/* Collegamenti                                                        */
-/* ------------------------------------------------------------------ */
+// Collegamenti
 
 export type StatoCollegamento = 'in-attesa' | 'attivo' | 'rifiutato';
 
@@ -158,13 +130,7 @@ export interface Collegamento {
   automazione: boolean;
 }
 
-/**
- * Cerca un professionista per email.
- *
- * Solo per email ESATTA, e restituisce solo il nome. Una ricerca per nome
- * parziale trasformerebbe l'elenco dei nutrizionisti iscritti in una rubrica
- * scaricabile da chiunque crei un account.
- */
+/** Cerca un professionista per email esatta; restituisce solo il nome. */
 export async function studioPerEmail(
   env: Env,
   email: string,
@@ -177,15 +143,7 @@ export async function studioPerEmail(
     .first<{ id: string; nome: string; email: string }>();
 }
 
-/**
- * Il cliente chiede di essere seguito.
- *
- * Rimandare la richiesta allo stesso studio aggiorna quella che c'è invece di
- * accumularne dieci: il cruscotto del professionista deve restare leggibile
- * anche se il cliente è impaziente. Una richiesta rifiutata può essere
- * rimandata — le persone si riconciliano, e un rifiuto definitivo per sempre
- * sarebbe una decisione presa dal software.
- */
+/** Richiesta di collegamento: se già esiste viene aggiornata. */
 export async function chiediCollegamento(
   env: Env,
   clienteId: string,
@@ -268,19 +226,11 @@ const daRigaCollegamento = (r: RigaCollegamento): Collegamento => ({
   stato: r.status,
   messaggio: r.message,
   richiestoIl: r.requested_at,
-  // `!== 0` e non `=== 1`: se un giorno la colonna dovesse arrivare come NULL —
-  // una migrazione andata a metà — l'automazione resta accesa, che è il
-  // comportamento storico. Un cliente senza risposte è peggio di uno con
-  // risposte automatiche.
+  // !== 0 di proposito: con NULL l'automazione resta accesa.
   automazione: r.auto_chat !== 0,
 });
 
-/**
- * Accende o spegne l'assistente per un cliente.
- *
- * Spento, ogni messaggio del cliente aspetta il professionista. È una scelta
- * che si prende sul singolo rapporto, non sullo studio intero.
- */
+/** Accende o spegne l'assistente per un cliente. */
 export async function impostaAutomazione(
   env: Env,
   studioId: string,
@@ -331,12 +281,7 @@ export async function collegamentiDelloStudio(
   return results.map(daRigaCollegamento);
 }
 
-/**
- * Il professionista è davvero il nutrizionista di quel cliente?
- *
- * Chiamata prima di ogni operazione su un cliente. Non è ridondante rispetto ai
- * filtri nelle query: è il controllo che permette a quelle di essere semplici.
- */
+/** Il professionista segue davvero quel cliente? */
 export async function collegamentoAttivo(
   env: Env,
   studioId: string,
@@ -351,9 +296,7 @@ export async function collegamentoAttivo(
   return riga !== null;
 }
 
-/* ------------------------------------------------------------------ */
-/* Diete                                                               */
-/* ------------------------------------------------------------------ */
+// Diete
 
 export type StatoDieta = 'bozza' | 'pubblicata' | 'archiviata';
 
@@ -432,14 +375,7 @@ export async function salvaDieta(
   return (esito.meta.changes ?? 0) > 0;
 }
 
-/**
- * Pubblica una dieta: da questo momento il cliente la vede.
- *
- * La dieta pubblicata precedente dello stesso cliente passa ad 'archiviata',
- * non viene cancellata. Un cliente ha una dieta attiva sola — quale stia
- * seguendo deve avere una risposta unica — ma la storia di cosa ha seguito
- * resta, ed è la prima cosa che un professionista guarda alla visita dopo.
- */
+/** Pubblica una dieta e archivia la precedente. */
 export async function pubblicaDieta(
   env: Env,
   studioId: string,
@@ -474,7 +410,7 @@ export async function eliminaDieta(env: Env, studioId: string, dietaId: string):
     .run();
 }
 
-/** La dieta che il cliente vede: solo pubblicata, mai una bozza. */
+/** La dieta pubblicata del cliente, mai una bozza. */
 export async function dietaDelCliente(env: Env, clienteId: string): Promise<DietaRiga | null> {
   const riga = await env.DB.prepare(
     `${SELECT_DIETA} WHERE client_id = ? AND status = 'pubblicata' LIMIT 1`,
@@ -511,9 +447,7 @@ export async function dieteDelCliente(
   return results.map(daRigaDieta);
 }
 
-/* ------------------------------------------------------------------ */
-/* Libreria degli alimenti                                             */
-/* ------------------------------------------------------------------ */
+// Libreria degli alimenti
 
 export async function libreriaDelloStudio(env: Env, studioId: string): Promise<Libreria> {
   const { results } = await env.DB.prepare(
@@ -611,9 +545,7 @@ export async function elencoLibreria(
   }));
 }
 
-/* ------------------------------------------------------------------ */
-/* Variazioni — il canale verso il professionista                     */
-/* ------------------------------------------------------------------ */
+// Variazioni
 
 export interface VariazioneRiga {
   id: string;
@@ -638,13 +570,7 @@ export interface VariazioneRiga {
   avvisi: string[];
   stato: 'nuova' | 'vista' | 'annullata';
   nota: string | null;
-  /**
-   * Era fra le alternative che il professionista aveva ammesso.
-   *
-   * Congelato al momento della scelta e mai ricalcolato: se lui cambia il piano
-   * domani, non deve far scendere retroattivamente l'aderenza di chi ieri aveva
-   * rispettato quello di ieri.
-   */
+  /** Era fra le alternative ammesse. Fissato alla scelta, non si ricalcola. */
   nelPiano: boolean;
 }
 
@@ -817,13 +743,7 @@ export async function segnaVariazioniViste(
     .run();
 }
 
-/**
- * Il professionista annulla una variazione del cliente.
- *
- * Restituisce le coordinate dell'alimento da rimettere com'era: è il chiamante
- * a toccare la dieta del cliente, perché quella scrittura deve avvenire
- * insieme al ricalcolo.
- */
+/** Il professionista annulla una variazione del cliente. */
 export async function annullaVariazione(
   env: Env,
   studioId: string,
@@ -848,9 +768,7 @@ export async function annullaVariazione(
   return daRigaVariazione(riga);
 }
 
-/* ------------------------------------------------------------------ */
-/* Domande girate allo studio                                          */
-/* ------------------------------------------------------------------ */
+// Domande girate allo studio
 
 export interface DomandaRiga {
   id: string;
@@ -870,7 +788,7 @@ export async function aggiungiDomanda(
   domanda: string,
   motivo: string,
 ): Promise<void> {
-  // Stessa domanda già aperta: non la si duplica. Allo studio non serve rumore.
+  // Stessa domanda già aperta: non si duplica.
   const gia = await env.DB.prepare(
     `SELECT 1 AS c FROM questions WHERE client_id = ? AND status = 'aperta' AND question = ?`,
   )
@@ -954,9 +872,7 @@ export async function rispondiDomanda(
     .run();
 }
 
-/* ------------------------------------------------------------------ */
-/* Messaggi — la conversazione fra cliente e studio                    */
-/* ------------------------------------------------------------------ */
+// Messaggi
 
 export type Autore = 'cliente' | 'studio' | 'assistente';
 
@@ -970,14 +886,7 @@ export interface Messaggio {
   letto: boolean;
 }
 
-/**
- * Scrive un messaggio nel filo.
- *
- * Ci finiscono anche le risposte dell'assistente, e non è una registrazione per
- * completezza: è ciò che permette al professionista che spegne l'automazione a
- * metà giornata di leggere cosa era stato detto al suo cliente prima, invece di
- * rispondere alla cieca.
- */
+/** Scrive un messaggio nel filo, anche quelli dell'assistente. */
 export async function scriviMessaggio(
   env: Env,
   ctx: { clienteId: string; studioId: string },
@@ -1015,13 +924,7 @@ const daRigaMessaggio = (r: RigaMessaggio): Messaggio => ({
   letto: r.read_at !== null,
 });
 
-/**
- * Il filo di un cliente, dal più vecchio al più recente.
- *
- * Si legge sempre filtrando sul cliente E sullo studio: il professionista che
- * cambia — un cliente che si scollega e si collega a un altro — non deve
- * trovarsi davanti le conversazioni di chi lo seguiva prima.
- */
+/** Il filo di un cliente, dal più vecchio. Filtra su cliente e studio. */
 export async function filoMessaggi(
   env: Env,
   clienteId: string,
@@ -1046,8 +949,6 @@ export async function segnaMessaggiLetti(
   studioId: string,
   chiLegge: 'cliente' | 'studio',
 ): Promise<void> {
-  // Il cliente legge quello che gli hanno scritto studio e assistente; lo
-  // studio legge quello che ha scritto il cliente. Nessuno «legge» i propri.
   const autori = chiLegge === 'cliente' ? `('studio', 'assistente')` : `('cliente')`;
 
   await env.DB.prepare(
@@ -1095,9 +996,7 @@ export async function messaggiNonLettiDelCliente(
 /** Un identificativo nuovo, per chi crea diete e pasti. */
 export { nuovoId };
 
-/* ------------------------------------------------------------------ */
-/* Passi                                                               */
-/* ------------------------------------------------------------------ */
+// Passi
 
 export async function salvaPassi(
   env: Env,
@@ -1128,9 +1027,7 @@ export async function passiRecenti(
   return results;
 }
 
-/* ------------------------------------------------------------------ */
-/* Pasti spuntati                                                      */
-/* ------------------------------------------------------------------ */
+// Pasti spuntati
 
 export type StatoPasto = 'fatto' | 'saltato';
 
@@ -1141,8 +1038,7 @@ export async function segnaPasto(
   pastoId: string,
   stato: StatoPasto | null,
 ): Promise<void> {
-  // `null` toglie la spunta: il cliente si è sbagliato, e tornare indietro deve
-  // essere possibile quanto spuntare.
+  // null toglie la spunta.
   if (stato === null) {
     await env.DB.prepare(
       `DELETE FROM meal_log WHERE client_id = ? AND day = ? AND meal_id = ?`,
@@ -1189,9 +1085,7 @@ export async function spunteRecenti(
   return results;
 }
 
-/* ------------------------------------------------------------------ */
-/* Il PDF della dieta                                                  */
-/* ------------------------------------------------------------------ */
+// PDF della dieta
 
 export async function salvaPdf(
   env: Env,
@@ -1210,7 +1104,7 @@ export async function salvaPdf(
     .run();
 }
 
-/** Solo i metadati: il contenuto non si porta dietro senza chiederlo. */
+/** Solo i metadati, senza il contenuto. */
 export async function infoPdf(
   env: Env,
   dietaId: string,

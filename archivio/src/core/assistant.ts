@@ -1,28 +1,10 @@
-/**
- * Assistente del paziente.
- *
- * ARCHITETTURA — è il punto su cui si regge tutto il prodotto:
- *
- *   il MOTORE stabilisce i fatti  →  l'AI li dice con la voce del professionista
- *
- * Mai il contrario. L'assistente non sa nulla di nutrizione e non deve saperlo:
- * ogni numero, ogni alimento, ogni "sì" e ogni "no" arrivano dal piano tramite
- * il validatore. L'AI riformula, non decide. Se il motore non sa rispondere,
- * l'assistente lo dice e gira la domanda allo studio — non improvvisa.
- *
- * Questo confine è ciò che rende il prodotto vendibile a un professionista: le
- * risposte sono le sue, non quelle di un modello linguistico.
- */
-
 import type { NutritionPlan, WeekPlan } from '../types.ts';
 import { DAY_NAMES } from '../types.ts';
 import { mealTemplate, mealsForDay } from './plan.ts';
 import { formatQuantity, substitutionsFor } from './substitutions.ts';
 import type { StyleProfile } from '../style/profile.ts';
 
-/* ------------------------------------------------------------------ */
-/* Interpretazione della domanda                                       */
-/* ------------------------------------------------------------------ */
+/* Interpretazione della domanda */
 
 export type IntentKind =
   | 'saluto'
@@ -61,14 +43,6 @@ const GIORNI: Record<string, number> = {
   venerdi: 4, sabato: 5, domenica: 6,
 };
 
-/**
- * Riconoscimento dell'intento.
- *
- * Deliberatamente meccanico: con una chiave API questo passaggio lo fa il
- * modello (vedi `llm.ts`), che capisce le frasi storte molto meglio. Ma il
- * risultato viaggia sempre attraverso la stessa struttura `Intent`, così il
- * resto del codice non cambia — e la risoluzione resta deterministica.
- */
 export function interpret(question: string, plan: NutritionPlan, today: number): Intent {
   const q = NORM(question);
 
@@ -84,7 +58,7 @@ export function interpret(question: string, plan: NutritionPlan, today: number):
   if (/\bdomani\b/.test(q)) day = (today + 1) % 7;
   if (/\bieri\b/.test(q)) day = (today + 6) % 7;
 
-  // Pasto citato: si cerca sull'elenco reale del piano, non su parole fisse.
+  // Pasto citato: si cerca sull'elenco reale del piano.
   let mealId: string | undefined;
   for (const tpl of mealsForDay(plan, day)) {
     if (q.includes(NORM(tpl.label))) mealId = tpl.id;
@@ -95,8 +69,6 @@ export function interpret(question: string, plan: NutritionPlan, today: number):
     else if (/\bcolazione\b/.test(q)) mealId = findMeal(plan, day, /colazione|pasto 1/i);
   }
 
-  // Nota sui confini di parola: "sostitu\b" non aggancia "sostituire", perché
-  // dopo "sostitu" la parola continua. Le radici vanno seguite da \w*.
   if (/\b(fuori|ristorante|invitat\w*|mangio fuori|non ci sono)\b/.test(q)) {
     return { kind: 'fuori-casa', day, mealId };
   }
@@ -142,9 +114,7 @@ function extractFood(q: string, plan: NutritionPlan, day: number): string | unde
   return best;
 }
 
-/* ------------------------------------------------------------------ */
-/* Risoluzione: i fatti li dà il motore                                */
-/* ------------------------------------------------------------------ */
+/* Risoluzione */
 
 export interface AssistantCard {
   kind: 'pasto' | 'alternative' | 'elenco';
@@ -164,10 +134,9 @@ export interface AssistantFlag {
 export interface AssistantReply {
   answer: string;
   cards: AssistantCard[];
-  /** Le regole del piano su cui poggia la risposta. Mostrate sempre. */
+  /** Le regole del piano su cui poggia la risposta. */
   citations: string[];
   flag?: AssistantFlag;
-  /** 'motore' = frase composta dal codice · 'ai' = riformulata dal modello. */
   source: 'motore' | 'ai';
   intent: Intent;
 }
@@ -234,12 +203,6 @@ function nextMeal(ctx: AssistantContext, hour: number): { day: number; mealId: s
   return { day: ctx.today, mealId: meals[idx >= 0 ? idx : meals.length - 1].id };
 }
 
-/**
- * Risolve la domanda contro il motore.
- *
- * Restituisce fatti, non prosa: la prosa arriva dopo, da `compose` o dal
- * modello. Tenerli separati è ciò che impedisce all'AI di inventare numeri.
- */
 export function resolve(ctx: AssistantContext, intent: Intent, hour: number): AssistantReply {
   const P = professional(ctx.plan);
   const cards: AssistantCard[] = [];
@@ -351,8 +314,6 @@ export function resolve(ctx: AssistantContext, intent: Intent, hour: number): As
         return { ...base, answer: `${found.label}: ${found.qty}. ${ctx.plan.weighingNote}` };
       }
 
-      // L'alimento può essere nel piano senza comparire in QUESTA settimana:
-      // la domanda riguarda il piano, non il menù di oggi.
       const fromPlan = intent.food ? portionsInPlan(ctx.plan, intent.food) : [];
       if (fromPlan.length > 0) {
         if (ctx.plan.weighingNote) citations.push(ctx.plan.weighingNote);
@@ -376,9 +337,6 @@ export function resolve(ctx: AssistantContext, intent: Intent, hour: number): As
 
     case 'regola': {
       const q = NORM(intent.topic ?? '');
-      // Verbi e riempitivi compaiono in quasi ogni domanda: se contano nel
-      // punteggio, "posso bere un caffè" pesca la regola sull'acqua perché
-      // contiene "bere". Le parole che distinguono sono i sostantivi.
       const VUOTE = new Set([
         'posso', 'puoi', 'devo', 'bere', 'mangiare', 'prendere', 'fare',
         'quanto', 'quanta', 'quando', 'come', 'cosa', 'oggi', 'domani',
@@ -386,9 +344,6 @@ export function resolve(ctx: AssistantContext, intent: Intent, hour: number): As
       ]);
       const parole = q.split(' ').filter((w) => w.length > 3 && !VUOTE.has(w));
 
-      // Si ordina per quante parole della domanda la regola contiene: prendere
-      // la prima che combacia su una parola qualsiasi risponde sull'acqua a chi
-      // ha chiesto del caffè.
       const regole = ctx.plan.generalRules
         .map((r) => ({ r, score: parole.filter((w) => NORM(r).includes(w)).length }))
         .filter((x) => x.score > 0)
@@ -487,17 +442,8 @@ function portionsInPlan(
   return out;
 }
 
-/* ------------------------------------------------------------------ */
-/* Voce del professionista                                             */
-/* ------------------------------------------------------------------ */
+/* Voce del professionista */
 
-/**
- * Il contesto di stile passato al modello.
- *
- * Contiene SOLO come parla il professionista e cosa ha stabilito — mai
- * conoscenze nutrizionali generiche. Se il modello non trova la risposta qui
- * dentro, la risposta non esiste.
- */
 export function styleBrief(plan: NutritionPlan, profile?: StyleProfile): string {
   const parts = [
     `Professionista: ${plan.professional.name}${plan.professional.register ? ` (${plan.professional.register})` : ''}.`,

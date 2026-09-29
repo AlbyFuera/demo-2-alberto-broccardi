@@ -1,58 +1,4 @@
-/*
- * Foglio di stile unico delle quattro schermate: accesso, registrazione,
- * studio, cliente.
- *
- * Due lettori diversi, due esigenze diverse:
- *
- *   il professionista guarda lo strumento tra due visite, di corsa, e deve
- *   vedere in un colpo d'occhio se c'è qualcosa che richiede la sua attenzione;
- *
- *   il cliente lo apre in piedi davanti al frigorifero, con una mano.
- *
- * Da qui le due scelte che governano tutto il resto: densità alta e gerarchia
- * severa per lo studio, elementi grandi e una colonna sola per il cliente.
- *
- * Nessun font esterno, nessuna icona scaricata: la Content-Security-Policy del
- * Worker vieta le richieste a terzi, e una pagina che non aspetta nulla da
- * fuori si apre anche in uno studio con la connessione dell'ospedale.
- *
- * ─────────────────────────────────────────────────────────────────────────
- * I SIMBOLI, e sono questi e nessun altro
- * ─────────────────────────────────────────────────────────────────────────
- *
- *   P   il marchio, un monogramma
- *   ✓   fatto, conforme, ammesso
- *   !   attenzione, qualcosa da guardare
- *   ✕   errore, chiudi, togli
- *   i   informazione, nota di contesto
- *   +   aggiungi
- *   →   direzione: da una cosa all'altra, o «è partita»
- *   ←   indietro, ripristina
- *   ↑   invia
- *   ⇄   sostituisci
- *   ≡   apri il pannello
- *   ≈   il numero è una stima, non un valore esatto
- *   ·   separatore, elemento di elenco
- *   —   qui non c'è ancora niente
- *
- * NESSUNA EMOJI. Non è una questione di gusto: un'emoji viene disegnata dal
- * sistema operativo, cambia forma tra un telefono e un computer, arriva a
- * colori dentro un'interfaccia che ha un accento solo, e su alcuni sistemi non
- * arriva affatto. Questi glifi sono testo: prendono il colore del testo,
- * seguono il peso del carattere e si stampano.
- *
- * Ognuno ha un significato, uno solo, sempre lo stesso. Un simbolo nuovo si
- * aggiunge qui prima di usarlo, o l'insieme smette di essere un insieme.
- */
-
 :root {
-  /*
-   * Solo chiaro. Il tema scuro c'era e seguiva il sistema operativo: è stato
-   * tolto perché una dieta si legge, si stampa e si mostra a un professionista,
-   * e la stessa schermata deve avere lo stesso aspetto su tutti gli schermi di
-   * chi la guarda. Un'interfaccia che cambia colore da sola è un'interfaccia di
-   * cui non si può dire com'è fatta.
-   */
   color-scheme: light;
 
   --sfondo: #f6f7f5;
@@ -65,7 +11,6 @@
   --testo-2: #5c665e;
   --testo-3: #8a938c;
 
-  /* Un solo accento, verde profondo: è un prodotto clinico, non un gioco. */
   --accento: #1f6b46;
   --accento-chiaro: #e8f2ec;
   --accento-scuro: #175135;
@@ -84,7 +29,6 @@
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
 }
-
 
 * {
   box-sizing: border-box;
@@ -138,7 +82,7 @@ a {
   color: var(--accento);
 }
 
-/* Il focus resta visibile: si usa con la tastiera più di quanto si creda. */
+/* Focus visibile per la navigazione da tastiera. */
 :focus-visible {
   outline: 2px solid var(--accento);
   outline-offset: 2px;
@@ -158,7 +102,7 @@ a {
   display: none !important;
 }
 
-/* ─────────────────────────────  controlli  ───────────────────────────── */
+/* Controlli */
 
 button,
 input,
@@ -270,7 +214,7 @@ label .aiuto {
   border-radius: 6px;
 }
 
-/* ─────────────────────────────  strutture  ───────────────────────────── */
+/* Strutture */
 
 .centrata {
   min-height: 100vh;
@@ -300,7 +244,7 @@ label .aiuto {
   margin-bottom: 1.75rem;
 }
 
-/* Il monogramma. Un carattere, il peso del titolo, nessun disegno da caricare. */
+/* Monogramma */
 .marchio .segno {
   display: grid;
   place-items: center;
@@ -325,13 +269,7 @@ label .aiuto {
   color: var(--testo-3);
 }
 
-/*
- * Barra superiore comune a studio e cliente.
- *
- * `viewport-fit=cover` fa arrivare la pagina sotto la tacca e sotto la barra di
- * stato: l'inset in alto è ciò che impedisce al nome dell'utente di finirci
- * sotto. Su un computer vale zero e non si vede.
- */
+/* Barra superiore: l'inset evita la tacca con viewport-fit=cover. */
 .barra {
   position: sticky;
   top: 0;
@@ -391,7 +329,7 @@ label .aiuto {
   max-width: 40rem;
 }
 
-/* ─────────────────────────────  avvisi  ───────────────────────────── */
+/* Avvisi */
 
 .avviso {
   display: flex;
@@ -430,7 +368,7 @@ label .aiuto {
   color: var(--testo-2);
 }
 
-/* ─────────────────────────────  etichette  ───────────────────────────── */
+/* Etichette */
 
 .tag {
   display: inline-flex;
@@ -476,12 +414,7 @@ label .aiuto {
   font-weight: 700;
 }
 
-/*
- * Lo scostamento calorico.
- *
- * Il segno è sempre esplicito, anche col più: «+180» e «180» si leggono in due
- * modi diversi, e un professionista che scorre venti righe non deve dedurlo.
- */
+/* Scostamento calorico */
 .delta {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
@@ -499,14 +432,14 @@ label .aiuto {
   color: var(--testo-3);
 }
 
-/* Un delta parziale non deve MAI sembrare esatto: la tilde lo dichiara. */
+/* Delta parziale: la tilde indica una stima. */
 .delta.parziale::before {
   content: '≈';
   margin-right: 0.0625rem;
   opacity: 0.7;
 }
 
-/* ─────────────────────────────  navigazione a schede  ───────────────── */
+/* Navigazione a schede */
 
 .schede {
   display: flex;
@@ -521,14 +454,7 @@ label .aiuto {
   display: none;
 }
 
-/*
- * Dentro il pannello del cliente le linguette NON si devono comprimere.
- *
- * `.pannello-corpo` è una colonna flex con dentro molto contenuto: senza questo,
- * le linguette venivano schiacciate a 22px di altezza — illeggibili e
- * impossibili da centrare con un pollice. È il tipo di difetto che non si vede
- * guardando il codice, solo misurando l'elemento.
- */
+/* Senza flex: none le linguette si schiacciano nel pannello. */
 .pannello-corpo > .schede {
   flex: none;
 }
@@ -552,7 +478,7 @@ label .aiuto {
   border-bottom-color: var(--accento);
 }
 
-/* ─────────────────────────────  elenchi  ───────────────────────────── */
+/* Elenchi */
 
 .griglia {
   display: grid;
@@ -592,10 +518,6 @@ label .aiuto {
   color: var(--testo-2);
 }
 
-/*
- * Il segno di uno stato vuoto è discreto per scelta: deve dire «non c'è ancora
- * niente», non attirare l'occhio più della frase che spiega cosa fare.
- */
 .vuoto .grande {
   font-size: 1.5rem;
   line-height: 1;
@@ -603,12 +525,9 @@ label .aiuto {
   color: var(--testo-3);
 }
 
-/* ─────────────────────────────  variazione  ───────────────────────────── */
+/* Variazione */
 
-/*
- * La riga di notifica: chi, cosa era, cosa è diventato, di quanto si è spostata
- * la giornata. Quattro informazioni, nell'ordine in cui servono.
- */
+/* Riga di notifica */
 .variazione {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -666,12 +585,12 @@ label .aiuto {
   gap: 0.5rem;
 }
 
-/* Il campo della nota di annullamento, che nasce dentro la griglia. */
+/* Nota di annullamento */
 .variazione .intera {
   grid-column: 1 / -1;
 }
 
-/* ─────────────────────────────  settimana  ───────────────────────────── */
+/* Settimana */
 
 .giorno {
   padding: 0.875rem;
@@ -724,7 +643,6 @@ label .aiuto {
   font-style: italic;
 }
 
-/* Gli alimenti sono BOTTONI: toccarli è il gesto che apre le alternative. */
 .alimenti {
   display: flex;
   flex-wrap: wrap;
@@ -743,8 +661,7 @@ label .aiuto {
   cursor: pointer;
   text-align: left;
   transition: border-color 0.12s, background 0.12s;
-  /* «crema di frutta secca senza zuccheri aggiunti» non deve spingere la
-     settimana fuori dallo schermo: va a capo dentro la sua pillola. */
+  /* I nomi lunghi vanno a capo nella pillola. */
   max-width: 100%;
   overflow-wrap: anywhere;
 }
@@ -754,7 +671,7 @@ label .aiuto {
   background: var(--accento-chiaro);
 }
 
-/* Ogni quantità è in tabellare: le colonne di numeri devono incolonnarsi. */
+/* Cifre tabellari */
 .peso {
   font-family: var(--mono);
   font-weight: 600;
@@ -771,7 +688,7 @@ label .aiuto {
   background: var(--accento-chiaro);
 }
 
-/* ─────────────────────────────  conversazione  ───────────────────────── */
+/* Conversazione */
 
 .chat {
   display: flex;
@@ -828,14 +745,7 @@ label .aiuto {
   color: var(--errore);
 }
 
-/*
- * La provenienza di ogni risposta, sotto ogni messaggio.
- *
- * Non è un dettaglio tecnico da nascondere: è la ragione per cui un
- * professionista può mettere il suo nome su questo strumento. Il cliente deve
- * poter distinguere sempre una frase riformulata da un modello da un numero
- * deciso dal piano.
- */
+/* Provenienza della risposta */
 .fonte {
   display: flex;
   align-items: center;
@@ -882,7 +792,7 @@ label .aiuto {
   color: var(--avviso);
 }
 
-/* Le alternative, in colonna: ognuna col suo scostamento. */
+/* Alternative in colonna */
 .opzioni {
   display: flex;
   flex-direction: column;
@@ -1034,7 +944,7 @@ label .aiuto {
   }
 }
 
-/* ─────────────────────────────  pannello laterale  ───────────────────── */
+/* Pannello laterale */
 
 .velo {
   position: fixed;
@@ -1075,8 +985,7 @@ label .aiuto {
 .pannello-corpo {
   flex: 1;
   overflow-y: auto;
-  /* Mai in orizzontale: un nome di alimento lungo deve andare a capo, non
-     spingere la settimana fuori dallo schermo. */
+  /* I nomi lunghi vanno a capo. */
   overflow-x: hidden;
   padding: 1rem;
   padding-bottom: calc(2rem + env(safe-area-inset-bottom));
@@ -1103,14 +1012,8 @@ label .aiuto {
   color: var(--testo);
 }
 
-/* ─────────────────────────────  passi guidati  ───────────────────────── */
+/* Passi guidati */
 
-/*
- * Il caricamento di un piano è a passi, e il passo di CONFERMA non si può
- * saltare: è lì che il professionista si assume la responsabilità dei numeri
- * che il software ha letto. L'interfaccia lo rende un passaggio esplicito
- * invece di un bottone «avanti».
- */
 .passi {
   display: flex;
   align-items: center;
@@ -1161,7 +1064,7 @@ label .aiuto {
   background: var(--bordo);
 }
 
-/* ─────────────────────────────  tabelle  ───────────────────────────── */
+/* Tabelle */
 
 .tabella {
   width: 100%;
@@ -1197,13 +1100,9 @@ label .aiuto {
   background: var(--superficie);
 }
 
-/* ─────────────────────────────  spaziature  ───────────────────────────── */
+/* Spaziature */
 
-/*
- * Poche classi di servizio, e la ragione è la Content-Security-Policy: senza
- * 'unsafe-inline' in `style-src` un attributo `style=""` viene ignorato dal
- * browser. Distanze e allineamenti devono quindi avere un nome qui.
- */
+/* La CSP blocca style="" inline: le spaziature vanno definite qui. */
 
 .sopra {
   margin-top: 1rem;
@@ -1244,32 +1143,20 @@ label .aiuto {
   margin-bottom: 0.75rem;
 }
 
-/*
- * La riga di conferma dopo un'azione: compare, dice cosa è successo, resta.
- * Non è un "toast" che sparisce: se il professionista ha appena creato un
- * cliente, la password che deve consegnargli non può svanire dopo tre secondi.
- */
+/* Riga di conferma persistente */
 .esito {
   margin-top: 0.75rem;
 }
 
-/* Campi affiancati nei moduli — collassano su una colonna sul telefono. */
+/* Campi affiancati, in colonna sul telefono. */
 .campi {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
   gap: 0 0.75rem;
 }
 
-/* ─────────────────────────────  scelta del ruolo  ───────────────────────── */
+/* Scelta del ruolo */
 
-/*
- * Due bottoni grandi, non un menù a tendina.
- *
- * È la prima domanda che il prodotto fa a chi arriva, e determina in quale
- * delle due applicazioni finisce. Un menù a tendina la farebbe sembrare un
- * campo da compilare tra gli altri; due riquadri la fanno sembrare quello che
- * è — una scelta.
- */
 .scelta-ruolo {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1315,13 +1202,9 @@ label .aiuto {
   }
 }
 
-/* ─────────────────────────────  editor della dieta  ─────────────────────── */
+/* Editor della dieta */
 
-/*
- * La dieta si scrive giorno per giorno, e la riga di un alimento è la cosa che
- * il professionista tocca più di ogni altra: nome, quantità, unità, e via.
- * Tutto su una riga sola, con il campo del nome che si prende lo spazio.
- */
+/* Riga di un alimento */
 .riga-alimento {
   display: grid;
   grid-template-columns: 1fr 5rem 4.5rem auto;
@@ -1337,8 +1220,7 @@ label .aiuto {
   font-size: 0.875rem;
 }
 
-/* L'alimento di cui non si conoscono i valori: non è un errore, è un lavoro
-   da fare, e finché non è fatto i totali restano incompleti. */
+/* Alimento senza valori nutrizionali */
 .riga-alimento.ignoto input:first-child {
   border-color: var(--avviso);
   background: var(--avviso-chiaro);
@@ -1372,8 +1254,7 @@ label .aiuto {
   padding: 0.375rem 0.5rem;
 }
 
-/* Il totale del giorno, sempre visibile mentre si scrive: è il numero che il
-   professionista sta cercando di far quadrare. */
+/* Totale del giorno */
 .conta-giorno {
   position: sticky;
   top: 3.25rem;
@@ -1404,7 +1285,7 @@ label .aiuto {
   font-variant-numeric: tabular-nums;
 }
 
-/* I sette giorni come schede: si scrive un giorno per volta. */
+/* I sette giorni come schede. */
 .giorni-nav {
   display: flex;
   gap: 0.25rem;
@@ -1435,11 +1316,7 @@ label .aiuto {
   font-weight: 600;
 }
 
-/*
- * Il giorno ancora vuoto è smorto: si vede a colpo d'occhio cosa manca, senza
- * aggiungere un simbolo. I giorni scritti portano le loro kcal accanto al nome,
- * quelli vuoti no — la differenza è già leggibile così.
- */
+/* Giorno vuoto */
 .giorni-nav button.vuoto-giorno {
   color: var(--testo-3);
   border-style: dashed;
@@ -1450,14 +1327,9 @@ label .aiuto {
   border-style: solid;
 }
 
-/* ─────────────────────────────  stato vuoto grande  ───────────────────── */
+/* Stato vuoto grande */
 
-/*
- * La schermata del cliente appena iscritto.
- *
- * È l'unica cosa che vede, e deve dirgli con chiarezza che non è rotto niente:
- * manca un passo, ed è questo.
- */
+/* Schermata del cliente appena iscritto */
 .primo-passo {
   max-width: 30rem;
   margin: 3rem auto;
@@ -1465,8 +1337,6 @@ label .aiuto {
   text-align: center;
 }
 
-/* Il segno del primo passo: dentro un cerchio, perché è l'unica cosa sulla
-   schermata e da sola si perderebbe. */
 .primo-passo .grande {
   display: grid;
   place-items: center;
@@ -1490,45 +1360,28 @@ label .aiuto {
   text-align: left;
 }
 
-/* ─────────────────────────────  schermi piccoli  ───────────────────────── */
+/* Schermi piccoli */
 
-/*
- * Il cliente apre questa applicazione IN PIEDI, davanti al frigorifero, con una
- * mano, e quasi sempre da un telefono. Non è il caso da sistemare per ultimo: è
- * il caso normale, e le regole qui sotto valgono più di quelle sopra.
- *
- * Tre cose che si sbagliano sempre e che qui sono risolte:
- *
- *  1. i CAMPI DI TESTO sotto i 16px fanno ingrandire la pagina a ogni tocco su
- *     iOS, e la pagina non torna più indietro da sola. Non è un dettaglio
- *     estetico: dopo aver scritto una domanda all'assistente ci si ritrova la
- *     schermata sformata;
- *  2. i BERSAGLI da toccare devono stare intorno ai 44px. Una pillola alta 30px
- *     si sbaglia una volta su tre, e qui toccare un alimento è IL gesto del
- *     prodotto;
- *  3. niente deve mai scorrere in ORIZZONTALE. Un nome di alimento lungo, una
- *     tabella, una riga di numeri: se spingono la pagina di lato, il cliente si
- *     ritrova a trascinare la settimana invece di leggerla.
- */
+/* Input a 16px (zoom iOS), bersagli di circa 44px, niente scroll orizzontale. */
 
 @media (max-width: 48rem) {
   .contenitore {
     padding: 1.25rem 1rem 3rem;
   }
 
-  /* La griglia della variazione va in colonna: due colonne su 360px non stanno. */
+  /* Variazione in colonna */
   .variazione {
     grid-template-columns: 1fr;
   }
 
-  /* Le tabelle dello studio scorrono dentro il loro contenitore, non nella pagina. */
+  /* Le tabelle scorrono nel loro contenitore. */
   .scorri {
     max-width: 100%;
   }
 }
 
 @media (max-width: 40rem) {
-  /* 1 · Nessuno zoom involontario: 16px è la soglia di iOS, non un gusto. */
+  /* Input a 16px: sotto questa soglia iOS ingrandisce la pagina. */
   input[type='text'],
   input[type='email'],
   input[type='password'],
@@ -1539,7 +1392,7 @@ label .aiuto {
     font-size: 16px;
   }
 
-  /* 2 · Bersagli da pollice. */
+  /* Bersagli da pollice */
   .alimento {
     padding: 0.5625rem 0.875rem;
     font-size: 0.9375rem;
@@ -1572,12 +1425,11 @@ label .aiuto {
     font-size: 0.875rem;
   }
 
-  /* Le linguette sono la navigazione del pannello: si centrano col pollice. */
   .schede button {
     padding: 0.75rem 0.875rem;
   }
 
-  /* 3 · La pagina non si sposta di lato, mai. */
+  /* Niente scroll orizzontale */
   html,
   body {
     overflow-x: hidden;
@@ -1596,8 +1448,6 @@ label .aiuto {
     padding-top: calc(2rem + env(safe-area-inset-top));
   }
 
-  /* Il messaggio prende tutta la larghezza: su un telefono il 10% risparmiato
-     non aiuta a capire chi parla — a quello serve il colore della bolla. */
   .msg {
     max-width: 100%;
   }
@@ -1614,7 +1464,7 @@ label .aiuto {
     padding: 0 0.875rem 0.5rem;
   }
 
-  /* Il pannello è uno schermo intero: niente bordo, niente ombra da mezzo lato. */
+  /* Pannello a schermo intero */
   .pannello {
     width: 100%;
     border-left: 0;
@@ -1632,8 +1482,6 @@ label .aiuto {
     padding: 0.75rem;
   }
 
-  /* La riga con il peso a destra: se il nome è lungo va a capo invece di
-     schiacciare il numero. */
   .riga {
     flex-wrap: wrap;
   }
@@ -1650,9 +1498,7 @@ label .aiuto {
     background: transparent;
   }
 
-  /* L'editor dello studio su un telefono: il nome dell'alimento si prende una
-     riga sua, quantità e unità stanno sotto. Scrivere una dieta dal telefono non
-     è il caso principale, ma correggere una grammatura sì. */
+  /* Editor della dieta su telefono */
   .riga-alimento {
     grid-template-columns: 1fr 4.5rem 4rem;
     gap: 0.375rem 0.5rem;
@@ -1671,7 +1517,7 @@ label .aiuto {
   }
 }
 
-/* Schermi molto stretti: 320px esiste ancora, e chi lo usa non è colpa sua. */
+/* Schermi molto stretti (320px) */
 @media (max-width: 22rem) {
   .campi {
     grid-template-columns: 1fr;
@@ -1688,10 +1534,7 @@ label .aiuto {
   }
 }
 
-/*
- * Telefono in orizzontale: l'altezza crolla a ~320px e la conversazione diventa
- * una fessura. Si recupera spazio da tutto ciò che non è il filo dei messaggi.
- */
+/* Telefono in orizzontale */
 @media (max-height: 30rem) and (orientation: landscape) {
   .barra {
     padding-top: calc(0.375rem + env(safe-area-inset-top));
@@ -1707,18 +1550,7 @@ label .aiuto {
   }
 }
 
-/* ─────────────────────────────  dashboard del cliente  ─────────────────── */
-
-/*
- * La schermata principale del cliente.
- *
- * Non è più la conversazione: è quello che deve fare oggi. La chat resta, ma
- * dietro una linguetta, perché si apre quando si ha una domanda — e una domanda
- * non ce l'hai tutti i giorni, mentre la colazione sì.
- *
- * L'ordine dall'alto è l'ordine delle domande che si fa chi apre l'applicazione:
- * cosa mangio adesso, come sto andando, quanto mi manca.
- */
+/* Dashboard del cliente */
 
 .riquadri {
   display: grid;
@@ -1781,13 +1613,7 @@ label .aiuto {
   background: var(--errore);
 }
 
-/*
- * Il pasto di oggi: la riga che si tocca per dire «fatto».
- *
- * La spunta è il gesto su cui poggia tutta l'aderenza, quindi è un bersaglio
- * grande e separato dal resto della riga: toccare il pasto apre i dettagli,
- * toccare la spunta lo segna, e i due gesti non si devono confondere.
- */
+/* Pasto di oggi */
 .pasto-oggi {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -1865,7 +1691,7 @@ label .aiuto {
   margin-top: 0.5rem;
 }
 
-/* Il grafico dei passi: barre, nessuna libreria. */
+/* Grafico dei passi */
 .barre {
   display: flex;
   align-items: flex-end;
@@ -1885,7 +1711,7 @@ label .aiuto {
   background: var(--accento);
 }
 
-/* L'aderenza accanto al nome di un cliente, nella tabella dello studio. */
+/* Aderenza nella tabella dello studio */
 .aderenza {
   display: inline-flex;
   align-items: center;
@@ -1917,7 +1743,7 @@ label .aiuto {
   font-weight: 400;
 }
 
-/* Il riquadro per trascinare il PDF. */
+/* Riquadro per trascinare il PDF */
 .zona-pdf {
   padding: 1.75rem 1.25rem;
   background: var(--superficie-2);
@@ -1938,7 +1764,7 @@ label .aiuto {
   display: none;
 }
 
-/* Il testo estratto dal PDF, accanto a quello che il software ne ha capito. */
+/* Testo estratto dal PDF */
 .testo-estratto {
   max-height: 22rem;
   overflow: auto;
@@ -1977,13 +1803,7 @@ label .aiuto {
   }
 }
 
-/*
- * La conversazione incassata in una linguetta, non più a tutto schermo.
- *
- * Altezza calcolata invece che `100dvh`: sopra ci sono la barra e le linguette,
- * e prendersi tutto lo schermo farebbe sparire proprio la navigazione con cui si
- * è arrivati qui.
- */
+/* Conversazione nella linguetta */
 .chat-incassata {
   display: flex;
   flex-direction: column;
@@ -2012,17 +1832,7 @@ label .aiuto {
   }
 }
 
-/*
- * ─────────────────────────────────────────────────────────────────────────
- * IL PIANO A SOSTITUZIONE
- * ─────────────────────────────────────────────────────────────────────────
- *
- * Il pannello che il professionista apre sotto un alimento per dire con cosa
- * si può sostituire. Sta INCASSATO nella riga da cui esce, con un rientro e un
- * filo verticale sul bordo: è un dettaglio di quell'alimento, non un'altra
- * sezione della dieta, e se galleggiasse a sé si perderebbe di vista a quale
- * riga appartiene.
- */
+/* Piano a sostituzione */
 .piano-alimento {
   margin: 0 0 0.625rem 0.75rem;
   padding: 0.75rem;
@@ -2039,8 +1849,6 @@ label .aiuto {
   margin-bottom: 0;
 }
 
-/* Stessa griglia della riga di un alimento: le due si leggono in colonna, e
-   la quantità dell'alternativa sta sotto quella dell'alimento che sostituisce. */
 .riga-alternativa {
   display: grid;
   grid-template-columns: 1fr 5rem 4.5rem auto;
@@ -2056,20 +1864,11 @@ label .aiuto {
   font-size: 0.875rem;
 }
 
-/* La riga dell'alimento ha un bottone in più — il piano — e senza questo la
-   griglia a quattro colonne lo spingerebbe fuori dal contenitore. */
 .riga-alimento {
   grid-template-columns: 1fr 5rem 4.5rem auto auto;
 }
 
-/*
- * Il filo dei messaggi dentro una scheda, per il professionista.
- *
- * Ha un'altezza sua e scorre da solo: la scheda di un cliente è già lunga —
- * dieta, aderenza, variazioni — e una conversazione di trenta messaggi che si
- * srotola dentro la pagina renderebbe irraggiungibile tutto quello che sta
- * sotto.
- */
+/* Messaggi nella scheda cliente */
 .filo.incassato {
   max-height: 22rem;
   padding: 0.875rem;
@@ -2088,18 +1887,8 @@ label .aiuto {
   max-width: none;
 }
 
-/*
- * Le opzioni del piano, come le vede il cliente.
- *
- * Quelle previste dal suo nutrizionista e quelle che invece sono una
- * deviazione non possono avere lo stesso aspetto: la prima scelta non gli
- * costa niente, la seconda gli costa aderenza, e l'interfaccia deve dirlo
- * prima che tocchi, non dopo.
- */
+/* Opzioni del piano lato cliente */
 .opzione.prevista {
-  /* Tutta la larghezza: è un bersaglio da pollice davanti al frigorifero, e
-     una pillola larga quanto il suo testo si sbaglia. La porzione, allineata
-     a destra, resta incolonnata da una riga all'altra. */
   width: 100%;
   border: 1px solid var(--bordo);
   margin-bottom: 0.375rem;
@@ -2115,13 +1904,7 @@ label .aiuto {
   opacity: 0.9;
 }
 
-/* Qui stavano le pillole con cui il cliente sceglieva la base — isocalorica,
-   isoproteica. Tolte insieme al comando: la base la fissa il nutrizionista
-   sulla dieta, e un controllo che si può premere dice il contrario. */
-
-/* L'alimento toccabile nella schermata di oggi: è il gesto principale del
-   prodotto — «questo lo cambio» — quindi ha l'altezza di un bersaglio da
-   pollice e non quella di una parola in una frase. */
+/* Alimento toccabile nella schermata di oggi */
 .alimento-scelta {
   display: inline-flex;
   align-items: center;
@@ -2161,8 +1944,6 @@ label .aiuto {
   }
 }
 
-/* Porzione e scostamento stanno nella stessa cella dell'opzione: la griglia ha
-   tre colonne, e una quarta cosa andrebbe a capo sotto il nome dell'alimento. */
 .opzione .fine {
   display: flex;
   align-items: center;

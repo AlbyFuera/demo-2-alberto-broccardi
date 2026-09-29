@@ -1,15 +1,9 @@
 #!/bin/bash
-# Collaudo end-to-end del prodotto: dall'iscrizione al veto del professionista.
-# Verifica anche ciò che NON deve funzionare.
-#
-# Ripetibile: usa email diverse a ogni esecuzione, quindi si può rilanciare
-# sullo stesso database senza inciampare in «esiste già un account».
+# Collaudo end-to-end. Usa email nuove a ogni esecuzione.
 set -u
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" && mkdir -p .lavoro && cd .lavoro
 rm -f n.txt c.txt c2.txt corpo.json dieta-piano.json dieta-attuale.json
-# In locale se non si dice altro, ma `B=https://… ./collaudo.sh` lo punta
-# all'istanza vera — che è il modo in cui si scoprono le due cose che in locale
-# non si vedono (vedi in fondo al README).
+# Contro l'istanza pubblicata: B=https://… scripts/collaudo.sh
 B=${B:-http://localhost:8787}
 ok=0; ko=0
 
@@ -18,8 +12,7 @@ EN="rossi+$T@studio.it"
 EC="mario+$T@posta.it"
 EA="altro+$T@studio.it"
 
-# Nella query string il «+» significa spazio: va codificato. Il browser lo fa da
-# sé con URLSearchParams, curl no.
+# curl non codifica il + nella query string.
 enc() { printf '%s' "$1" | sed 's/+/%2B/g; s/@/%40/g'; }
 ENQ=$(enc "$EN")
 ECQ=$(enc "$EC")
@@ -227,15 +220,10 @@ prova "pareggiata sulle proteine" '"base":"proteine"'
 json "{\"giorno\":0,\"pasto\":\"$PASTO\",\"indice\":1,\"alimento\":\"pizza margherita\"}"
 post c.txt /api/cliente/verifica corpo.json
 prova "alimento sconosciuto: non ne inventa i valori" '"esito":"sconosciuta"'
-# L'assistente NON gira più la domanda al professionista: risponde lui. È il
-# confine che il committente ha spostato — vedi `ai.rispondiLibero`.
+# Il cliente deve sempre ricevere una risposta.
 json '{"domanda":"posso mangiare una pizza margherita al posto del pollo?"}'
 post c.txt /api/cliente/chat corpo.json
 prova "l'assistente risponde comunque" '"risposta"'
-# Non si pretende l'assenza dell'inoltro in modo assoluto: quando il modello non
-# risponde affatto (quota, rete) l'inoltro al professionista è il ripiego
-# previsto, ed è meglio di una risposta vuota. Si pretende che il cliente riceva
-# SEMPRE una frase.
 if printf '%s' "$R" | python3 -c "import json,sys; r=json.load(sys.stdin); sys.exit(0 if len(r.get('risposta') or '') > 20 else 1)"; then
   printf '  \033[32m✓\033[0m e la risposta non è mai vuota\n'; ok=$((ok+1))
 else
@@ -289,10 +277,7 @@ titolo "15 · Ritiro e scollegamento"
 json "{\"id\":\"$DIETA\"}"
 post n.txt /api/studio/ritira corpo.json
 prova "dieta ritirata" '"ok":true'
-# In remoto D1 può servire una lettura vecchia di un istante subito dopo una
-# scrittura: si riprova per un paio di secondi invece di dichiarare un difetto
-# che non c'è. Nell'uso vero fra il ritiro e la lettura del cliente passano
-# secondi, non millisecondi.
+# D1 remoto può restituire una lettura vecchia: si riprova.
 for i in 1 2 3 4 5; do
   get c.txt /api/cliente/scheda
   printf '%s' "$R" | grep -q 'non ti ha ancora pubblicato' && break
@@ -304,18 +289,13 @@ post n.txt /api/studio/pubblica corpo.json
 prova "ripubblicata" '"ok":true'
 
 titolo "16 · Piano a sostituzione"
-# Il professionista scrive, sul petto di pollo del pranzo, l'elenco chiuso delle
-# sostituzioni che ammette: due da calcolare e una con la porzione scritta a
-# mano. È la funzione che il piano a sostituzione esiste per fare.
 get n.txt "/api/studio/dieta?dieta=$DIETA"
-# Il corpo passa da un file e non da una pipe: lo heredoc qui sotto occupa già
-# lo standard input di python, e leggerlo da lì darebbe in pasto a json lo
-# script stesso.
+# Da file: lo stdin di python è occupato dallo heredoc.
 printf '%s' "$R" > dieta-attuale.json
 python3 - "$DIETA" > dieta-piano.json <<'PY'
 import json, sys
 d = json.load(open('dieta-attuale.json'))['dieta']
-# La regola vale per tutta la dieta: si scrive una volta, in testa.
+# Regola di pareggio della dieta.
 d['base'] = 'kcal'
 for g in d['giorni']:
     for p in g['pasti']:
@@ -324,8 +304,7 @@ for g in d['giorni']:
         for a in p['alimenti']:
             if 'pollo' in a['nome']:
                 a['gruppo'] = 'fonte proteica'
-                # Eccezione per questo alimento: la fonte proteica si pareggia
-                # sulle proteine anche dentro un piano isocalorico.
+                # Eccezione: si pareggia sulle proteine.
                 a['base'] = 'proteine'
                 a['alternative'] = [
                     {'nome': 'merluzzo'},
@@ -333,7 +312,7 @@ for g in d['giorni']:
                     {'nome': 'uova', 'quantita': 2, 'unita': 'pz'},
                 ]
             if a['nome'] == 'pasta':
-                # Nessuna base propria: deve ereditare quella della dieta.
+                # Nessuna base propria: eredita quella della dieta.
                 a['gruppo'] = 'fonte di carboidrati'
                 a['alternative'] = [{'nome': 'riso'}, {'nome': 'patate'}]
 print(json.dumps({'id': sys.argv[1], 'dieta': d}))
@@ -359,16 +338,12 @@ prova "la porzione scritta a mano resta quella" '"fissata":true'
 
 prova "l'eccezione dell'alimento è dichiarata come tale" '"regola":"alimento"'
 
-# La pasta non ha una base sua: deve prendere quella della dieta, che è
-# isocalorica. È la funzione per cui il campo sul piano esiste — scriverla una
-# volta invece che su trenta alimenti.
+# Senza base propria vale quella della dieta.
 get c.txt "/api/cliente/alternative?giorno=0&pasto=$PASTO&indice=0"
 prova "l'alimento senza eccezione segue la regola della dieta" '"nomeBase":"isocalorica"'
 prova "e si sa da dove viene quella regola" '"regola":"dieta"'
 
-# Il parametro `base` nella richiesta non esiste più. Chiederne una diversa non
-# cambia una virgola: senza questo vincolo, chi vuole mangiare di più sceglie la
-# lettura che gli dà la porzione più grande, ed è la dieta che sceglie il cliente.
+# Il parametro base del cliente viene ignorato.
 UNO=$(curl -s -b c.txt "$B/api/cliente/alternative?giorno=0&pasto=$PASTO&indice=0&base=proteine" | python3 -c "import json,sys; o=json.load(sys.stdin)['piano']['opzioni']; print([x['quantita'] for x in o if x['nome']=='riso'][0])")
 DUE=$(curl -s -b c.txt "$B/api/cliente/alternative?giorno=0&pasto=$PASTO&indice=0&base=kcal" | python3 -c "import json,sys; o=json.load(sys.stdin)['piano']['opzioni']; print([x['quantita'] for x in o if x['nome']=='riso'][0])")
 if [ "$UNO" = "$DUE" ]; then
@@ -377,9 +352,7 @@ else
   printf '  \033[31m✗\033[0m il cliente ha cambiato la porzione chiedendo un'\''altra base (%s vs %s)\n' "$UNO" "$DUE"; ko=$((ko+1))
 fi
 
-# E lo stesso quando applica davvero: 205 g è la porzione isoproteica di
-# merluzzo, quella della regola scritta sul pollo. Chiedere «kcal» nel corpo
-# della richiesta non la sposta.
+# 205 g: porzione isoproteica di merluzzo.
 json "{\"giorno\":0,\"pasto\":\"$PASTO\",\"indice\":1,\"alimento\":\"merluzzo\",\"base\":\"kcal\"}"
 post c.txt /api/cliente/applica corpo.json
 prova "il cliente non può cambiare la regola di pareggio" '"quantita":"205g"'
@@ -403,8 +376,6 @@ prova "e lo studio la riceve marcata come prevista" '"nelPiano":true'
 get c.txt /api/cliente/dashboard
 prova "l'aderenza dichiara i pasti con sostituzioni ammesse" 'pastiConSostituzioniAmmesse'
 
-# La porzione di un'alternativa con la quantità scritta dal professionista è
-# quella che ha scritto lui, non un calcolo.
 json "{\"giorno\":0,\"pasto\":\"$PASTO\",\"indice\":1,\"alimento\":\"uova\"}"
 post c.txt /api/cliente/applica corpo.json
 prova "le due uova restano due uova" '"quantita":"2 pz"'
@@ -462,7 +433,7 @@ R=$(curl -s -X POST $B/api/accedi -H 'content-type: application/json' -d @corpo.
 prova "la nuova sì" '"pagina":"/cliente"'
 
 titolo "20 · Limitazione dei tentativi"
-# Un'email nuova, per non consumare i tentativi degli account usati sopra.
+# Email nuova, per non consumare i tentativi degli account sopra.
 EV="vittima+$T@posta.it"
 json "{\"email\":\"$EV\",\"password\":\"unapasswordlunga\",\"ruolo\":\"cliente\"}"
 curl -s -X POST $B/api/registrati -H 'content-type: application/json' -d @corpo.json > /dev/null

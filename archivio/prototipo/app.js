@@ -1,12 +1,3 @@
-/**
- * Nutrizionista AI — interfaccia a conversazione.
- *
- * La chat è il prodotto: la settimana, la spesa e la preparazione stanno in un
- * pannello laterale, non al centro. Ogni risposta mostra da dove viene — se
- * l'ha scritta il motore o se l'ha riformulata il modello — e su quali regole
- * del piano poggia. Un paziente deve poter risalire alla fonte di ogni numero.
- */
-
 const $ = (id) => document.getElementById(id);
 const DAYS = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
 
@@ -21,8 +12,6 @@ const state = {
   tab: 'settimana',
   busy: false,
 };
-
-/* ────────────────────── utilità ────────────────────── */
 
 const esc = (s) =>
   String(s).replace(
@@ -68,8 +57,6 @@ function weekParams() {
   return p.toString();
 }
 
-/* ────────────────────── caricamento ────────────────────── */
-
 async function loadPlans() {
   const piani = await api('piani');
   $('plan-select').innerHTML = piani
@@ -94,8 +81,6 @@ async function loadPlan() {
   $('who-sub').textContent =
     `${state.plan.patient.name} · ${state.data.validation.ok ? 'settimana conforme' : 'settimana NON conforme'}`;
 }
-
-/* ────────────────────── conversazione ────────────────────── */
 
 function bubble(role, html) {
   const el = document.createElement('div');
@@ -215,11 +200,6 @@ function wireCard(root) {
   }
 }
 
-/**
- * Sostituzione richiesta toccando un alimento: si passa dall'endpoint
- * dedicato, che conosce già slot e giorno, invece di far reinterpretare
- * all'assistente una frase che abbiamo costruito noi.
- */
 async function askSubstitution(target) {
   const params =
     `${weekParams()}&giorno=${target.day}&pasto=${encodeURIComponent(target.mealId)}` +
@@ -295,8 +275,6 @@ async function ask(question, target) {
   }
 }
 
-/* ────────────────────── suggerimenti ────────────────────── */
-
 function renderSuggestions() {
   const s = state.plan?.canGenerate.ok
     ? [
@@ -316,8 +294,6 @@ function renderSuggestions() {
     b.addEventListener('click', () => ask(b.textContent));
   }
 }
-
-/* ────────────────────── pannello ────────────────────── */
 
 function openPanel(tab) {
   if (tab) state.tab = tab;
@@ -538,8 +514,6 @@ async function renderStudio(body) {
     });
   }
 }
-
-/* ────────────────────── avvio ────────────────────── */
 
 $('composer').addEventListener('submit', (e) => {
   e.preventDefault();

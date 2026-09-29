@@ -1,21 +1,4 @@
-/**
- * API dello studio (nutrizionista).
- *
- * Quattro lavori, in ordine di frequenza reale:
- *
- *   1. guardare cosa hanno cambiato o chiesto i clienti   → cruscotto()
- *   2. accettare chi chiede di essere seguito             → decidi()
- *   3. scrivere la dieta, giorno per giorno               → salvaDieta()
- *   4. completare gli alimenti che il motore non conosce  → salvaAlimento()
- *
- * Il primo è quello che apre ogni mattina, e per questo è l'unico che deve
- * stare in una schermata sola senza scorrere.
- *
- * REGOLA VALIDA OVUNQUE: prima di toccare i dati di un cliente si verifica che
- * esista un collegamento ATTIVO. Ricevere una richiesta non è essere il suo
- * nutrizionista — e un cliente che ha rifiutato o si è scollegato non deve
- * restare leggibile.
- */
+// Prima di toccare i dati di un cliente serve un collegamento attivo.
 
 import {
   BASI,
@@ -47,9 +30,7 @@ import { conSostituzioni, sostituzioniAttive } from './sovrapposizione.ts';
 import { LIMITE_PDF, dietaDaLettura, leggiPdf } from './pdf.ts';
 import { nomeDi, type Env, type Utente } from './types.ts';
 
-/* ------------------------------------------------------------------ */
-/* Il cruscotto                                                        */
-/* ------------------------------------------------------------------ */
+// Il cruscotto
 
 export async function cruscotto(env: Env, utente: Utente) {
   const [collegamenti, variazioni, domande] = await Promise.all([
@@ -61,8 +42,6 @@ export async function cruscotto(env: Env, utente: Utente) {
   const richieste = collegamenti.filter((c) => c.stato === 'in-attesa');
   const attivi = collegamenti.filter((c) => c.stato === 'attivo');
 
-  // Una query per cliente sarebbe una N+1 che su D1 si paga in latenza a ogni
-  // caricamento: le diete dei clienti attivi si leggono in un colpo solo.
   const diete = await dietePerClienti(env, utente.id, attivi.map((c) => c.clienteId));
   const aderenze = await aderenzePerClienti(
     env,
@@ -93,7 +72,6 @@ export async function cruscotto(env: Env, utente: Utente) {
         dieta: dieta
           ? { id: dieta.id, titolo: dieta.titolo, stato: dieta.stato, vuota: dietaVuotaDavvero(dieta.dieta) }
           : null,
-        // Il numero che il professionista guarda per primo, accanto al nome.
         aderenza: aderenze.get(c.clienteId) ?? null,
         variazioniNuove: variazioni.filter((v) => v.clienteId === c.clienteId && v.stato === 'nuova').length,
         domandeAperte: domande.filter((d) => d.clienteId === c.clienteId && d.stato === 'aperta').length,
@@ -126,22 +104,14 @@ async function dietePerClienti(
 
   for (const clienteId of clienti) {
     const diete = await db.dieteDelCliente(env, studioId, clienteId);
-    // Quella pubblicata se c'è, altrimenti la bozza più recente: è quella su
-    // cui il professionista sta lavorando.
+    // La pubblicata se c'è, altrimenti la bozza più recente.
     const attuale = diete.find((d) => d.stato === 'pubblicata') ?? diete.find((d) => d.stato === 'bozza');
     if (attuale) per.set(clienteId, attuale);
   }
   return per;
 }
 
-/**
- * L'aderenza di ogni cliente, in un colpo solo.
- *
- * Si legge dalle spunte degli ultimi otto giorni. Chi non ha una dieta o non ha
- * mai spuntato niente non ha un'aderenza: ha `null`, che l'interfaccia mostra
- * come «nessun dato» e non come zero. È la distinzione che cambia la telefonata
- * che il professionista gli farà.
- */
+/** L'aderenza di ogni cliente; null se non ci sono dati. */
 async function aderenzePerClienti(
   env: Env,
   clienti: string[],
@@ -170,7 +140,7 @@ async function aderenzePerClienti(
   return per;
 }
 
-/** Sondaggio leggero: solo i numeri, per il pallino sulle notifiche. */
+/** Solo i numeri, per il pallino delle notifiche. */
 export async function novita(env: Env, utente: Utente) {
   const [variazioni, domande, collegamenti, messaggi] = await Promise.all([
     db.contaVariazioniNuove(env, utente.id),
@@ -183,16 +153,12 @@ export async function novita(env: Env, utente: Utente) {
     variazioniNuove: variazioni,
     domandeAperte: domande.length,
     richieste: collegamenti.filter((c) => c.stato === 'in-attesa').length,
-    // I messaggi dei clienti entrano nel pallino: un cliente che scrive a un
-    // professionista che ha spento l'automazione sta aspettando lui, e se
-    // l'avviso non arriva l'interruttore diventa un modo di non rispondere.
+    // Anche i messaggi dei clienti contano nel pallino.
     messaggi: [...messaggi.values()].reduce((s, n) => s + n, 0),
   };
 }
 
-/* ------------------------------------------------------------------ */
-/* Collegamenti                                                        */
-/* ------------------------------------------------------------------ */
+// Collegamenti
 
 export async function decidi(env: Env, utente: Utente, body: any) {
   const linkId = String(body?.link ?? '');
@@ -213,11 +179,9 @@ export async function scollega(env: Env, utente: Utente, body: any) {
   return { ok: true };
 }
 
-/* ------------------------------------------------------------------ */
-/* Il cliente visto dallo studio                                       */
-/* ------------------------------------------------------------------ */
+// Il cliente visto dallo studio
 
-/** Nessuna lettura su un cliente senza collegamento attivo. Nessuna eccezione. */
+/** Nessuna lettura su un cliente senza collegamento attivo. */
 async function esigiCliente(env: Env, studioId: string, clienteId: string) {
   if (!clienteId) throw new ErroreHttp(400, 'Manca il cliente.');
   if (!(await db.collegamentoAttivo(env, studioId, clienteId))) {
@@ -241,8 +205,7 @@ export async function cliente(env: Env, utente: Utente, params: URLSearchParams)
   const collegamento = collegamenti.find((c) => c.clienteId === clienteId);
   const attuale = diete.find((d) => d.stato === 'pubblicata') ?? diete.find((d) => d.stato === 'bozza');
 
-  // Aprire la scheda è leggere: i messaggi del cliente smettono di essere «da
-  // leggere» qui, non quando lui riceve una risposta.
+  // Aprire la scheda segna i messaggi come letti.
   await db.segnaMessaggiLetti(env, clienteId, utente.id, 'studio');
 
   return {
@@ -284,8 +247,7 @@ export async function cliente(env: Env, utente: Utente, params: URLSearchParams)
 }
 
 function riepilogoDieta(riga: db.DietaRiga, libreria: any, variazioni: db.VariazioneRiga[]) {
-  // Quello che il cliente sta seguendo davvero: la dieta con le sue
-  // sostituzioni sopra. È l'unica versione che conta quando lo si giudica.
+  // La dieta con le sostituzioni applicate.
   const { dieta: seguita, applicate } = conSostituzioni(riga.dieta, variazioni);
   const { media, giorniScritti, totale } = totaleSettimana(seguita, libreria);
 
@@ -329,9 +291,7 @@ function riepilogoDieta(riga: db.DietaRiga, libreria: any, variazioni: db.Variaz
   };
 }
 
-/* ------------------------------------------------------------------ */
-/* Scrivere la dieta                                                   */
-/* ------------------------------------------------------------------ */
+// Scrivere la dieta
 
 export async function nuovaDieta(env: Env, utente: Utente, body: any) {
   const clienteId = String(body?.cliente ?? '');
@@ -342,9 +302,7 @@ export async function nuovaDieta(env: Env, utente: Utente, body: any) {
 
   const dieta = dietaVuota(db.nuovoId('die'), titolo);
 
-  // Da una dieta esistente: la maggior parte delle diete nuove è la precedente
-  // con due o tre cose cambiate, e riscriverla da zero è il modo più veloce di
-  // far smettere un professionista di usare lo strumento.
+  // Copia da una dieta esistente.
   const daId = String(body?.da ?? '');
   if (daId) {
     const precedente = await db.dietaDelloStudio(env, utente.id, daId);
@@ -361,7 +319,7 @@ export async function nuovaDieta(env: Env, utente: Utente, body: any) {
   return { ok: true, id: dieta.id, dieta };
 }
 
-/** Copiando una dieta gli id dei pasti si rifanno: le vecchie variazioni non devono agganciarsi. */
+/** Nuovi id ai pasti, così le vecchie variazioni non si agganciano. */
 function rigeneraId(giorni: Giorno[]): Giorno[] {
   return giorni.map((g) => ({
     ...g,
@@ -406,23 +364,12 @@ export async function apriDieta(env: Env, utente: Utente, params: URLSearchParam
         };
       }),
     },
-    // Gli alimenti che il motore non conosce: finché restano, i totali sono
-    // incompleti e il professionista lo vede scritto sopra la dieta.
+    // Alimenti che il motore non conosce.
     daCompletare: alimentiDaCompletare(riga.dieta, libreria),
   };
 }
 
-/**
- * Salva la dieta.
- *
- * Si riscrive intera a ogni salvataggio, e va bene così: una dieta pesa pochi
- * kilobyte e salvare per campi significherebbe inventare un protocollo di
- * modifiche parziali per risparmiare byte che nessuno sta contando.
- *
- * Ogni pasto senza id ne riceve uno: gli id li fa il server, mai il browser.
- * Ci puntano le variazioni dei clienti, e un id scelto dal client sarebbe un
- * modo per far agganciare una vecchia sostituzione a un pasto nuovo.
- */
+/** Salva la dieta intera. Gli id dei pasti li genera il server. */
 export async function salvaDieta(env: Env, utente: Utente, body: any) {
   const id = String(body?.id ?? '');
   const riga = await db.dietaDelloStudio(env, utente.id, id);
@@ -444,17 +391,7 @@ export async function salvaDieta(env: Env, utente: Utente, body: any) {
 
 const UNITA_AMMESSE = new Set(['g', 'ml', 'pz']);
 
-/**
- * Il piano a sostituzione di un alimento, come arriva dall'editor.
- *
- * Massimo otto alternative per alimento: non è un limite tecnico, è che un
- * elenco più lungo il cliente non lo legge — sceglie fra le prime tre e le
- * altre cinque sono lavoro buttato per chi le ha scritte.
- *
- * I campi si restituiscono `undefined` quando sono vuoti invece di stringhe e
- * array vuoti: la dieta viaggia come JSON in una colonna, e trenta alimenti con
- * tre campi vuoti ciascuno sono peso morto in ogni lettura.
- */
+/** Piano a sostituzione di un alimento; i campi vuoti diventano undefined. */
 function leggiPiano(a: any): { alternative?: Alternativa[]; base?: BaseSostituzione; gruppo?: string } {
   const alternative: Alternativa[] = (Array.isArray(a?.alternative) ? a.alternative : [])
     .slice(0, 8)
@@ -464,23 +401,14 @@ function leggiPiano(a: any): { alternative?: Alternativa[]; base?: BaseSostituzi
       const quantita = Number.isFinite(q) && q > 0 ? q : undefined;
       return {
         nome,
-        // La quantità è facoltativa: quando manca la calcola il motore
-        // pareggiando secondo la base scelta. Uno zero salvato per sbaglio
-        // metterebbe nel piatto del cliente «0 g di ricotta».
+        // Quantità facoltativa: se manca la calcola il motore.
         ...(quantita !== undefined ? { quantita } : {}),
         ...(quantita !== undefined && UNITA_AMMESSE.has(x?.unita) ? { unita: x.unita as Unita } : {}),
       };
     })
     .filter((x: Alternativa) => x.nome.length > 0);
 
-  /*
-   * Nomi ripetuti fuori, e anche l'alimento stesso.
-   *
-   * Capita scrivendo — si aggiunge una riga, si dimentica di averla già messa —
-   * e il cliente si troverebbe l'elenco con due volte la stessa cosa, o con
-   * «al posto del pollo puoi mettere il pollo». Il confronto è quello del
-   * motore: minuscole, senza accenti.
-   */
+  // Toglie i nomi ripetuti e l'alimento stesso.
   const visti = new Set([normalizza(String(a?.nome ?? ''))]);
   const uniche = alternative.filter((x: Alternativa) => {
     const chiave = normalizza(x.nome);
@@ -489,14 +417,7 @@ function leggiPiano(a: any): { alternative?: Alternativa[]; base?: BaseSostituzi
     return true;
   });
 
-  /*
-   * L'assenza qui ha un significato preciso: «come dice la dieta».
-   *
-   * Per questo si conserva anche 'auto' quando arriva esplicito, mentre prima
-   * si scartava: su una dieta dichiarata isoproteica, «pareggia sul
-   * macronutriente principale» è un'eccezione vera per quell'alimento, e
-   * buttarla lo farebbe tornare sotto la regola generale.
-   */
+  // Assente vuol dire come da dieta; 'auto' esplicito si conserva.
   const base = BASI.includes(a?.base) ? (a.base as BaseSostituzione) : undefined;
   const gruppo = String(a?.gruppo ?? '').trim().slice(0, 40);
 
@@ -507,7 +428,7 @@ function leggiPiano(a: any): { alternative?: Alternativa[]; base?: BaseSostituzi
   };
 }
 
-/** Legge e ripulisce la dieta che arriva dal browser. Niente entra senza passare di qui. */
+/** Legge e ripulisce la dieta che arriva dal browser. */
 function leggiDieta(grezza: any, precedente: Dieta): Dieta {
   const testo = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
 
@@ -554,9 +475,7 @@ function leggiDieta(grezza: any, precedente: Dieta): Dieta {
     };
   });
 
-  // La regola di sostituzione di tutta la dieta. 'auto' non si salva: è il
-  // comportamento predefinito, e scriverlo nel JSON di ogni dieta non
-  // aggiungerebbe niente a quello che l'assenza già dice.
+  // 'auto' non si salva: è il predefinito.
   const baseDieta = BASI.includes(grezza?.base) ? (grezza.base as BaseSostituzione) : undefined;
 
   return {
@@ -579,13 +498,7 @@ function leggiDieta(grezza: any, precedente: Dieta): Dieta {
   };
 }
 
-/**
- * Pubblica: da qui in poi il cliente la vede.
- *
- * Si rifiuta di pubblicare una dieta vuota. Non è pedanteria: un cliente che
- * apre l'applicazione e trova sette giorni senza niente pensa che lo strumento
- * sia rotto, non che il suo nutrizionista non abbia ancora scritto.
- */
+/** Pubblica la dieta. Una dieta vuota viene rifiutata. */
 export async function pubblica(env: Env, utente: Utente, body: any) {
   const id = String(body?.id ?? '');
   const riga = await db.dietaDelloStudio(env, utente.id, id);
@@ -604,8 +517,7 @@ export async function pubblica(env: Env, utente: Utente, body: any) {
 
   return {
     ok: true,
-    // Non blocca la pubblicazione: una dieta con un alimento non in tabella è
-    // comunque una dieta valida. Il cliente vedrà il conto dichiarato parziale.
+    // Un alimento non in tabella non blocca la pubblicazione.
     avviso:
       mancanti.length > 0
         ? `Pubblicata. ${mancanti.length} alimenti non hanno valori nutrizionali: ` +
@@ -630,21 +542,13 @@ export async function eliminaDieta(env: Env, utente: Utente, body: any) {
   return { ok: true };
 }
 
-/* ------------------------------------------------------------------ */
-/* Libreria degli alimenti                                             */
-/* ------------------------------------------------------------------ */
+// Libreria degli alimenti
 
 export async function libreria(env: Env, utente: Utente) {
   return { alimenti: await db.elencoLibreria(env, utente.id) };
 }
 
-/**
- * Salva i valori di un alimento.
- *
- * I numeri li scrive il professionista. Non c'è una via in cui li proponga un
- * modello: un valore nutrizionale inventato entra in una dieta clinica e ci
- * resta, e nessuno saprebbe più da dove è arrivato.
- */
+/** Salva i valori di un alimento, inseriti dal professionista. */
 export async function salvaAlimento(env: Env, utente: Utente, body: any) {
   const nome = String(body?.nome ?? '').trim();
   if (nome.length < 2) throw new ErroreHttp(400, 'Serve il nome dell’alimento.');
@@ -660,9 +564,7 @@ export async function salvaAlimento(env: Env, utente: Utente, body: any) {
 
   const per = body?.per === 'pz' ? 'pz' : 'g100';
 
-  // La somma dei tre macronutrienti non può superare 100 g su 100 g di
-  // alimento: è un controllo aritmetico, non nutrizionale, e prende gli errori
-  // di battitura prima che finiscano in una dieta.
+  // Controllo aritmetico: i macro non superano 100 g su 100 g.
   if (per === 'g100' && macro[0] + macro[1] + macro[2] > 100) {
     throw new ErroreHttp(
       400,
@@ -691,12 +593,7 @@ export async function eliminaAlimento(env: Env, utente: Utente, body: any) {
   return { ok: true };
 }
 
-/**
- * Cosa sa il motore di un alimento, mentre il professionista lo sta scrivendo.
- *
- * Serve all'editor per dire subito «questo lo conosco» o «di questo mi servono
- * i valori», senza aspettare il salvataggio.
- */
+/** Cosa sa il motore di un alimento, per l'editor. */
 export async function conosci(env: Env, utente: Utente, params: URLSearchParams) {
   const nome = String(params.get('nome') ?? '').trim();
   const unita = String(params.get('unita') ?? 'g');
@@ -713,9 +610,7 @@ export async function conosci(env: Env, utente: Utente, params: URLSearchParams)
   };
 }
 
-/* ------------------------------------------------------------------ */
-/* Variazioni e domande                                                */
-/* ------------------------------------------------------------------ */
+// Variazioni e domande
 
 export async function segnaViste(env: Env, utente: Utente, body: any) {
   const ids = Array.isArray(body?.ids) ? body.ids.map(String).slice(0, 200) : [];
@@ -723,14 +618,7 @@ export async function segnaViste(env: Env, utente: Utente, body: any) {
   return { ok: true };
 }
 
-/**
- * Il veto sulla variazione di un cliente.
- *
- * È il potere che rende lo strumento accettabile a chi firma la dieta:
- * l'ultima parola resta sua. Basta mettere la riga ad 'annullata' — la
- * sovrapposizione smette da sola di applicarla e il piatto torna quello
- * prescritto, senza una seconda scrittura che potrebbe fallire a metà.
- */
+/** Annulla la variazione di un cliente: basta lo stato 'annullata'. */
 export async function annullaVariazione(env: Env, utente: Utente, body: any) {
   const id = String(body?.id ?? '');
   const nota = body?.nota ? String(body.nota).slice(0, 500) : null;
@@ -742,24 +630,9 @@ export async function annullaVariazione(env: Env, utente: Utente, body: any) {
   return { ok: true };
 }
 
-/* ------------------------------------------------------------------ */
-/* La conversazione con il cliente                                     */
-/* ------------------------------------------------------------------ */
+// Conversazione con il cliente
 
-/**
- * L'interruttore dell'assistente, cliente per cliente.
- *
- * Spento, l'assistente smette di rispondere a QUEL cliente e i suoi messaggi
- * aspettano il professionista. È una decisione che si prende sul singolo
- * rapporto — al cliente autonomo si lascia l'assistente, a quello appena
- * operato si vuole rispondere di persona — e un interruttore unico per tutto
- * lo studio costringerebbe a scegliere il comportamento sbagliato per metà
- * delle persone.
- *
- * Quello che l'assistente ha già detto NON si cancella: resta nel filo, ed è
- * anzi la prima cosa che il professionista deve poter leggere quando prende in
- * mano una conversazione cominciata senza di lui.
- */
+/** Accende o spegne l'assistente per un cliente. */
 export async function automazione(env: Env, utente: Utente, body: any) {
   const clienteId = String(body?.cliente ?? '');
   await esigiCliente(env, utente.id, clienteId);
@@ -768,9 +641,7 @@ export async function automazione(env: Env, utente: Utente, body: any) {
   const fatto = await db.impostaAutomazione(env, utente.id, clienteId, attiva);
   if (!fatto) throw new ErroreHttp(404, 'Collegamento non trovato.');
 
-  // Il cliente deve sapere chi gli sta rispondendo da adesso in poi: senza
-  // questa riga, l'assistente smetterebbe di parlare senza che nessuno glielo
-  // dica, e lui penserebbe che l'applicazione si è rotta.
+  // Avvisa il cliente di chi risponde da adesso.
   await db.scriviMessaggio(
     env,
     { clienteId, studioId: utente.id },
@@ -823,9 +694,7 @@ export async function rispondi(env: Env, utente: Utente, body: any) {
   return { ok: true };
 }
 
-/* ------------------------------------------------------------------ */
-/* Impostazioni                                                        */
-/* ------------------------------------------------------------------ */
+// Impostazioni
 
 export async function impostazioni(env: Env, utente: Utente, body: any) {
   const nome = body?.nome !== undefined ? String(body.nome).trim().slice(0, 80) : undefined;
@@ -838,21 +707,9 @@ export async function impostazioni(env: Env, utente: Utente, body: any) {
   return { ok: true };
 }
 
-/* ------------------------------------------------------------------ */
-/* Caricare la dieta come PDF                                          */
-/* ------------------------------------------------------------------ */
+// Caricare la dieta come PDF
 
-/**
- * Il PDF diventa una dieta.
- *
- * Tre cose avvengono, nell'ordine: si conserva il file, si prova a leggerlo, e
- * si crea una BOZZA con quello che si è capito. La bozza il cliente non la vede
- * finché il professionista non la pubblica — ed è lì che deve controllare quello
- * che la lettura ha ricavato.
- *
- * Se la lettura non riesce, il PDF resta comunque allegato e la dieta si scrive
- * a mano: si perde l'automatismo, non il lavoro.
- */
+/** Dal PDF a una bozza di dieta. */
 export async function caricaPdf(env: Env, utente: Utente, body: any) {
   const clienteId = String(body?.cliente ?? '');
   await esigiCliente(env, utente.id, clienteId);
@@ -877,8 +734,7 @@ export async function caricaPdf(env: Env, utente: Utente, body: any) {
     );
   }
 
-  // Un PDF comincia sempre con %PDF-. Controllarlo evita di conservare un file
-  // qualunque a cui è stata cambiata l'estensione.
+  // Controllo della firma %PDF-.
   const testa = new TextDecoder().decode(new Uint8Array(dati).slice(0, 5));
   if (testa !== '%PDF-') throw new ErroreHttp(400, 'Questo non è un PDF.');
 
@@ -887,10 +743,7 @@ export async function caricaPdf(env: Env, utente: Utente, body: any) {
     nome.replace(/\.pdf$/i, '').slice(0, 80) ||
     'Dieta';
 
-  // L'ordine conta: PRIMA si conserva il file e si crea la bozza, POI si prova
-  // a leggerlo. La lettura passa da un modello e può volerci troppo: se il
-  // Worker viene terminato a metà, il professionista deve ritrovarsi comunque
-  // il PDF caricato e una bozza vuota da compilare, non un errore e niente.
+  // Prima si salvano file e bozza, poi la lettura, che può andare in timeout.
   const dietaId = db.nuovoId('die');
   await db.creaDieta(env, utente.id, clienteId, dietaVuota(dietaId, titolo));
   await db.salvaPdf(env, dietaId, nome, base64, dati.byteLength);
@@ -919,8 +772,6 @@ export async function caricaPdf(env: Env, utente: Utente, body: any) {
     lettaAutomaticamente: lettura.ok,
     avvisi: lettura.avvisi,
     motivo: lettura.motivo ?? null,
-    // Il testo estratto serve al professionista per confrontare: è la carta
-    // accanto a quello che il software ha capito.
     testo: lettura.testo?.slice(0, 8000) ?? null,
   };
 }
@@ -934,7 +785,7 @@ export async function infoPdf(env: Env, utente: Utente, params: URLSearchParams)
   return { pdf: await db.infoPdf(env, id) };
 }
 
-/** Il PDF, per il professionista. Stesso file che vede il cliente. */
+/** Il PDF, per il professionista. */
 export async function scaricaPdf(
   env: Env,
   utente: Utente,

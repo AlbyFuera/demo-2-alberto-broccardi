@@ -28,11 +28,6 @@ describe('plausibilità della frase del modello', () => {
     );
   });
 
-  /*
-   * Il caso reale che ha fatto scrivere il modulo: llama-3.3 in fp8 ha
-   * restituito questo, senza segnalare alcun errore, e finiva sullo schermo
-   * di un cliente al posto della frase corretta che il motore aveva già.
-   */
   it('REGRESSIONE: boccia l’impasto di token visto in produzione', () => {
     const v = plausibile(
       'diffusion inclusive mingle besar_slave Incre kleingreenuntosشار秒-spec' +
@@ -64,10 +59,6 @@ describe('plausibilità della frase del modello', () => {
     assert.equal(plausibile('   ', FATTI).ok, false);
   });
 
-  /*
-   * Chiediamo due o tre frasi: se il modello ne produce dieci volte tanto, non
-   * ha riformulato i fatti — ha ricominciato a parlare per conto suo.
-   */
   it('boccia una risposta sproporzionata rispetto ai fatti', () => {
     assert.equal(plausibile('Va bene. '.repeat(120), FATTI).ok, false);
   });

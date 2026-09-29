@@ -1,14 +1,3 @@
-/**
- * Quel poco che studio e cliente condividono davvero.
- *
- * Non è una libreria: sono le quattro cose che, scritte due volte, prima o poi
- * divergono — l'escape dell'HTML, la lettura degli errori dell'API, il cambio
- * password obbligatorio e il modo di scrivere uno scostamento calorico.
- *
- * Tutto il resto resta separato di proposito. Lo studio e il cliente non sono
- * due viste dello stesso schermo: sono due prodotti che condividono un server.
- */
-
 export const $ = (id) => document.getElementById(id);
 
 export const GIORNI = [
@@ -23,35 +12,16 @@ export const GIORNI = [
 
 export const oggiIndice = () => (new Date().getDay() + 6) % 7;
 
-/**
- * Escape di ogni testo che finisce in `innerHTML`.
- *
- * Nomi di alimenti, note del professionista e domande dei clienti sono testo
- * libero scritto da qualcun altro: passano tutti di qui. Non è teorico — il
- * nome di un cliente arriva dal modulo di un altro utente.
- */
+/** Escape di ogni testo che finisce in `innerHTML`. */
 export const esc = (s) =>
   String(s ?? '').replace(
     /[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
   );
 
-/* ------------------------------------------------------------------ */
-/* Chiamate                                                            */
-/* ------------------------------------------------------------------ */
+/* Chiamate */
 
-/**
- * Una chiamata all'API.
- *
- * Il messaggio d'errore del server arriva all'utente così com'è: è scritto in
- * italiano per essere letto («Il tuo nutrizionista non ti ha ancora assegnato
- * un piano»), e sostituirlo con un generico "errore" butterebbe via l'unica
- * informazione utile.
- *
- * Il ritorno all'accesso avviene solo sul codice `sessione-scaduta`, non su
- * ogni 401: «la password attuale non è corretta» è anch'essa un 401, e
- * buttare fuori chi ha solo sbagliato a digitare sarebbe assurdo.
- */
+// Solo `sessione-scaduta` riporta all'accesso: anche la password errata è 401.
 async function chiamata(percorso, opzioni) {
   let risposta;
   try {
@@ -88,19 +58,11 @@ export async function esci() {
   window.location.href = '/';
 }
 
-/* ------------------------------------------------------------------ */
-/* Presentazione dei numeri                                            */
-/* ------------------------------------------------------------------ */
+/* Presentazione dei numeri */
 
 export const arrotonda = (n) => Math.round(Number(n) * 10) / 10;
 
-/**
- * Lo scostamento calorico, con il segno sempre esplicito.
- *
- * `parziale` non è un dettaglio: quando la composizione di un alimento non è
- * nota il conto è una stima, e presentarla come esatta è il modo più veloce di
- * perdere la fiducia di chi il piano lo firma. La tilde lo dichiara sempre.
- */
+/** Scostamento calorico, con il segno sempre esplicito. */
 export function delta(kcal, parziale = false) {
   const n = Math.round(Number(kcal) || 0);
   const verso = n > 0 ? 'su' : n < 0 ? 'giu' : 'pari';
@@ -110,7 +72,6 @@ export function delta(kcal, parziale = false) {
   );
 }
 
-/** "3 minuti fa", "ieri", "12 marzo": la precisione che serve, non di più. */
 export function quando(iso) {
   if (!iso) return '—';
   const data = new Date(iso);
@@ -133,18 +94,8 @@ export function vuoto(segno, titolo, spiegazione = '') {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Cambio password                                                     */
-/* ------------------------------------------------------------------ */
+/* Cambio password */
 
-/**
- * Cambio password.
- *
- * Ogni utente sceglie la propria all'iscrizione, quindi non esiste più un
- * cambio obbligatorio al primo accesso: `obbligatorio` resta per il caso in cui
- * servisse forzarlo (una password compromessa), e in quel caso il pannello NON
- * si chiude — nessuna schermata dietro deve essere raggiungibile prima.
- */
 export function apriCambioPassword(obbligatorio = false) {
   if ($('cambio-pw')) return;
 
@@ -190,8 +141,7 @@ export function apriCambioPassword(obbligatorio = false) {
         attuale: $('cpw-attuale').value,
         nuova: $('cpw-nuova').value,
       });
-      // Il server ha chiuso ogni sessione e ne ha aperta una nuova: si ricarica
-      // per ripartire con quella, senza stati residui in memoria.
+      // Il server ha rinnovato la sessione: si ricarica la pagina.
       window.location.reload();
     } catch (e) {
       errore(e.message);
@@ -204,17 +154,8 @@ export function apriCambioPassword(obbligatorio = false) {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* Avvio comune                                                        */
-/* ------------------------------------------------------------------ */
+/* Avvio comune */
 
-/**
- * Chi sta guardando la pagina, con i controlli che non si possono dimenticare.
- *
- * Il server già rifiuta un cliente su /studio e un professionista su /cliente:
- * questo è il secondo controllo, quello che evita di disegnare mezza schermata
- * prima di accorgersene.
- */
 export async function avvia(ruoloAtteso) {
   const io = await chiSono();
 

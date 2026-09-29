@@ -1,38 +1,5 @@
-/**
- * Terzo piano di collaudo — impostazione a macronutrienti.
- *
- * Famiglia diversa dalle prime due: NON prescrive alimenti. Fissa calorie e
- * grammi di macronutrienti e lascia al paziente la scelta del cibo.
- * Conseguenza diretta: il motore non può comporre una settimana, perché non
- * c'è nulla fra cui scegliere. Può però verificare che i conti tornino — ed è
- * esattamente lì che questo piano si rivela interessante.
- *
- * Le celle lasciate in bianco nel documento originale sono `undefined` qui,
- * non zero e non valori inventati: un dato mancante è un'informazione.
- *
- * ─────────────────────────────────────────────────────────────────────────
- * DA CONFERMARE DAL PROFESSIONISTA:
- *
- *  1. CONTRADDIZIONE PRINCIPALE. I macronutrienti sommano a 2.650 kcal, ma
- *     l'obiettivo giornaliero dichiarato è 1.800. Coincidono esattamente con
- *     il TDEE iniziale: sembrano non ricalcolati dopo il deficit.
- *  2. RIGA "REST DAY" vuota, benché il piano distingua i giorni di allenamento.
- *  3. PESO CORPOREO non indicato nel documento. Qui è dedotto dai rapporti
- *     g/kg (137/1,8 · 323/4,25 · 90/1,2 → ~76 kg) SOLO per poter verificare i
- *     conti: va confermato, non è un dato del piano.
- *  4. "se cena 600/70 kcal": quasi certamente 600/700, ma è una correzione che
- *     spetta a chi ha scritto il piano, non al software.
- *  5. TDEE finale, deficit medio, surplus/deficit totale e variazione di peso
- *     sono in bianco.
- */
-
 import type { NutritionPlan } from '../types.ts';
 
-/**
- * Peso DEDOTTO, non dichiarato. Serve solo a rendere verificabili i g/kg.
- * Se il professionista lo smentisce, cadono i controlli che lo usano — non i
- * dati del piano.
- */
 const PESO_DEDOTTO_KG = 76;
 
 export const pianoMacro: NutritionPlan = {
@@ -93,8 +60,7 @@ export const pianoMacro: NutritionPlan = {
       {
         id: 'pasto-3',
         label: 'Pasto 3 (post workout)',
-        // "600/70 kcal" nel documento: letto come 600–700 se è la cena,
-        // ~200 se è uno spuntino. DA CONFERMARE.
+        // 600/70 kcal nel documento: letto come 600-700 a cena, ~200 a spuntino. Da confermare.
         kcalMin: 200,
         kcalMax: 700,
         note: 'Se cena 600/700 kcal, se spuntino 200 circa. Prediligi carboidrati semplici e proteine.',

@@ -20,27 +20,17 @@ describe('macronutriente caratterizzante', () => {
     assert.equal(caratterizzante({ proteine: 0, carboidrati: 0, grassi: 100 }), 'grassi');
   });
 
-  /*
-   * Le verdure non caratterizzano nulla: sostituirle a peso è corretto, e
-   * cercare di pareggiare i loro 2 g di carboidrati produrrebbe porzioni assurde.
-   */
   it('non attribuisce un caratterizzante a un alimento a basso apporto', () => {
     assert.equal(caratterizzante({ proteine: 1.3, carboidrati: 1.4, grassi: 0.1 }), 'nessuno');
   });
 
   it('nemmeno a un alimento misto, dove nessun macronutriente comanda', () => {
-    // 288 kcal, di cui 38% grassi, 35% carboidrati, 28% proteine: nessuna
-    // quota raggiunge il 40%, e pareggiarne una sposterebbe le altre due.
+    // 288 kcal: 38% grassi, 35% carboidrati, 28% proteine.
     assert.equal(caratterizzante({ proteine: 20, carboidrati: 25, grassi: 12 }), 'nessuno');
   });
 });
 
 describe('equivalenza tra due alimenti', () => {
-  /*
-   * LA REGOLA DEL MODULO: si pareggia il macronutriente caratterizzante, non le
-   * calorie. Pareggiare le kcal tra due fonti diverse dà un numero giusto e una
-   * dieta sbagliata.
-   */
   it('pareggia i carboidrati tra due fonti di carboidrati', () => {
     const e = equivalenza(g('pasta', 100), 'riso');
     assert.equal(e.esito, 'calcolata');
@@ -64,10 +54,6 @@ describe('equivalenza tra due alimenti', () => {
     assert.equal(e.entra!.quantita! % 5, 0);
   });
 
-  /*
-   * Lo scostamento va calcolato sulla quantità ARROTONDATA. Un delta calcolato
-   * sul numero esatto descriverebbe un pasto che nessuno mangerà.
-   */
   it('REGRESSIONE: lo scostamento è quello della porzione arrotondata', () => {
     const e = equivalenza(g('pasta', 100), 'riso');
     const q = e.entra!.quantita!;
@@ -90,12 +76,6 @@ describe('equivalenza tra due alimenti', () => {
     assert.equal(e.entra!.unita, 'pz');
   });
 
-  /*
-   * Il caso che il professionista deve vedere: pasta → pollo. Il pareggio sui
-   * carboidrati è impossibile (il pollo non ne ha), quindi si ripiega sulle
-   * calorie E SI DICE, perché non è la sostituzione di un ingrediente: è un
-   * cambio di forma della giornata.
-   */
   it('ripiega sulle calorie quando il caratterizzante non è pareggiabile, e avvisa', () => {
     const e = equivalenza(g('pasta', 100), 'petto di pollo');
     assert.equal(e.esito, 'calcolata');
@@ -127,7 +107,6 @@ describe('equivalenza tra due alimenti', () => {
     }
   });
 
-  /* Nessun numero inventato: se non si conosce un alimento, si ferma. */
   it('non calcola nulla se non conosce l’alimento che ENTRA', () => {
     const e = equivalenza(g('pasta', 100), 'nduja');
     assert.equal(e.esito, 'sconosciuta');
@@ -192,12 +171,6 @@ describe('proposte quando il cliente non nomina il sostituto', () => {
     for (let i = 1; i < p.length; i++) assert.ok(p[i - 1].scarto <= p[i].scarto);
   });
 
-  /*
-   * 100 g di pasta portano 75 g di carboidrati; il latte ne ha 5 per 100 ml.
-   * Il pareggio esiste ed è un litro e mezzo di latte: un conto giusto e un
-   * consiglio che nessuno seguirebbe. Una proposta assurda fa perdere fiducia
-   * anche in quelle buone.
-   */
   it('REGRESSIONE: non propone porzioni fuori scala', () => {
     for (const p of proposte(g('pasta', 100), dieta)) {
       assert.ok(p.quantita <= 300, `proposto ${p.quantita}${p.unita} di ${p.nome}`);

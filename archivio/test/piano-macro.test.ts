@@ -24,7 +24,6 @@ describe('classificazione dei piani', () => {
 
     const esito = canGenerateWeek(pianoMacro);
     assert.equal(esito.ok, false);
-    // La motivazione deve dire PERCHÉ, non limitarsi a rifiutare.
     assert.match(esito.reason ?? '', /non elenca alimenti/);
     assert.match(esito.reason ?? '', /al posto del professionista/);
   });
@@ -32,15 +31,13 @@ describe('classificazione dei piani', () => {
 
 describe('verifica di un piano a macronutrienti', () => {
   it('scopre che i macronutrienti non tornano con le calorie obiettivo', () => {
-    // 137×4 + 323×4 + 90×9 = 2650, ma l'obiettivo dichiarato è 1800.
+    // 137×4 + 323×4 + 90×9 = 2650 kcal, obiettivo 1800.
     assert.ok(
       messaggi(pianoMacro).some((m) => /sommano a 2650 kcal.*obiettivo giornaliero è 1800/.test(m)),
     );
   });
 
   it("segnala che l'obiettivo è matematicamente irraggiungibile", () => {
-    // Proteine + carboidrati fanno già 1840 kcal: nessun margine, nemmeno a
-    // grassi zero. È il caso in cui il paziente non può che fallire.
     assert.ok(
       messaggi(pianoMacro).some((m) => /irraggiungibile anche azzerando i grassi/.test(m)),
       'la contraddizione più grave deve essere detta esplicitamente',
@@ -54,7 +51,6 @@ describe('verifica di un piano a macronutrienti', () => {
   it('segnala la riga "Rest day" lasciata in bianco', () => {
     const issue = checkPlanIntegrity(pianoMacro).find((i) => /Rest day/.test(i.message));
     assert.ok(issue);
-    // Una cella vuota è un dato mancante, non un errore di calcolo.
     assert.equal(issue.severity, 'avviso');
   });
 

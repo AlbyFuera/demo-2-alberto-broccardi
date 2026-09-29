@@ -1,23 +1,3 @@
-/**
- * La schermata del professionista.
- *
- * Tre viste, in ordine di frequenza reale: il cruscotto (ogni giorno), la
- * scheda di un cliente (ogni tanto), l'editor della dieta (il lavoro lungo).
- *
- * L'EDITOR è il pezzo che decide se lo strumento viene usato o abbandonato.
- * Due scelte lo governano:
- *
- *   · si scrive UN GIORNO PER VOLTA, con il totale sempre in alto. È il numero
- *     che il professionista sta cercando di far quadrare mentre digita, e
- *     doverlo cercare altrove significa doverlo calcolare a mente;
- *   · l'alimento che il motore non conosce si colora subito, non al
- *     salvataggio. Se se ne accorge dieci minuti dopo, quando ha scritto sette
- *     giorni, deve tornare indietro a cercarlo.
- *
- * Il salvataggio è esplicito. Un salvataggio automatico su una dieta clinica
- * significa pubblicare per sbaglio una riga scritta a metà.
- */
-
 import {
   $,
   GIORNI,
@@ -44,13 +24,6 @@ const stato = {
 
 const contenuto = () => $('contenuto');
 
-/**
- * Le basi di pareggio, dette come le direbbe lui.
- *
- * Il nome tecnico da solo non basta — «isoglucidica» non è di uso quotidiano
- * nemmeno per chi la usa — e il nome comune da solo sarebbe impreciso: si
- * scrivono tutti e due, e la scelta si fa leggendo la riga intera.
- */
 const BASI_DIETA = [
   ['auto', 'come viene: sul macronutriente principale'],
   ['kcal', 'isocalorica: stesse calorie'],
@@ -65,9 +38,7 @@ const nomeBaseDieta = () => {
   return { auto: 'sul macronutriente principale', kcal: 'isocalorica', proteine: 'isoproteica', carboidrati: 'isoglucidica', grassi: 'isolipidica' }[b];
 };
 
-/* ------------------------------------------------------------------ */
-/* Ricarica                                                            */
-/* ------------------------------------------------------------------ */
+// Ricarica
 
 async function ricarica() {
   stato.dati = await leggi('/api/studio/cruscotto');
@@ -77,9 +48,6 @@ async function ricarica() {
 
 function aggiornaTesta() {
   const c = stato.dati.conteggi;
-  // Le domande non compaiono più nella dashboard: l'assistente risponde da sé,
-  // quindi non entrano nemmeno nel pallino. I messaggi sì: quando l'automazione
-  // è spenta, un cliente che scrive sta aspettando una persona.
   const nuove = c.variazioniNuove + c.richieste + (c.messaggi ?? 0);
 
   $('chi-nome').textContent = stato.dati.io.nome || stato.dati.io.email;
@@ -97,18 +65,8 @@ function avvisa(messaggio, tipo = 'attenzione') {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Cruscotto                                                           */
-/* ------------------------------------------------------------------ */
+// Cruscotto
 
-/**
- * Una variazione come arriva sul tavolo del professionista.
- *
- * Quattro informazioni nell'ordine in cui servono: chi, cosa c'era scritto,
- * cosa ci ha messo, di quanto si è spostata la giornata. E su quale
- * macronutriente il motore ha pareggiato — senza quello il delta calorico non
- * si sa come leggerlo.
- */
 function rigaVariazione(v) {
   const avvisi = v.avvisi.length
     ? `<div class="numeri"><span>! ${esc(v.avvisi.join(' · '))}</span></div>`
@@ -209,7 +167,6 @@ function disegnaCruscotto() {
       }
     });
   }
-
 }
 
 function collegaAzioniComuni() {
@@ -221,13 +178,6 @@ function collegaAzioniComuni() {
   }
 }
 
-/**
- * Il veto sulla variazione di un cliente.
- *
- * Chiede una nota prima di procedere, e non per formalità: il cliente si vedrà
- * tornare indietro un piatto che aveva scelto, e «annullata» senza una riga di
- * spiegazione è il modo più veloce di fargli smettere di usare lo strumento.
- */
 function chiediAnnullamento(bottone) {
   if (bottone.dataset.aperto) return;
   bottone.dataset.aperto = '1';
@@ -261,17 +211,8 @@ function chiediAnnullamento(bottone) {
   });
 }
 
-/* ------------------------------------------------------------------ */
-/* Clienti                                                             */
-/* ------------------------------------------------------------------ */
+// Clienti
 
-/**
- * L'aderenza come la legge il professionista in un colpo d'occhio.
- *
- * «—» non è zero: è «non ha mai segnato niente». La differenza cambia la
- * telefonata che gli farà — a uno chiede perché non segue la dieta, all'altro
- * se ha capito come si usa l'applicazione.
- */
 function scriviAderenza(a) {
   if (!a || a.percentuale === null) {
     return `<span class="aderenza ignota" title="Non ha ancora segnato nessun pasto">— nessun dato</span>`;
@@ -498,22 +439,8 @@ function disegnaCliente() {
   collegaAzioniComuni();
 }
 
-/* ------------------------------------------------------------------ */
-/* La conversazione con il cliente                                     */
-/* ------------------------------------------------------------------ */
+// La conversazione con il cliente
 
-/**
- * Il filo dei messaggi, con l'interruttore dell'assistente sopra.
- *
- * L'interruttore sta QUI, dentro la scheda del cliente, e non nelle
- * impostazioni dello studio: è una decisione che si prende su una persona —
- * questa la seguo io di persona, quest'altra se la cava con l'assistente — e
- * metterlo altrove significherebbe farla prendere su tutti insieme.
- *
- * Il filo mostra tre voci diverse e non le confonde mai: il cliente,
- * l'assistente, e il professionista. Far passare per proprie le parole di un
- * modello sarebbe la bugia più grave che questo prodotto possa dire.
- */
 function conversazione(d) {
   const auto = d.cliente.automazione;
   const filo = d.conversazione ?? [];
@@ -598,16 +525,12 @@ async function nuovaDieta(clienteId, daId) {
   const esito = await invia('/api/studio/nuova-dieta', {
     cliente: clienteId,
     titolo,
-    // Copiare la precedente è quasi sempre quello che serve: una dieta nuova è
-    // la vecchia con due o tre cose cambiate.
     da: daId ?? '',
   });
   await apriEditor(esito.id);
 }
 
-/* ------------------------------------------------------------------ */
-/* Editor della dieta                                                  */
-/* ------------------------------------------------------------------ */
+// Editor della dieta
 
 async function apriEditor(dietaId) {
   contenuto().innerHTML = `<div class="vuoto"><p class="grande">·</p><p>Caricamento…</p></div>`;
@@ -671,10 +594,6 @@ function disegnaEditor() {
     `<label><span>Acqua litri</span><input id="ob-acqua" type="number" min="0" step="0.1" value="${o.acqua ?? ''}"></label>` +
     `<label><span>Passi al giorno</span><input id="ob-passi" type="number" min="0" step="500" value="${o.passi ?? ''}"></label>` +
     `</div>` +
-    // La regola di sostituzione sta qui, in testa alla dieta e non dentro il
-    // singolo alimento, perché è una decisione clinica sul piano: la si prende
-    // una volta e vale per ogni sostituzione che il cliente farà. Il cliente
-    // non la può cambiare, e in fondo alla riga c'è scritto.
     `<label><span>Le sostituzioni si pareggiano <span class="aiuto">vale per tutta la dieta — il cliente non la può cambiare</span></span>` +
     `<select id="base-dieta">` +
     BASI_DIETA.map(
@@ -689,9 +608,7 @@ function disegnaEditor() {
       .map((g) => {
         const vuotoGiorno = !g.pasti.some((p) => p.alimenti.length > 0);
         const kcal = e.conti.giorni.find((x) => x.indice === g.indice)?.kcal ?? 0;
-        // `aria-pressed`, non `aria-selected`: questi sono bottoni a
-        // interruttore, non le linguette di un tablist, e con l'attributo
-        // sbagliato uno screen reader non annuncia quale giorno è aperto.
+        // aria-pressed e non aria-selected: sono interruttori, non tab.
         return (
           `<button data-giorno="${g.indice}" aria-pressed="${g.indice === e.giorno}"` +
           `${vuotoGiorno ? ' class="vuoto-giorno"' : ''}>` +
@@ -751,8 +668,6 @@ function disegnaAlimento(a, i, j) {
       .map((u) => `<option value="${u}"${a.unita === u ? ' selected' : ''}>${u}</option>`)
       .join('') +
     `</select>` +
-    // Il numero accanto al simbolo è quello che il professionista guarda per
-    // sapere dove ha già scritto un piano e dove no, senza aprire niente.
     `<button class="btn mini ${quante ? '' : 'neutra'}" data-piano="${i}.${j}" ` +
     `aria-expanded="${aperto}" title="Sostituzioni ammesse">⇄${quante ? ` ${quante}` : ''}</button>` +
     `<button class="btn mini pericolo" data-togli-alimento="${i}.${j}" title="Togli">✕</button>` +
@@ -761,15 +676,6 @@ function disegnaAlimento(a, i, j) {
   );
 }
 
-/**
- * Il piano a sostituzione di un alimento.
- *
- * È la cosa che il professionista chiede da sempre e che sul foglio non ci sta:
- * «a colazione la fonte proteica può essere questa, questa o questa». Le
- * grammature non gliele si chiede — le calcola il motore sulla base che sceglie
- * lui — ma il campo c'è, perché quella singola alternativa che nella sua
- * esperienza va scritta diversamente deve poterla scrivere.
- */
 function disegnaPiano(a, i, j) {
   const alternative = a.alternative ?? [];
 
@@ -779,8 +685,6 @@ function disegnaPiano(a, i, j) {
         `<div class="riga-alternativa" data-alternativa="${k}">` +
         `<input type="text" value="${esc(alt.nome ?? '')}" placeholder="merluzzo" data-alt="nome">` +
         `<input type="number" min="0" step="1" value="${alt.quantita ?? ''}" ` +
-        // Il campo è largo cinque caratteri: «calcolata» ci arriverebbe tagliato
-        // a metà, e un segnaposto troncato non dice niente a nessuno.
         `placeholder="auto" data-alt="quantita" title="Lascia vuoto e la calcolo io">` +
         `<select data-alt="unita">` +
         ['g', 'ml', 'pz']
@@ -800,11 +704,6 @@ function disegnaPiano(a, i, j) {
     `<div class="campi">` +
     `<label><span>Come si chiama questo posto <span class="aiuto">lo legge il cliente</span></span>` +
     `<input type="text" value="${esc(a.gruppo ?? '')}" placeholder="fonte proteica" data-piano-campo="gruppo"></label>` +
-    // Solo per QUESTO alimento, e il predefinito è seguire la dieta: la regola
-    // si scrive una volta in testa al piano, qui si deroga. Senza il valore
-    // vuoto in cima, il professionista dovrebbe ripetere la stessa scelta su
-    // ogni alimento — che è esattamente la fatica che il campo sulla dieta
-    // toglie di mezzo.
     `<label><span>Solo per questo alimento</span><select data-piano-campo="base">` +
     [['', `come dice la dieta: ${nomeBaseDieta()}`], ...BASI_DIETA]
       .map(
@@ -823,16 +722,6 @@ function disegnaPiano(a, i, j) {
   );
 }
 
-/**
- * Rilegge dal modulo il giorno che si sta scrivendo e lo mette nello stato.
- *
- * NON scarta le righe ancora senza nome. Sembra una pulizia sensata e invece è
- * il modo più diretto di rendere l'editor inutilizzabile: si aggiunge una riga,
- * si aggiunge la seconda, e la prima — su cui non si è ancora scritto niente —
- * spariva. A ripulire ci pensa il server al salvataggio, che è il momento
- * giusto: lì una riga senza nome è davvero da buttare, qui è una riga in cui il
- * professionista sta per scrivere.
- */
 function leggiGiorno() {
   const e = stato.editor;
   const giorno = e.dieta.giorni.find((g) => g.indice === e.giorno);
@@ -847,9 +736,6 @@ function leggiGiorno() {
       nota: vecchio.nota,
       alimenti: [...nodo.querySelectorAll('.riga-alimento')].map((riga, j) => {
         const q = riga.querySelector('[data-campo="quantita"]').value;
-        // Il piano vive nel modello e non nel DOM: il pannello è aperto su un
-        // alimento alla volta, e gli altri trenta devono restare quelli che
-        // sono. Si rilegge dal modulo solo quello aperto.
         const vecchioAlimento = vecchio.alimenti?.[j] ?? {};
         const pannello = nodo.querySelector(`[data-piano-di="${i}.${j}"]`);
 
@@ -897,16 +783,12 @@ const pianoDi = (a) => ({
 function leggiPannelloPiano(pannello) {
   const campo = (nome) => pannello.querySelector(`[data-piano-campo="${nome}"]`)?.value ?? '';
 
-  // Le righe ancora senza nome NON si scartano qui: chi ne aggiunge una
-  // seconda vedrebbe sparire la prima, su cui non ha ancora scritto. A
-  // buttarle è il server al salvataggio, che è il momento in cui una riga
-  // senza nome è davvero da buttare.
+  // Non scartare qui le righe senza nome: lo fa il server al salvataggio.
   const alternative = [...pannello.querySelectorAll('.riga-alternativa')].map((riga) => {
     const q = riga.querySelector('[data-alt="quantita"]').value;
     return {
       nome: riga.querySelector('[data-alt="nome"]').value.trim(),
-      // Vuoto significa «calcolala tu»: è il caso normale, e trasformarlo in
-      // uno zero metterebbe «0 g di ricotta» nel piatto di qualcuno.
+      // Vuoto significa calcolata dal motore: non convertire in zero.
       quantita: q === '' ? undefined : Number(q),
       unita: riga.querySelector('[data-alt="unita"]').value,
     };
@@ -914,10 +796,7 @@ function leggiPannelloPiano(pannello) {
 
   return {
     alternative,
-    // Vuoto significa «come dice la dieta» e va mandato vuoto: forzarlo ad
-    // 'auto' — come faceva prima — scriverebbe su ogni alimento toccato
-    // un'eccezione che il professionista non ha chiesto, e la regola del piano
-    // non arriverebbe mai in fondo.
+    // Vuoto significa come dice la dieta: non forzare 'auto'.
     base: campo('base'),
     gruppo: campo('gruppo').trim(),
   };
@@ -934,13 +813,6 @@ function collegaEditor() {
     });
   });
 
-  /*
-   * Il pannello di un alimento può essere aperto proprio mentre si cambia la
-   * regola del piano, e lì dentro c'è scritto «come dice la dieta: isocalorica»
-   * — che da quel momento sarebbe una bugia. Si aggiorna la riga invece di
-   * ridisegnare tutto: un ridisegno chiuderebbe il pannello sotto le mani di
-   * chi ci stava scrivendo.
-   */
   $('base-dieta').addEventListener('change', () => {
     e.dieta.base = $('base-dieta').value;
     e.sporca = true;
@@ -997,13 +869,11 @@ function collegaEditor() {
     });
   }
 
-  /* --- il piano a sostituzione --- */
+  // Piano a sostituzione
 
   for (const el of contenuto().querySelectorAll('[data-piano]')) {
     el.addEventListener('click', () => {
       leggiGiorno();
-      // Uno alla volta: due pannelli aperti su un editor già denso di campi
-      // fanno perdere di vista la dieta, che è la cosa che si sta scrivendo.
       e.pianoAperto = e.pianoAperto === el.dataset.piano ? null : el.dataset.piano;
       disegnaEditor();
     });
@@ -1054,18 +924,6 @@ function collegaEditor() {
 const NOMI_SUGGERITI = ['Colazione', 'Spuntino', 'Pranzo', 'Merenda', 'Cena', 'Spuntino serale'];
 const nomeSuggerito = (i) => NOMI_SUGGERITI[i] ?? `Pasto ${i + 1}`;
 
-/**
- * Uscire dall'editor con modifiche non salvate.
- *
- * Non un `confirm()` del browser: quella è una finestra disegnata dal sistema
- * operativo, con i suoi bottoni e la sua lingua, in mezzo a un'interfaccia che
- * ha un insieme di forme e di simboli suo. La domanda si fa dentro la pagina,
- * come ogni altra conferma di questo prodotto.
- *
- * E si offre la terza via che un `confirm()` non può offrire: salvare e uscire.
- * È quello che il professionista vuole fare nove volte su dieci, e costringerlo
- * a scegliere tra perdere il lavoro e restare è una scelta finta.
- */
 function chiediUscita(prosegui) {
   if (!stato.editor?.sporca) {
     prosegui();
@@ -1101,13 +959,6 @@ function chiediUscita(prosegui) {
   });
 }
 
-/**
- * Copiare un giorno su un altro.
- *
- * Nella pratica quasi tutte le diete hanno giorni identici o quasi, e
- * riscriverli a mano sette volte è il motivo per cui uno strumento del genere
- * finisce abbandonato dopo la seconda dieta.
- */
 function copiaGiorno() {
   const e = stato.editor;
   const zona = document.createElement('div');
@@ -1127,9 +978,7 @@ function copiaGiorno() {
       leggiGiorno();
       const sorgente = e.dieta.giorni.find((g) => g.indice === Number(b.dataset.copia));
       const destinazione = e.dieta.giorni.find((g) => g.indice === e.giorno);
-      // Gli id dei pasti NON si copiano: ci puntano le variazioni dei clienti,
-      // e due pasti con lo stesso id farebbero agganciare una sostituzione al
-      // giorno sbagliato. Li rifà il server al salvataggio.
+      // Gli id dei pasti non si copiano: li rigenera il server.
       destinazione.pasti = sorgente.pasti.map((p) => ({
         nome: p.nome,
         orario: p.orario,
@@ -1190,13 +1039,6 @@ async function pubblica(dietaId) {
   }
 }
 
-/**
- * Il modulo che chiede i valori mancanti.
- *
- * I numeri li scrive il professionista, uno alla volta. Non c'è una via in cui
- * li proponga un modello: un valore nutrizionale inventato entra in una dieta
- * clinica e ci resta, e nessuno saprebbe più da dove è arrivato.
- */
 function apriCompletamento() {
   const mancanti = stato.editor.daCompletare;
 
@@ -1256,9 +1098,7 @@ function apriCompletamento() {
   });
 }
 
-/* ------------------------------------------------------------------ */
-/* Libreria degli alimenti                                             */
-/* ------------------------------------------------------------------ */
+// Libreria degli alimenti
 
 async function disegnaLibreria() {
   contenuto().innerHTML = `<div class="vuoto"><p class="grande">·</p><p>Caricamento…</p></div>`;
@@ -1337,9 +1177,7 @@ async function disegnaLibreria() {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* Il mio studio                                                       */
-/* ------------------------------------------------------------------ */
+// Il mio studio
 
 function disegnaConto() {
   const io = stato.dati.io;
@@ -1375,9 +1213,7 @@ function disegnaConto() {
   $('esci').addEventListener('click', esci);
 }
 
-/* ------------------------------------------------------------------ */
-/* Impalcatura                                                         */
-/* ------------------------------------------------------------------ */
+// Impalcatura
 
 function disegna() {
   for (const b of $('schede').querySelectorAll('button')) {
@@ -1401,14 +1237,6 @@ for (const b of $('schede').querySelectorAll('button')) {
   });
 }
 
-/**
- * Sondaggio leggero delle novità.
- *
- * Un minuto, e solo i numeri del pallino: la schermata resta aperta per ore su
- * una scrivania, e ricaricare tutto il cruscotto a ripetizione costerebbe
- * letture su D1 per niente. Il contenuto si aggiorna quando il professionista
- * torna sulla scheda, non alle sue spalle mentre sta scrivendo una dieta.
- */
 setInterval(async () => {
   if (document.hidden || !stato.dati) return;
   try {
@@ -1421,8 +1249,6 @@ setInterval(async () => {
   }
 }, 60_000);
 
-// Un salvataggio perso perché si è chiusa la scheda è il modo più veloce di
-// far smettere qualcuno di fidarsi di uno strumento.
 window.addEventListener('beforeunload', (e) => {
   if (stato.editor?.sporca) e.preventDefault();
 });
@@ -1435,21 +1261,8 @@ async function inizia() {
 
 inizia();
 
-/* ------------------------------------------------------------------ */
-/* Caricare la dieta come PDF                                          */
-/* ------------------------------------------------------------------ */
+// Caricare la dieta come PDF
 
-/**
- * Il PDF diventa una bozza, non una dieta.
- *
- * La lettura automatica sbaglia: legge «150 g» dove c'era «15 g», salta una
- * riga, confonde due giorni. Per questo quello che ne esce è una BOZZA che il
- * professionista apre nell'editor e controlla — e per questo, accanto a quello
- * che il software ha capito, resta il testo che ha letto davvero.
- *
- * Il PDF originale resta comunque allegato: se la lettura ha sbagliato, la
- * carta del nutrizionista è sempre lì, e il cliente può aprirla.
- */
 function apriCaricamentoPdf(clienteId) {
   const zona = document.createElement('div');
   zona.className = 'scheda accesso stretto sotto';
@@ -1493,8 +1306,6 @@ function apriCaricamentoPdf(clienteId) {
 
   campo.addEventListener('change', () => prendi(campo.files[0]));
 
-  // Trascinare il file è il gesto naturale da computer, e il professionista la
-  // dieta ce l'ha già aperta in un'altra finestra.
   for (const evento of ['dragenter', 'dragover']) {
     area.addEventListener(evento, (e) => {
       e.preventDefault();
@@ -1570,8 +1381,7 @@ function inBase64(file) {
     const lettore = new FileReader();
     lettore.onerror = () => rifiuta(new Error('Non sono riuscito a leggere il file.'));
     lettore.onload = () => {
-      // `readAsDataURL` produce «data:application/pdf;base64,XXXX»: serve la
-      // parte dopo la virgola.
+      // Serve solo la parte base64 dopo la virgola.
       const testo = String(lettore.result);
       risolvi(testo.slice(testo.indexOf(',') + 1));
     };

@@ -1,28 +1,13 @@
 {
-  // Configurazione Cloudflare.
-  //
-  //   npx wrangler d1 create pianificatore
-  //     → copia l'id restituito in "database_id" qui sotto
-  //   npx wrangler d1 migrations apply pianificatore --local     (sviluppo)
-  //   npx wrangler d1 migrations apply pianificatore --remote     (produzione)
-  //   npx wrangler secret put CODICE_STUDIO
-  //   npx wrangler dev            → http://localhost:8787
-  //   npx wrangler deploy
-  //
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "pianificatore-dieta",
   "main": "worker/index.ts",
   "compatibility_date": "2026-07-01",
 
-  // Il motore in `src/` usa `structuredClone` e nient'altro fuori dagli
-  // standard: nessun bisogno di nodejs_compat, e non averlo tiene il bundle
-  // piccolo e l'avvio a freddo breve.
   "assets": {
     "directory": "web",
     "binding": "ASSETS",
-    // Il Worker decide il routing PRIMA degli asset. Serve perché "/" deve
-    // portare all'accesso e "/studio" deve essere negato a un cliente: se gli
-    // asset rispondessero per primi, chiunque scaricherebbe la dashboard.
+    // Il Worker deve passare prima degli asset: protegge /studio.
     "run_worker_first": true
   },
 
@@ -34,18 +19,13 @@
     }
   ],
 
-  // Workers AI: nessuna chiave da custodire, quota gratuita giornaliera
-  // inclusa nel piano Free. Se il binding manca, l'assistente resta
-  // deterministico invece di spegnersi.
   "ai": {
     "binding": "AI"
   },
 
   "vars": {
-    // Il modello si cambia da qui, senza toccare il codice.
     "MODELLO_AI": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
-    // CODICE_STUDIO è un SEGRETO: va messo con `wrangler secret put`,
-    // mai qui dentro, o finisce nel controllo di versione.
+    // CODICE_STUDIO va impostato con `wrangler secret put`, non qui.
   },
 
   "observability": {

@@ -25,10 +25,6 @@ describe('pasto saltato', () => {
     assert.ok(Math.abs(r.previsto.kcal - atteso.kcal) < 0.001);
   });
 
-  /*
-   * L'obiettivo dichiarato dal professionista vince sul totale della dieta: se
-   * ha scritto 1800 kcal e la giornata ne somma 1600, il riferimento è il suo.
-   */
   it('misura la mancanza contro l’obiettivo, non contro la somma dei pasti', () => {
     const r = recupero(dieta, LUN, [], 7)!;
     assert.equal(r.obiettivoKcal, 1800);
@@ -42,11 +38,6 @@ describe('pasto saltato', () => {
     assert.ok(Math.abs(r.manca.kcal) < 0.001, 'niente saltato e niente obiettivo: non manca nulla');
   });
 
-  /*
-   * L'orario decide cosa resta da fare. Alle 7 del mattino resta tutto; alle 22
-   * non resta niente, e dirgli che gli resta la cena lo porterebbe a mangiare
-   * due volte.
-   */
   it('i pasti rimanenti dipendono dall’ora', () => {
     assert.equal(recupero(dieta, LUN, [], 7)!.rimanenti.length, 3);
     assert.equal(recupero(dieta, LUN, [], 14)!.rimanenti.length, 1);
@@ -65,11 +56,6 @@ describe('pasto saltato', () => {
     assert.equal(r.rimanenti.length, 1);
   });
 
-  /*
-   * Lo scoperto è la domanda vera del cliente: «anche facendo tutto il resto,
-   * quanto mi manca?». Se salta il pranzo e fa colazione e cena, gli manca
-   * esattamente il pranzo rispetto all'obiettivo.
-   */
   it('lo scoperto è quello che manca a fine giornata, facendo tutto il resto', () => {
     const r = recupero(dieta, LUN, ['pas_pra'], 7)!;
     const pranzo = r.saltati[0].valori.kcal;

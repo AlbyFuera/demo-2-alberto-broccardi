@@ -1,15 +1,3 @@
-/**
- * Ottimizzazione della preparazione (meal prep).
- *
- * L'obiettivo non è "cucinare in anticipo" in astratto, ma ridurre il numero di
- * accensioni dei fornelli rispettando i giorni di conservazione: un riso che si
- * tiene 3 giorni non può coprire una settimana con una sola cottura.
- *
- * L'algoritmo è volutamente semplice e ispezionabile: per ogni alimento da
- * cuocere in batch si scorrono i giorni in cui serve e si apre una nuova
- * sessione ogni volta che la conservazione non arriva al giorno successivo.
- */
-
 import type { NutritionPlan, WeekPlan } from '../types.ts';
 import { DAY_NAMES } from '../types.ts';
 

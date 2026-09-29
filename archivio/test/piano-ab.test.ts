@@ -40,9 +40,6 @@ describe('integrità dei piani', () => {
     delete slot.options[0].nutrients;
 
     const problems = checkPlanIntegrity(rotto);
-    // L'elenco delle fonti è condiviso da tutti i pasti: il buco viene
-    // segnalato ovunque comparirebbe, che è esattamente ciò che serve al
-    // professionista per capire quanto è esteso il problema.
     assert.ok(problems.length >= 1);
     assert.ok(problems.every((p) => /non ha il valore di carboidrati/.test(p.message)));
   });
@@ -78,7 +75,7 @@ describe('regimi alternati (Alim A / Alim B)', () => {
 
   it('applica il regime giusto a ogni giorno', () => {
     const w = week(3);
-    // Lun-Gio e Dom = Alim A (5 pasti, il sesto è facoltativo e non richiesto).
+    // Lun-Gio e Dom = Alim A.
     for (const d of [0, 1, 2, 3, 6]) {
       const ids = w.days[d].meals.map((m) => m.mealId).sort();
       assert.deepEqual(ids, ['pasto-1', 'pasto-2', 'pasto-3', 'pasto-4', 'pasto-5']);
@@ -112,8 +109,6 @@ describe('regimi alternati (Alim A / Alim B)', () => {
 
   it('rifiuta gli alimenti di un regime dentro un giorno dell\'altro', () => {
     const bad = tamper(week(3), (w) => {
-      // Il pasto 6 di Alim B (budino + cioccolato) infilato in un giorno di
-      // Alim A, dove quel pasto prevede tutt'altro.
       const venerdi = w.days[4].meals.find((m) => m.mealId === 'pasto-6')!;
       w.days[0].meals.push(structuredClone(venerdi));
     });
@@ -146,7 +141,6 @@ describe('regimi alternati (Alim A / Alim B)', () => {
 /* ================================================================== */
 describe('porzioni espresse in nutriente', () => {
   it('calcola il peso dalla quota di carboidrati', () => {
-    // 50 g di carboidrati da un alimento che ne ha 78 g/100 g → ~64 g.
     const basmati = plan.variants![0].meals[0].slots
       .find((s) => s.id === 'carbo')!
       .options.find((o) => o.id === 'carb-riso-basmati')!;
@@ -156,7 +150,6 @@ describe('porzioni espresse in nutriente', () => {
   });
 
   it('rispetta la quantità fissata dal professionista', () => {
-    // "Se mangi patate americane 250 g": il numero è suo, non si ricalcola.
     const patate = plan.variants![0].meals[0].slots
       .find((s) => s.id === 'carbo')!
       .options.find((o) => o.id === 'carb-patate-americane')!;
@@ -186,7 +179,7 @@ describe('porzioni espresse in nutriente', () => {
 
   it('rifiuta la porzione di un altro regime', () => {
     const bad = tamper(week(3), (w) => {
-      // Lunedì è Alim A (50 g di carb): mettere la porzione da 70 g è sbagliato.
+      // Lunedì è Alim A: 50 g di carboidrati.
       const pasto = w.days[0].meals.find((m) => m.mealId === 'pasto-1')!;
       const carbo = pasto.items.find((i) => i.slotId === 'carbo')!;
       const quotaSbagliata = resolvePortion(carbo.food, { nutrient: 'carboidrati', qty: 70 });
@@ -212,7 +205,7 @@ describe('porzioni espresse in nutriente', () => {
       assert.notEqual(o.quantity, '100g', 'non deve comparire il peso di riferimento');
     }
 
-    // Venerdì = Alim B, quota 70 g: la stessa fonte pesa di più.
+    // Venerdì = Alim B, quota 70 g.
     const venerdi = substitutionsFor(plan, week(3), 4, 'pasto-3', 'carbo');
     for (const o of venerdi) {
       const atteso = resolvePortion(o.food, { nutrient: 'carboidrati', qty: 70 });
@@ -285,7 +278,6 @@ describe('vincoli di questo piano', () => {
   it('le alternative proposte sono quelle del regime di quel giorno', () => {
     const w = week(3);
 
-    // Venerdì è Alim B: l'equino, previsto solo in Alim A, non va offerto.
     const venerdi = substitutionsFor(plan, w, 4, 'pasto-5', 'proteine');
     assert.ok(venerdi.length > 0);
     assert.ok(
@@ -293,7 +285,6 @@ describe('vincoli di questo piano', () => {
       "l'equino non è previsto in Alim B",
     );
 
-    // Lunedì è Alim A: il macinato di vitello, previsto solo in B, non va offerto.
     const lunedi = substitutionsFor(plan, w, 0, 'pasto-5', 'proteine');
     assert.ok(lunedi.length > 0);
     assert.ok(
@@ -301,8 +292,6 @@ describe('vincoli di questo piano', () => {
       'il macinato di vitello non è previsto in Alim A',
     );
 
-    // L'unione delle alternative offerte più la scelta attuale copre
-    // esattamente le opzioni del regime, senza sbavature.
     const ammessiInB = new Set(
       mealsForDay(plan, 4)
         .find((m) => m.id === 'pasto-5')!

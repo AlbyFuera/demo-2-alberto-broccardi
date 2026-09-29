@@ -1,13 +1,3 @@
-/**
- * Ripianificazione a evento.
- *
- * È l'automazione che il piano cartaceo non può dare: "giovedì sera ho una
- * cena fuori" non deve costringere il paziente a improvvisare, né a buttare la
- * settimana. I giorni già consumati restano intoccati, i giorni futuri vengono
- * ricomposti tenendo conto di ciò che è già stato mangiato — così le frequenze
- * settimanali continuano a tornare.
- */
-
 import type { NutritionPlan, WeekPlan } from '../types.ts';
 import { DAY_NAMES } from '../types.ts';
 import type { ExternalMeal, GenerateResult } from './generator.ts';
@@ -15,7 +5,6 @@ import { generateWeek } from './generator.ts';
 import { allMealTemplates, mealLabel } from './plan.ts';
 
 export interface WeekEvent {
-  /** 'fuori' = pasto fuori casa · 'libero' = sposta qui il pasto libero. */
   type: 'fuori' | 'libero';
   day: number;
   meal: string;
@@ -42,8 +31,6 @@ export function replan(
   const keptDays = Array.from({ length: Math.max(0, opts.fromDay) }, (_, i) => i);
   const events = opts.events ?? [];
 
-  /* I pasti fuori casa già registrati nei giorni consumati vanno riproposti,
-     altrimenti la nuova settimana li dimenticherebbe. */
   const external: ExternalMeal[] = [];
   for (const d of keptDays) {
     for (const meal of week.days[d].meals) {
@@ -83,10 +70,6 @@ export function replan(
     if (candidates.length > 0) freeMeal = { day: candidates[0], meal: mealId };
   }
 
-  /* Ricomporre tutta la settimana per una sola cena fuori è tecnicamente
-     corretto e praticamente inaccettabile: chi ha già fatto la spesa si
-     ritrova un menù nuovo. Si rilascia il minimo indispensabile, allargando
-     solo quando i vincoli non tornano. */
   const eventDays = new Set([
     ...external.map((e) => e.day),
     ...(freeMeal ? [freeMeal.day] : []),
@@ -125,7 +108,7 @@ export function replan(
     }
   }
 
-  // Ultima risorsa: si ricompone tutto dal primo giorno ancora modificabile.
+  // Altrimenti si ricompone tutto dal primo giorno modificabile.
   result ??= generateWeek(plan, {
     ...baseOptions,
     keep: keptDays.map((day) => ({ day })),

@@ -1,11 +1,3 @@
-/**
- * Resa in Markdown dei quattro output previsti dal metodo:
- * tabella settimanale · lista della spesa · meal prep · check dei vincoli.
- *
- * La resa è separata dal motore di proposito: la stessa settimana va mostrata
- * al paziente in app, al nutrizionista in dashboard e in PDF stampabile.
- */
-
 import type {
   NutritionPlan,
   PlannedMeal,
@@ -36,7 +28,6 @@ export function renderWeekTable(plan: NutritionPlan, week: WeekPlan): string {
     if (hasVariants) cells.push(variantLabelForDay(plan, day.index) ?? '—');
     for (const tpl of templates) {
       const meal = day.meals.find((m) => m.mealId === tpl.id);
-      // Con regimi alternati un pasto può semplicemente non esistere quel giorno.
       cells.push(meal ? describeMeal(meal) : '—');
     }
     lines.push(`| ${cells.join(' | ')} |`);
@@ -149,14 +140,6 @@ export function renderConstraintCheck(
   return out.join('\n');
 }
 
-/**
- * Tabella di conversione delle porzioni espresse in nutriente.
- *
- * Quando il piano dice "50 g di carboidrati", il peso nel piatto lo calcola il
- * software. Quel calcolo non può restare implicito: il professionista deve
- * poter controllare in un colpo d'occhio sia le porzioni sia i valori di
- * composizione che le hanno prodotte.
- */
 export function renderPortionDerivations(plan: NutritionPlan): string {
   const groups = portionDerivations(plan);
   if (groups.length === 0) return '';

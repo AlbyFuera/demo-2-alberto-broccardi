@@ -1,14 +1,3 @@
-/**
- * Motore delle sostituzioni.
- *
- * È la funzione che toglie il nutrizionista da WhatsApp: "posso sostituire il
- * riso?" riceve una risposta immediata, esatta e con la quantità giusta.
- *
- * Nota di progetto: qui NON viene riscritta nessuna regola. Una sostituzione è
- * ammessa se, applicandola, la settimana continua a passare il validatore.
- * Una sola fonte di verità significa che non possono divergere.
- */
-
 import type { FoodOption, NutritionPlan, PlannedItem, WeekPlan } from '../types.ts';
 import { DAY_NAMES } from '../types.ts';
 import { unitDaysFor } from './generator.ts';
@@ -24,30 +13,19 @@ export interface SubstitutionOption {
   reason?: string;
   /** Giorni impattati dalla sostituzione (i pranzi appaiati cambiano insieme). */
   affectsDays: number[];
-  /**
-   * Alcune sostituzioni trascinano un altro slot: chi passa da "cereali +
-   * legumi" alla porzione piena deve cambiare anche la fonte proteica.
-   */
   alsoChanges?: { slotId: string; food: FoodOption }[];
   /** Etichetta completa da mostrare, comprensiva delle modifiche collegate. */
   label: string;
 }
 
 export function formatQuantity(food: FoodOption): string {
-  // "Verdure o insalata" non ha un peso: scriverne uno sarebbe inventarlo.
+  // "Verdure o insalata" non ha un peso.
   if (food.freeQuantity) return 'q.b.';
   const value =
     food.qtyMax && food.qtyMax !== food.qty ? `${food.qty}–${food.qtyMax}` : `${food.qty}`;
   return food.unit === 'pz' ? `${value} pz` : `${value}${food.unit}`;
 }
 
-/**
- * Opzioni sostituibili una-a-una in uno slot.
- *
- * Gli alimenti che esistono solo dentro una combo sono esclusi di proposito:
- * non sono sostituti di una porzione piena, sono metà di una coppia. Vengono
- * proposti a parte da `comboAlternativesFor`.
- */
 function optionsForSlot(
   plan: NutritionPlan,
   day: number,
@@ -58,10 +36,6 @@ function optionsForSlot(
   return [...(tpl?.slots.find((s) => s.id === slotId)?.options ?? [])];
 }
 
-/**
- * Porzione effettiva dell'alimento in quello slot.
- * Negli slot espressi in nutriente il peso va ricalcolato, non copiato.
- */
 function portionFor(
   plan: NutritionPlan,
   day: number,
@@ -116,10 +90,6 @@ function activeCombo(plan: NutritionPlan, week: WeekPlan, day: number, mealId: s
   );
 }
 
-/**
- * Elenca le alternative per uno slot, dicendo per ciascuna se è ammessa
- * e — quando non lo è — perché.
- */
 export function substitutionsFor(
   plan: NutritionPlan,
   week: WeekPlan,
@@ -132,12 +102,6 @@ export function substitutionsFor(
   const current = meal?.items.find((it) => it.slotId === slotId);
   const combo = activeCombo(plan, week, day, mealId);
 
-  /**
-   * Problemi già presenti nella settimana prima di toccare qualcosa.
-   * Una sostituzione va giudicata per ciò che ROMPE lei, non per lo stato
-   * generale della settimana: altrimenti un errore in un altro giorno farebbe
-   * apparire vietato tutto l'elenco.
-   */
   const preesistenti = new Set(
     validate(plan, week).errors.map((e) => `${e.rule}|${e.message}`),
   );
@@ -152,8 +116,6 @@ export function substitutionsFor(
     const introdotti = result.errors.filter(
       (e) => !preesistenti.has(`${e.rule}|${e.message}`),
     );
-    // La quantità mostrata è quella EFFETTIVA: negli slot espressi in nutriente
-    // il peso nel piano è un valore di riferimento, non ciò che finisce nel piatto.
     const shown = portionFor(plan, day, mealId, slotId, food);
     const extra = also
       .map((a) => {
@@ -173,7 +135,6 @@ export function substitutionsFor(
     };
   };
 
-  /* Caso 1 — porzione piena: si può cambiare il singolo slot. */
   if (!combo || !combo.replaces.includes(slotId)) {
     for (const food of optionsForSlot(plan, day, mealId, slotId)) {
       if (food.id === current?.food.id) continue;
@@ -181,8 +142,6 @@ export function substitutionsFor(
     }
   }
 
-  /* Caso 2 — il pasto usa una sostituzione composta (es. cereali + legumi):
-     cambiare questo slot significa cambiare anche l'altra metà della coppia. */
   if (combo && combo.replaces.includes(slotId)) {
     const otherSlots = combo.replaces.filter((s) => s !== slotId);
 
@@ -193,8 +152,6 @@ export function substitutionsFor(
       out.push(evaluate(food));
     }
 
-    // 2b. ritorno alla porzione piena: per ogni alternativa di questo slot si
-    //     propone la prima fonte compatibile per gli altri slot della combo.
     for (const food of optionsForSlot(plan, day, mealId, slotId)) {
       const also: { slotId: string; food: FoodOption }[] = [];
       for (const other of otherSlots) {
@@ -203,16 +160,12 @@ export function substitutionsFor(
           const trial = [{ slotId, food }, ...also, { slotId: other, food: o }];
           return validate(plan, applySubstitution(plan, week, day, mealId, trial)).ok;
         });
-        // Se nessun abbinamento funziona l'alternativa va comunque mostrata,
-        // marcata come non ammessa: al paziente serve un "no" con la ragione,
-        // non un'opzione che sparisce dall'elenco senza spiegazioni.
         also.push({ slotId: other, food: pick ?? candidates[0] });
       }
       out.push(evaluate(food, also));
     }
   }
 
-  /* Caso 3 — passaggio a una sostituzione composta partendo da porzione piena. */
   if (!combo) {
     const tpl = mealTemplate(plan, day, mealId);
     for (const c of tpl?.combos ?? []) {
@@ -246,10 +199,6 @@ function humanize(message: string): string {
     .replace('il piano ne chiede almeno', 'scenderesti sotto il minimo di');
 }
 
-/**
- * Inversione delle fonti proteiche pranzo ↔ cena, quando il piano la consente.
- * Restituisce null se lo scambio non è ammesso o rompe la settimana.
- */
 export function swapProteins(
   plan: NutritionPlan,
   week: WeekPlan,

@@ -1,5 +1,3 @@
-/* Nutrizionista AI — chat al centro. Foglio unico, nessuna dipendenza. */
-
 :root {
   color-scheme: light dark;
 
@@ -68,8 +66,6 @@ body {
 [hidden] { display: none !important; }
 .muted { color: var(--muted); }
 
-/* ───────── intestazione ───────── */
-
 .top {
   flex: none;
   background: color-mix(in srgb, var(--bg) 92%, transparent);
@@ -121,8 +117,6 @@ select:focus-visible, .icon-btn:focus-visible, .btn:focus-visible,
   outline: 2px solid var(--accent); outline-offset: 2px;
 }
 
-/* ───────── conversazione ───────── */
-
 .chat { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
 .thread {
@@ -170,8 +164,6 @@ select:focus-visible, .icon-btn:focus-visible, .btn:focus-visible,
   background: var(--surface-2); color: var(--muted);
 }
 .src.is-ai { background: var(--accent-soft); color: var(--accent-ink); }
-
-/* ───────── schede dentro la conversazione ───────── */
 
 .card {
   max-width: min(84%, 560px);
@@ -225,8 +217,6 @@ select:focus-visible, .icon-btn:focus-visible, .btn:focus-visible,
 }
 .mini:hover { color: var(--text); border-style: solid; border-color: var(--accent); }
 
-/* ───────── citazioni: da dove viene la risposta ───────── */
-
 .cites {
   max-width: min(84%, 560px); margin-top: 7px;
   font-size: 12.5px; color: var(--muted);
@@ -239,8 +229,6 @@ select:focus-visible, .icon-btn:focus-visible, .btn:focus-visible,
   font-size: 12.5px; padding: 8px 11px; border-radius: var(--r-sm);
   background: var(--warn-soft); color: var(--warn);
 }
-
-/* ───────── suggerimenti rapidi ───────── */
 
 .suggestions {
   flex: none;
@@ -257,8 +245,6 @@ select:focus-visible, .icon-btn:focus-visible, .btn:focus-visible,
   padding: 7px 13px; cursor: pointer; white-space: nowrap;
 }
 .sug:hover { color: var(--text); border-color: var(--accent); }
-
-/* ───────── composer ───────── */
 
 .composer {
   flex: none;
@@ -292,8 +278,6 @@ select:focus-visible, .icon-btn:focus-visible, .btn:focus-visible,
 .typing i:nth-child(2) { animation-delay: 0.2s; }
 .typing i:nth-child(3) { animation-delay: 0.4s; }
 @keyframes blink { 0%, 60%, 100% { opacity: 0.25; } 30% { opacity: 1; } }
-
-/* ───────── pannello laterale ───────── */
 
 .scrim { position: fixed; inset: 0; background: rgb(0 0 0 / 38%); z-index: 30; }
 

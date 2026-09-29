@@ -1,18 +1,3 @@
-/**
- * Ingresso unico del prodotto.
- *
- * Una schermata sola per due mestieri: professionista e cliente entrano dallo
- * stesso form e, in base al ruolo che sta scritto in `users`, finiscono in due
- * applicazioni diverse. Il ruolo non arriva mai dal browser — nemmeno alla
- * registrazione, dove il valore inviato viene accettato solo se è uno dei due
- * ammessi e non viene mai più riletto dal client.
- *
- * Il routing sta davanti agli asset statici (`run_worker_first`): se i file
- * rispondessero per primi, chiunque conoscesse l'URL scaricherebbe la
- * schermata dello studio senza aver fatto accesso. Il file arriva solo dopo il
- * controllo.
- */
-
 import {
   CREDENZIALI_FINTE,
   ErroreHttp,
@@ -34,12 +19,9 @@ import * as cliente from './api-cliente.ts';
 import * as studio from './api-studio.ts';
 import type { Env, Utente } from './types.ts';
 
-/* ------------------------------------------------------------------ */
-/* Risposte                                                            */
-/* ------------------------------------------------------------------ */
+// Risposte
 
 const SICUREZZA = {
-  // Nessuno script esterno, nessun frame: l'applicazione è tutta di prima parte.
   'content-security-policy':
     "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; " +
     "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
@@ -53,7 +35,7 @@ function json(dati: unknown, stato = 200, intestazioni: Record<string, string> =
     status: stato,
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      // I dati di una dieta non si mettono in cache da nessuna parte.
+      // Nessuna cache per i dati delle diete.
       'cache-control': 'no-store',
       ...SICUREZZA,
       ...intestazioni,
@@ -66,7 +48,7 @@ function errore(e: unknown): Response {
     return json({ errore: e.message, ...(e.codice ? { codice: e.codice } : {}) }, e.status);
   }
   console.error('errore non previsto:', e);
-  // Il messaggio interno non esce: direbbe a un estraneo com'è fatto il sistema.
+  // Il messaggio interno non va esposto al client.
   return json({ errore: 'Errore interno. Riprova.' }, 500);
 }
 
@@ -110,26 +92,15 @@ function vaiA(percorso: string): Response {
   return new Response(null, { status: 302, headers: { location: percorso, ...SICUREZZA } });
 }
 
-/** La pagina che spetta al ruolo: è l'unico posto che lo decide. */
+/** La pagina che spetta al ruolo. */
 function paginaDi(utente: Utente): string {
   return utente.ruolo === 'nutrizionista' ? '/studio' : '/cliente';
 }
 
-/**
- * Ritardo fisso su ogni tentativo di accesso fallito.
- *
- * Non è un limitatore di frequenza serio — quello richiede uno stato condiviso
- * (Durable Object o KV) e va aggiunto prima di aprire il servizio al pubblico.
- * Qui rende non conveniente provare password a raffica su una connessione, e
- * soprattutto rende il tempo di risposta indipendente dal fatto che l'email
- * esista: senza, la differenza di durata rivelerebbe quali indirizzi hanno un
- * account.
- */
+/** Ritardo fisso sui fallimenti: stesso tempo di risposta se l'email esiste o no. */
 const ritardoCostante = () => new Promise((r) => setTimeout(r, 400));
 
-/* ------------------------------------------------------------------ */
-/* API                                                                 */
-/* ------------------------------------------------------------------ */
+// API
 
 async function api(
   request: Request,
@@ -151,7 +122,7 @@ async function api(
       nome: utente.nome,
       email: utente.email,
       obiettivo: utente.obiettivo,
-      /** Vuoto alla registrazione: l'interfaccia lo chiede, ma non blocca. */
+      /** Facoltativo alla registrazione. */
       profiloDaCompletare: utente.nome.trim().length === 0,
       pagina: paginaDi(utente),
     });
@@ -161,17 +132,14 @@ async function api(
     const email = db.normEmail(String(body?.email ?? ''));
     const password = String(body?.password ?? '');
 
-    // PRIMA il limite, POI la verifica: verificare una password costa 600.000
-    // iterazioni di PBKDF2, e chi prova a raffica non deve poter comprare tutto
-    // quel lavoro a ogni tentativo.
+    // Il limite va controllato prima della verifica della password (PBKDF2).
     const blocco = await limite.controllaAccesso(env, email, request);
     if (blocco.superato) {
       throw new ErroreHttp(429, limite.messaggioLimite(blocco.attendi), 'troppi-tentativi');
     }
 
     const credenziali = await db.credenzialiPerEmail(env, email);
-    // Si verifica la password anche quando l'utente non esiste, contro un hash
-    // finto: altrimenti la risposta immediata rivela che l'email è sconosciuta.
+    // Hash finto se l'utente non esiste, per non rivelarlo dai tempi.
     const valida = credenziali
       ? await verifyPassword(password, credenziali)
       : await verifyPassword(password, CREDENZIALI_FINTE);
@@ -183,12 +151,10 @@ async function api(
       if (superato.superato) {
         throw new ErroreHttp(429, limite.messaggioLimite(superato.attendi), 'troppi-tentativi');
       }
-      // Un messaggio unico: distinguere i due casi regala l'elenco degli iscritti.
+      // Messaggio unico: non rivelare quali email sono iscritte.
       throw new ErroreHttp(401, 'Email o password non corretti.');
     }
 
-    // Riuscito: il conteggio di quell'email si azzera, così chi ha solo
-    // sbagliato a digitare non si porta dietro i tentativi di ieri.
     await limite.accessoRiuscito(env, email);
 
     const sessione = await apriSessione(
@@ -229,9 +195,6 @@ async function api(
       throw new ErroreHttp(409, 'Esiste già un account con questa email.');
     }
 
-    // La registrazione è aperta, non illimitata: dieci account per indirizzo di
-    // rete in un quarto d'ora bastano a uno studio e non bastano a chi vuole
-    // riempire la tabella degli utenti.
     const troppe = await limite.controllaIscrizione(env, request);
     if (troppe.superato) {
       throw new ErroreHttp(429, limite.messaggioLimite(troppe.attendi), 'troppi-tentativi');
@@ -278,16 +241,14 @@ async function api(
 
     await db.cambiaPassword(env, mio.id, nuova);
 
-    // `cambiaPassword` chiude tutte le sessioni, compresa questa: se ne apre
-    // una nuova, o l'utente si troverebbe fuori subito dopo aver obbedito.
+    // cambiaPassword chiude tutte le sessioni: se ne riapre una.
     const sessione = await apriSessione(env, mio.id, request.headers.get('user-agent'), new Date());
     return json({ ok: true }, 200, { 'set-cookie': cookieDiSessione(sessione, https) });
   }
 
   if (percorso === '/api/elimina-account') {
     const mio = esigi(utente);
-    // La password si richiede sempre: cancellare un account è irreversibile e
-    // una sessione lasciata aperta su un computer altrui non deve bastare.
+    // Password sempre richiesta per cancellare l'account.
     const credenziali = await db.credenzialiPerEmail(env, mio.email);
     if (!credenziali || !(await verifyPassword(String(body?.password ?? ''), credenziali))) {
       await ritardoCostante();
@@ -310,7 +271,7 @@ async function api(
     if (azione === 'spunta') return json(await cliente.spunta(env, mio, body));
     if (azione === 'cambio-pasto') return json(await cliente.cambiaPasto(env, mio, params));
     if (azione === 'applica-cambio') return json(await cliente.applicaCambioPasto(env, mio, body));
-    // Il PDF esce come file, non come JSON: ha una risposta sua.
+    // Il PDF esce come file.
     if (azione === 'pdf') return conSicurezza(await cliente.pdf(env, mio));
     if (azione === 'cerca-studio') return json(await cliente.cercaStudio(env, mio, params));
     if (azione === 'richiedi') return json(await cliente.richiedi(env, mio, body));
@@ -362,15 +323,13 @@ async function api(
   throw new ErroreHttp(404, `Endpoint sconosciuto: ${percorso}`);
 }
 
-/* ------------------------------------------------------------------ */
-/* Pagine                                                              */
-/* ------------------------------------------------------------------ */
+// Pagine
 
 async function pagine(request: Request, env: Env, percorso: string): Promise<Response | null> {
   const utente = await utenteCorrente(env, request);
 
   if (percorso === '/' || percorso === '/accedi') {
-    // Chi è già dentro non rivede il form: va dove gli spetta.
+    // Utente già dentro: va alla sua pagina.
     return utente ? vaiA(paginaDi(utente)) : await pagina(env, request, 'accedi.html');
   }
 
@@ -380,7 +339,7 @@ async function pagine(request: Request, env: Env, percorso: string): Promise<Res
 
   if (percorso === '/studio') {
     if (!utente) return vaiA('/');
-    // Un cliente che digita /studio non riceve un errore: riceve la sua pagina.
+    // Ruolo sbagliato: va alla sua pagina.
     if (utente.ruolo !== 'nutrizionista') return vaiA('/cliente');
     return await pagina(env, request, 'studio.html');
   }
@@ -394,7 +353,7 @@ async function pagine(request: Request, env: Env, percorso: string): Promise<Res
   return null;
 }
 
-/** Solo i file che l'applicazione usa davvero: nessuna directory da esplorare. */
+/** Solo i file che l'applicazione usa. */
 const STATICI = new Set([
   '/ui.css',
   '/comune.js',

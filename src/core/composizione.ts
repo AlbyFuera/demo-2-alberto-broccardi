@@ -1,23 +1,6 @@
-/**
- * Composizione degli alimenti: grammi di macronutriente per 100 g/ml o per pezzo.
- *
- * TRE REGOLE, nell'ordine, e la prima batte le altre:
- *
- *  1. se l'alimento sta nella LIBRERIA DELLO STUDIO, vincono i valori del
- *     professionista: li ha scritti lui e se ne assume la responsabilità;
- *  2. altrimenti si usa la tabella qui sotto, che è una STIMA dichiarata tale;
- *  3. se l'alimento non è in tabella, il conto NON viene completato: si
- *     restituisce `null` e chi mostra il dato deve dirlo.
- *
- * La terza regola è la più importante, ed è il motivo per cui l'interfaccia
- * chiede al professionista i valori mancanti invece di farli inventare a un
- * modello. Un numero nutrizionale senza fondamento in una dieta clinica è
- * peggio di un numero assente: il professionista si fiderebbe.
- */
-
 import type { Alimento, Macro } from '../types.ts';
 
-/** Da dove viene un valore di composizione. Mostrato all'utente, mai nascosto. */
+/** Da dove viene un valore di composizione. */
 export type Fonte = 'studio' | 'tabella';
 
 export interface Composizione extends Macro {
@@ -42,17 +25,7 @@ export type Libreria = Map<string, VoceLibreria>;
 
 const STIMA = 'stima interna, non validata da un nutrizionista';
 
-/**
- * Valori indicativi in grammi per 100 g/ml di parte edibile, alimento crudo
- * salvo dove l'etichetta dice «cotto».
- *
- * DA CONFERMARE — nessuno di questi valori è stato validato da un
- * nutrizionista. Uno studio che li vuole propri li sovrascrive dalla sua
- * libreria, alimento per alimento, e da quel momento vincono i suoi.
- *
- * Chiave: nome normalizzato. Non un identificativo, perché i nomi si ripetono
- * tra professionisti diversi — una dieta nuova trova già coperti i cibi comuni.
- */
+/** Valori per 100 g/ml edibili, crudi salvo dove indicato. Non validati. */
 const PER_100: Record<string, [number, number, number]> = {
   /* --- cereali e derivati, a crudo --- */
   pasta: [13, 75, 1.5],
@@ -207,10 +180,7 @@ const PER_100: Record<string, [number, number, number]> = {
   'proteine idrolizzate': [85, 2, 1],
 }
 
-/**
- * Alimenti misurati a pezzo: qui la base è UN pezzo, non 100 g. Il peso di un
- * pezzo dipende dalla pezzatura, quindi sono ancora più indicativi degli altri.
- */
+/** Valori per un pezzo, non per 100 g. */
 const PER_PEZZO: Record<string, [number, number, number]> = {
   uova: [6.5, 0.4, 5.5], // un uovo medio, ~55 g edibili
   tuorlo: [2.7, 0.3, 4.5],
@@ -219,10 +189,6 @@ const PER_PEZZO: Record<string, [number, number, number]> = {
   'budino proteico': [20, 10, 4],
   'burro di arachidi': [3.8, 1.5, 7.5], // un cucchiaio, ~15 g
 }
-
-/* ------------------------------------------------------------------ */
-/* Ricerca                                                             */
-/* ------------------------------------------------------------------ */
 
 export const normalizza = (s: string): string =>
   s
@@ -245,12 +211,10 @@ function daTabella(
 ): Composizione | null {
   const n = normalizza(nome);
 
-  // Corrispondenza esatta prima di tutto: è l'unica che non può sbagliare.
+  // Prima la corrispondenza esatta.
   const esatta = tabella[n];
   if (esatta) return comporre(esatta, per);
 
-  // Poi la chiave più lunga contenuta nel nome. L'ordine per lunghezza
-  // decrescente è ciò che impedisce a "pane" di catturare "pane integrale".
   for (const chiave of chiavi) {
     if (n.includes(chiave)) return comporre(tabella[chiave], per);
   }
@@ -268,18 +232,12 @@ function comporre(v: [number, number, number], per: 'g100' | 'pz'): Composizione
   };
 }
 
-/**
- * La composizione di un alimento, o `null` se non la si conosce.
- *
- * `null` significa «non lo so» e va trattato come tale: non esiste un valore di
- * riserva. È questo `null` che fa comparire al professionista la richiesta di
- * inserire i valori.
- */
+/** `null` se la composizione è ignota: nessun valore di riserva. */
 export function composizioneDi(nome: string, unita: string, libreria?: Libreria): Composizione | null {
   const chiave = normalizza(nome);
   const per = unita === 'pz' ? 'pz' : 'g100';
 
-  // 1. La libreria dello studio vince sempre: sono i valori del professionista.
+  // 1. La libreria dello studio vince sempre.
   const sua = libreria?.get(chiave);
   if (sua && sua.per === per) {
     return {
@@ -298,13 +256,7 @@ export function composizioneDi(nome: string, unita: string, libreria?: Libreria)
     : daTabella(nome, PER_100, CHIAVI_100, 'g100');
 }
 
-/**
- * I macronutrienti effettivi di una porzione.
- *
- * `null` quando la composizione è ignota o la quantità è libera: in entrambi i
- * casi il chiamante deve dichiarare che quell'alimento è fuori dal conto,
- * ma per motivi opposti — uno è ignoranza, l'altro è una scelta del piano.
- */
+/** `null` se composizione ignota o quantità libera. */
 export function macroDi(
   alimento: Alimento,
   libreria?: Libreria,

@@ -1,12 +1,3 @@
-/**
- * Creazione dell'account.
- *
- * Il ruolo scelto qui è un'indicazione al server, non un'autorizzazione: il
- * server lo accetta solo se è uno dei due valori ammessi, lo scrive in tabella
- * e da quel momento non lo rilegge mai più dal browser. Cambiare questo file
- * non dà accesso a niente che non si avrebbe comunque.
- */
-
 import { $, invia } from '/comune.js';
 
 let ruolo = 'cliente';

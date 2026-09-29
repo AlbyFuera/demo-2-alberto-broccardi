@@ -1,34 +1,16 @@
-/**
- * La lista della spesa della settimana.
- *
- * Aggrega gli stessi alimenti attraverso i sette giorni. Non c'è nulla di
- * clinico qui: è aritmetica, ma è la funzione che il cliente usa il sabato
- * mattina, e senza di essa deve rileggersi la dieta sommando a mente.
- *
- * Gli alimenti a quantità libera restano nell'elenco SENZA un peso: «verdure
- * q.b.» va comprata, e farla sparire dalla lista perché non ha un numero
- * sarebbe il modo più diretto di far tornare il cliente a casa senza verdure.
- */
-
 import type { Dieta } from '../types.ts';
 import { normalizza } from './composizione.ts';
 
 export interface RigaSpesa {
   nome: string;
   unita: string;
-  /** Totale della settimana. `null` per gli alimenti «q.b.». */
+  /** Totale settimanale; null per gli alimenti q.b. */
   quantita: number | null;
-  /** In quanti pasti compare: dà l'idea dell'impegno. */
+  /** Numero di pasti in cui compare. */
   ricorrenze: number;
 }
 
-/**
- * Una sola lista, ordinata per ricorrenza decrescente.
- *
- * Niente categorie merceologiche: classificare «seitan» o «crema di frutta
- * secca» richiederebbe una tabella che qualcuno deve mantenere, e sbagliarla
- * darebbe una lista peggiore di una lista non ordinata.
- */
+/** Ordinata per ricorrenza decrescente. */
 export function listaSpesa(dieta: Dieta): RigaSpesa[] {
   const righe = new Map<string, RigaSpesa>();
 

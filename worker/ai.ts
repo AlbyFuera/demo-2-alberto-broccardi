@@ -1,27 +1,3 @@
-/**
- * Livello AI — Workers AI.
- *
- * Perché Workers AI e non una chiave di un fornitore esterno: gira dentro lo
- * stesso Worker, non richiede nessuna chiave da custodire, e il piano gratuito
- * di Cloudflare include un'allocazione giornaliera che copre l'uso di uno
- * studio. Zero credenziali significa anche zero credenziali da far scadere il
- * giorno della dimostrazione.
- *
- * Il modello fa due cose, entrambe di LINGUA:
- *
- *  1. capisce la domanda del cliente meglio delle espressioni regolari;
- *  2. dice la risposta del motore con la voce del professionista.
- *
- * Quello che NON fa, e che il prompt di sistema gli vieta: cambiare grammature,
- * concedere sostituzioni, inventare valori nutrizionali, dare consigli propri.
- * Ogni numero arriva da `equivalenza.ts` e da `dieta.ts`. Il modello riformula,
- * non rivede.
- *
- * Se il binding manca, la quota è esaurita o la rete cade, `null` fa ricadere
- * tutto sul motore: le stesse risposte, scritte dal codice. L'assistente
- * peggiora di lingua, mai di contenuto.
- */
-
 import type { Domanda, Risposta } from '../src/core/assistente.ts';
 import type { Equivalenza } from '../src/core/equivalenza.ts';
 import { scriviQuantita } from '../src/core/dieta.ts';
@@ -48,13 +24,7 @@ export function stato(env: Env): StatoAi {
   return { attivo: true, modello: env.MODELLO_AI ?? MODELLO_PREDEFINITO };
 }
 
-/**
- * Una chiamata al modello, con tutti gli errori che ricadono su `null`.
- *
- * `null` non è un caso eccezionale: è il normale funzionamento quando il
- * modello non c'è, la quota è finita, la rete cade — o la frase che torna non è
- * una frase. Chi chiama ha sempre pronta la versione del motore.
- */
+/** Una chiamata al modello; ogni errore diventa `null`. */
 async function chiedi(
   env: Env,
   system: string,
@@ -76,14 +46,10 @@ async function chiedi(
     const testo = typeof risposta === 'string' ? risposta : risposta?.response;
     return testo?.trim() || null;
   } catch {
-    // Quota esaurita, modello non disponibile, rete: il motore basta.
+    // Quota, modello o rete: risponde il motore.
     return null;
   }
 }
-
-/* ------------------------------------------------------------------ */
-/* 1. Comprensione della domanda                                       */
-/* ------------------------------------------------------------------ */
 
 const SYSTEM_INTENTO = `Classifichi le domande di un cliente sulla sua dieta.
 
@@ -113,13 +79,7 @@ Esempi:
 "vorrei cambiare il pollo di stasera"          -> alimento: "pollo", alimentoNuovo: null
 "ho saltato il pranzo, come recupero?"         -> tipo: "saltato"`;
 
-/**
- * Estrae il primo oggetto JSON dal testo del modello.
- *
- * I modelli piccoli premettono volentieri «Ecco il JSON:» e chiudono con un
- * blocco markdown. Cercare le graffe è più robusto che sperare in un output
- * pulito, e un fallimento qui costa solo il ritorno alle espressioni regolari.
- */
+/** Estrae il primo oggetto JSON dal testo del modello. */
 function primoJson(testo: string): any | null {
   const senzaFence = testo.replace(/```(?:json)?/g, '');
   const inizio = senzaFence.indexOf('{');
@@ -182,10 +142,6 @@ export async function interpreta(
     testo,
   };
 }
-
-/* ------------------------------------------------------------------ */
-/* 2. Voce del professionista                                          */
-/* ------------------------------------------------------------------ */
 
 const SYSTEM_VOCE = `Sei l'assistente che parla al cliente per conto del suo nutrizionista.
 
@@ -251,37 +207,19 @@ export async function parlaConLaVoce(
   return accettabile(voce, risposta.risposta);
 }
 
-/**
- * Il filtro finale: una riformulazione implausibile si butta.
- *
- * È l'ultima riga di difesa dell'architettura, e serve perché un modello
- * quantizzato può restituire un impasto di token senza segnalare alcun errore.
- * Il motore ha già la frase giusta: nel dubbio vince la sua.
- */
+/** Scarta le riformulazioni implausibili. */
 function accettabile(voce: string | null, attesa: string): string | null {
   if (!voce) return null;
 
   const v = plausibile(voce, attesa);
   if (v.ok) return voce;
 
-  // Va nei log, non addosso al cliente: lui riceve la frase del motore, che è
-  // corretta, e non sa che c'è stato un problema.
+  // Il cliente riceve la frase del motore.
   console.warn('risposta del modello scartata:', v.motivo, '|', voce.slice(0, 120));
   return null;
 }
 
-/* ------------------------------------------------------------------ */
-/* 3. La risposta su una sostituzione                                  */
-/* ------------------------------------------------------------------ */
-
-/**
- * Racconta l'esito di un'equivalenza.
- *
- * I fatti sono già decisi: la grammatura la calcola `equivalenza.ts`
- * pareggiando il macronutriente caratterizzante, il delta pure. Al modello
- * resta di scriverlo in due frasi. È la richiesta più frequente del cliente e
- * quella in cui la differenza tra «esatto» e «comprensibile» si sente di più.
- */
+/** Racconta l'esito di un'equivalenza. */
 export async function raccontaEquivalenza(
   env: Env,
   e: Equivalenza,
@@ -322,27 +260,7 @@ export async function raccontaEquivalenza(
   return accettabile(voce, fatti.join(' '));
 }
 
-/* ------------------------------------------------------------------ */
-/* 4. Risposta libera, con la voce del nutrizionista                    */
-/* ------------------------------------------------------------------ */
-
-/**
- * Quando il motore non ha una risposta, risponde il modello.
- *
- * È un cambio di confine deciso dal committente, e va scritto qui perché chi
- * legge il codice lo sappia: prima una domanda che il motore non sapeva
- * risolvere veniva GIRATA al professionista. Adesso risponde l'assistente, e
- * quella risposta non passa da nessun umano.
- *
- * Quello che resta, e che non è negoziabile nemmeno così:
- *
- *  · i NUMERI della dieta continuano ad arrivare dal motore. Il modello può
- *    parlare di nutrizione in generale, non può dire al cliente che la sua
- *    dieta prevede una cosa che non prevede;
- *  · sintomi, farmaci e malattie NON si trattano. Non è un rifiuto del
- *    software: è quello che un nutrizionista risponderebbe davvero, perché una
- *    diagnosi non si fa per iscritto senza vedere la persona.
- */
+// Sintomi, farmaci e malattie restano fuori: li gestisce il professionista.
 const SYSTEM_LIBERO = `Sei l'assistente nutrizionale di un cliente, e parli con la voce del suo
 nutrizionista. Rispondi a QUALSIASI domanda sul cibo, sull'alimentazione,
 sull'attività fisica e sulle abitudini, come risponderebbe un buon
@@ -380,13 +298,7 @@ In italiano, dando del tu, tre o quattro frasi. Concreto. Se dai un numero, dì
 da dove viene. Niente elenchi puntati, niente emoji, niente «spero di esserti
 utile».`;
 
-/**
- * Risponde a una domanda qualunque, coi dati della dieta sotto mano.
- *
- * `fatti` è quello che il motore sa: la giornata del cliente, gli obiettivi, le
- * indicazioni del professionista. Serve a tenere la risposta ancorata alla sua
- * dieta invece che alla nutrizione in generale.
- */
+/** Risponde a una domanda qualunque, coi dati della dieta. */
 export async function rispondiLibero(
   env: Env,
   domanda: string,
@@ -400,6 +312,5 @@ export async function rispondiLibero(
     { maxTokens: 500, temperatura: 0.4 },
   );
 
-  // Stesso filtro delle altre risposte: un impasto di token non si mostra.
   return accettabile(voce, domanda);
 }

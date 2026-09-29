@@ -18,11 +18,6 @@ describe('composizione degli alimenti', () => {
     assert.ok(c.carboidrati > 60);
   });
 
-  /*
-   * L'ordine per lunghezza decrescente è ciò che impedisce a «pane» di
-   * catturare «pane integrale». Sono due alimenti con macronutrienti diversi, e
-   * scambiarli sposta i conti di ogni dieta che li usa.
-   */
   it('il nome più specifico vince su quello più corto', () => {
     const bianco = composizioneDi('pane bianco', 'g');
     const integrale = composizioneDi('pane integrale', 'g');
@@ -59,12 +54,6 @@ describe('composizione degli alimenti', () => {
     assert.equal(macroDi({ nome: 'zucchine', quantita: null, unita: 'g', libera: true }), null);
   });
 
-  /*
-   * La regola che regge tutto il resto: i valori del professionista vincono
-   * sempre su quelli interni, e la fonte lo dichiara. Se un giorno lo strumento
-   * mostrasse i propri numeri al posto dei suoi, lui non potrebbe più metterci
-   * la firma.
-   */
   it('la libreria dello studio vince sulla tabella interna', () => {
     const libreria: Libreria = new Map([
       [

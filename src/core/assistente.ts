@@ -1,24 +1,3 @@
-/**
- * L'assistente del cliente.
- *
- * ARCHITETTURA — è il punto su cui si regge tutto il prodotto:
- *
- *   il MOTORE stabilisce i fatti  →  l'AI li dice con la voce del professionista
- *
- * Mai il contrario. Ogni numero, ogni grammatura, ogni «sì» e ogni «no»
- * arrivano da `dieta.ts`, `equivalenza.ts` e `recupero.ts`. Il modello
- * linguistico riformula, non decide. Se il motore non sa rispondere,
- * l'assistente lo dice e gira la domanda allo studio — non improvvisa.
- *
- * Questo file contiene due cose:
- *
- *   1. `interpreta`  — da una frase all'intenzione. Meccanico, sostituibile
- *      dal modello (vedi `worker/ai.ts`) senza che il resto cambi;
- *   2. `risolvi`     — dall'intenzione ai fatti. Deterministico, sempre.
- *
- * Il passo 2 non chiama mai il passo 1 e non sa che esiste un modello.
- */
-
 import type { Dieta, Valori } from '../types.ts';
 import { NOMI_GIORNI } from '../types.ts';
 import type { Libreria } from './composizione.ts';
@@ -33,10 +12,6 @@ import {
   trovaAlimento,
 } from './dieta.ts';
 import { recupero } from './recupero.ts';
-
-/* ------------------------------------------------------------------ */
-/* Intenzione                                                          */
-/* ------------------------------------------------------------------ */
 
 export type TipoDomanda =
   | 'saluto'
@@ -62,11 +37,11 @@ export interface Domanda {
   giorno?: number;
   /** Il pasto di cui parla, quando lo nomina. */
   pastoId?: string;
-  /** L'alimento che vuole TOGLIERE dal piatto. */
+  /** L'alimento da togliere. */
   alimento?: string;
-  /** L'alimento che vuole METTERCI. Può non esistere nella dieta: è il punto. */
+  /** L'alimento da mettere; può non essere nella dieta. */
   alimentoNuovo?: string;
-  /** Il testo originale, che serve all'AI e alla segnalazione allo studio. */
+  /** Testo originale della domanda. */
   testo: string;
 }
 
@@ -84,14 +59,7 @@ const GIORNI_SCRITTI: Record<string, number> = {
   venerdi: 4, sabato: 5, domenica: 6,
 };
 
-/**
- * I modi in cui si esprime una sostituzione, e da che parte sta cosa.
- *
- * `invertito: true` significa che a SINISTRA del separatore c'è l'alimento che
- * ENTRA: «metto le patate AL POSTO DEL riso». Con «sostituisco il riso CON le
- * patate» l'ordine è l'opposto. È una differenza che nessuna euristica di
- * prossimità indovina: va enumerata.
- */
+/** `invertito`: a sinistra del separatore c'è l'alimento che entra. */
 const SEPARATORI: { re: RegExp; invertito: boolean }[] = [
   { re: /\bal posto (?:del|della|dello|dei|degli|delle|di|d')\b/, invertito: true },
   { re: /\binvece (?:del|della|dello|dei|degli|delle|di|d')\b/, invertito: true },
@@ -102,7 +70,7 @@ const SEPARATORI: { re: RegExp; invertito: boolean }[] = [
   { re: /\bcambiare?(?:lo|la)? in\b/, invertito: false },
 ];
 
-/** Parole che non nominano un alimento: verbi, articoli, riferimenti di tempo. */
+/** Parole che non nominano un alimento. */
 const RIEMPITIVI = new Set(
   ('posso potrei vorrei voglio devo puo si e possibile mettere metterci mangiare mangiarmi ' +
     'prendere usare fare sostituire sostituirlo sostituirla cambiare cambiarlo cambiarla ' +
@@ -118,18 +86,6 @@ const GENERICI = new Set(['', 'altro', 'roba', 'cose', 'cosa']);
 /** Parole che in un nome di alimento non identificano nulla da sole. */
 const PAROLE_VUOTE = new Set(['di', 'da', 'del', 'della', 'dello', 'dei', 'delle', 'e', 'o', 'a', 'al', 'con', 'in']);
 
-/**
- * L'alimento della dieta nominato nel frammento.
- *
- * NON basta cercare il nome intero dentro la domanda: il professionista scrive
- * «petto di pollo» e il cliente chiede «posso cambiare il pollo?». Cercare
- * «petto di pollo» dentro quella frase non trova niente, e la richiesta finiva
- * per essere applicata al primo alimento del pasto — cioè a un piatto a cui il
- * cliente non stava pensando.
- *
- * Si contano quindi le parole del nome che compaiono nella domanda, e vince
- * quello che ne ha di più. A parità, il nome più lungo: è il più specifico.
- */
 function alimentoDellaDietaIn(frammento: string, alimenti: string[]): string | undefined {
   const q = NORM(frammento);
   const parole = new Set(q.split(' '));
@@ -156,15 +112,6 @@ function alimentoDellaDietaIn(frammento: string, alimenti: string[]): string | u
   return migliore?.nome;
 }
 
-/**
- * Il nome dell'alimento che il cliente vuole METTERE, anche se la dieta non lo
- * contiene.
- *
- * Serve al caso che conta di più: «posso mangiare una pizza al posto del
- * merluzzo?». La pizza non è nella dieta — cercarla tra i suoi alimenti non la
- * trova, e senza questo passaggio la richiesta si degrada in «dammi delle
- * alternative al merluzzo», che risponde a una domanda diversa.
- */
 function nomeLibero(frammento: string): string | undefined {
   const q = NORM(frammento);
   if (/\b(qualcosa|qualcos|altro|niente|nulla)\b/.test(q)) return undefined;
@@ -175,7 +122,7 @@ function nomeLibero(frammento: string): string | undefined {
   return GENERICI.has(nome) || nome.length < 3 ? undefined : nome;
 }
 
-/** La coppia «cosa esce / cosa entra» nominata nella domanda. */
+/** La coppia esce/entra nominata nella domanda. */
 export function coppia(
   testo: string,
   dieta: Dieta,
@@ -197,9 +144,6 @@ export function coppia(
 
     if (esce && entra) return { alimento: esce, alimentoNuovo: entra };
 
-    // Sappiamo cosa esce ma non riconosciamo cosa entra: quasi sempre è un
-    // alimento che il professionista non ha previsto, ed è il caso che lui
-    // deve vedere. Si prende il nome così com'è scritto.
     if (esce) {
       const fuori = nomeLibero(testoEntra);
       return fuori ? { alimento: esce, alimentoNuovo: fuori } : { alimento: esce };
@@ -263,10 +207,6 @@ function perNome(dieta: Dieta, giorno: number, re: RegExp): string | undefined {
   return giornoDi(dieta, giorno)?.pasti.find((p) => re.test(p.nome))?.id;
 }
 
-/* ------------------------------------------------------------------ */
-/* Risoluzione: i fatti li dà il motore                                */
-/* ------------------------------------------------------------------ */
-
 export interface Scheda {
   titolo: string;
   righe?: { nome: string; quantita: string }[];
@@ -274,12 +214,12 @@ export interface Scheda {
 }
 
 export interface Risposta {
-  /** La frase composta dal codice. L'AI può riformularla, non cambiarla. */
+  /** Frase composta dal codice; l'AI può solo riformularla. */
   risposta: string;
   schede: Scheda[];
   /** Le indicazioni del professionista su cui poggia la risposta. */
   citazioni: string[];
-  /** Quando il motore non sa: la domanda va allo studio. */
+  /** Presente quando la domanda va girata allo studio. */
   daGirare?: { motivo: string };
   fonte: 'motore' | 'ai';
   domanda: Domanda;
@@ -326,8 +266,6 @@ function prossimoPasto(ctx: Contesto): { giorno: number; pastoId: string } | nul
     if (m && Number(m[1]) >= ctx.ora) return { giorno: ctx.oggi, pastoId: pasto.id };
   }
 
-  // Nessun orario scritto, o è tardi: si dà il primo pasto di oggi, e se oggi
-  // non c'è niente il primo di domani.
   if (oggi?.pasti.length) return { giorno: ctx.oggi, pastoId: oggi.pasti[0].id };
 
   const domani = giornoDi(ctx.dieta, (ctx.oggi + 1) % 7);
@@ -440,7 +378,7 @@ export function risolvi(ctx: Contesto, d: Domanda): Risposta {
       ...base,
       risposta: raccontaRecuperoLocale(r, ctx.nomeProfessionista),
       schede: r.rimanenti.map((p) => schedaPasto(ctx, giorno, p.id)!).filter(Boolean),
-      // Come recuperare è una decisione clinica: si segnala, non si inventa.
+      // Il recupero lo decide il professionista.
       daGirare:
         Math.round(r.scoperto.kcal) > 150
           ? {
@@ -478,8 +416,7 @@ export function risolvi(ctx: Contesto, d: Domanda): Risposta {
   }
 
   if (d.tipo === 'sostituzione') {
-    // Le sostituzioni hanno un percorso proprio, in `worker/api-cliente.ts`:
-    // è lì che serve l'equivalenza, e passare da qui la duplicherebbe.
+    // Le sostituzioni passano da worker/api-cliente.ts.
     return { ...base, risposta: '' };
   }
 
@@ -492,7 +429,7 @@ export function risolvi(ctx: Contesto, d: Domanda): Risposta {
   };
 }
 
-/** Ripetuta qui per non far dipendere `recupero.ts` dal nome del professionista. */
+/** Duplicata per non far dipendere recupero.ts dal nome del professionista. */
 function raccontaRecuperoLocale(
   r: ReturnType<typeof recupero> & object,
   nomeProfessionista: string,

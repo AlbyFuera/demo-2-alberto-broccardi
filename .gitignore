@@ -1,24 +1,15 @@
 node_modules/
 .DS_Store
+.claude/
 
-# Stato locale di wrangler, compreso il database D1 di sviluppo.
+# Stato locale di wrangler, compreso il D1 di sviluppo.
 .wrangler/
 .dev.vars
 
-# Credenziali degli account di prova: restano sulla macchina.
+# File temporanei degli script.
+scripts/.lavoro/
+
+# Dati privati: stanno in ../privato, mai nella repo.
 CREDENZIALI-DEMO.md
-
-# File di lavoro di collaudo.sh e strumenti-demo.sh: si rigenerano a ogni
-# esecuzione e non devono finire nel controllo di versione.
-*.txt
-corpo.json
-dieta*.json
-riempi.sh
-c.json
-
-# Il piano alimentare di una persona vera e la skill che lo usa: dati sanitari
-# con nome e cognome, e la fonte è la scheda firmata di un professionista.
-# Restano sulla macchina, come le credenziali.
 piano-alimentare.md
 SKILL.md
-pianificatore-dieta/

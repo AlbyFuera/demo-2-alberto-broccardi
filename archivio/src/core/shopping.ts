@@ -1,12 +1,3 @@
-/**
- * Lista della spesa aggregata.
- *
- * Due dettagli che fanno la differenza rispetto a una somma banale:
- *  - le quantità del piano sono a CRUDO, quindi per i legumi (e simili) va
- *    indicata la quantità da acquistare, non quella da mettere nel piatto;
- *  - i pasti liberi e fuori casa non generano spesa.
- */
-
 import type { NutritionPlan, WeekPlan } from '../types.ts';
 
 export interface ShoppingLine {

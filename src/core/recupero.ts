@@ -1,25 +1,3 @@
-/**
- * «Ho saltato un pasto: come arrivo al fabbisogno?»
- *
- * È la seconda domanda che un cliente fa davvero, dopo quella sulle
- * sostituzioni, e finora nessuno strumento gli rispondeva con un numero.
- *
- * QUELLO CHE QUESTO MODULO FA: dice quanto manca alla giornata rispetto a
- * quello che il professionista aveva scritto, e in che misura i pasti che
- * restano lo coprono già.
- *
- * QUELLO CHE NON FA, ed è la parte che conta: non inventa un pasto di
- * compensazione e non dice «aggiungi 200 g di riso». Spostare le calorie di un
- * pasto saltato su quelli successivi è una decisione clinica — dipende da cosa
- * ha saltato, dall'orario, dall'obiettivo, dalla persona. Il software fa i
- * conti e li mette davanti al cliente e al professionista; a decidere è chi ha
- * firmato la dieta.
- *
- * L'onestà su questo confine è ciò che rende la funzione utile invece di
- * pericolosa: un cliente in deficit che ogni sera si sente dire «recupera 600
- * kcal» finirebbe per mangiare peggio di come mangiava senza lo strumento.
- */
-
 import type { Dieta, Giorno, Pasto, Totale, Valori } from '../types.ts';
 import { TOTALE_ZERO, sommaTotali } from '../types.ts';
 import type { Libreria } from './composizione.ts';
@@ -46,7 +24,7 @@ export interface Recupero {
   manca: Mancanza;
   /** Quanto dei pasti rimanenti coprirà da solo. */
   copertoDaiRimanenti: Valori;
-  /** Quanto resterebbe scoperto a fine giornata, anche facendo tutto il resto. */
+  /** Quanto resta scoperto a fine giornata. */
   scoperto: Mancanza;
   /** Il conto del giorno è incompleto. */
   parziale: boolean;
@@ -68,14 +46,7 @@ const differenza = (previsto: Valori, assunto: Valori): Mancanza => ({
   grassi: previsto.grassi - assunto.grassi,
 });
 
-/**
- * Un pasto è «ancora da fare» se ha un orario successivo all'ora corrente.
- *
- * I pasti senza orario si considerano ancora da fare: è l'ipotesi che sbaglia
- * nella direzione giusta — dire a qualcuno che gli resta un pasto che ha già
- * mangiato è un fastidio, dirgli che non gli resta nulla quando deve ancora
- * cenare lo porta a mangiare meno del dovuto.
- */
+/** I pasti senza orario si considerano ancora da fare. */
 function ancoraDaFare(pasto: Pasto, ora: number, saltati: Set<string>): boolean {
   if (saltati.has(pasto.id)) return false;
   if (!pasto.orario) return true;
@@ -85,12 +56,7 @@ function ancoraDaFare(pasto: Pasto, ora: number, saltati: Set<string>): boolean 
   return Number(m[1]) >= ora;
 }
 
-/**
- * I conti della giornata, dato quello che il cliente dice di aver saltato.
- *
- * `pastiSaltati` sono gli id dei pasti dichiarati saltati. Se il cliente non
- * nomina niente, il calcolo dice comunque a che punto è la giornata.
- */
+/** `pastiSaltati`: id dei pasti dichiarati saltati. */
 export function recupero(
   dieta: Dieta,
   indiceGiorno: number,
@@ -128,8 +94,7 @@ export function recupero(
     grassi: giaMangiato.grassi + copertoDaiRimanenti.grassi,
   };
 
-  // L'obiettivo dichiarato dal professionista vince sul totale della dieta:
-  // se ha scritto 2000 kcal e la giornata ne somma 1950, il riferimento è il suo.
+  // L'obiettivo dichiarato vince sul totale della dieta.
   const riferimento: Valori = {
     kcal: dieta.obiettivi.kcal ?? previsto.kcal,
     proteine: dieta.obiettivi.proteine ?? previsto.proteine,
@@ -158,12 +123,6 @@ export function recupero(
   };
 }
 
-/**
- * La risposta in parole, composta dal codice.
- *
- * È questa la frase che l'AI riformula: i numeri li decide qui il motore, e il
- * modello può cambiare il tono ma non le cifre.
- */
 export function raccontaRecupero(r: Recupero, nomeProfessionista: string): string {
   const arr = (n: number) => Math.abs(Math.round(n));
   const frasi: string[] = [];

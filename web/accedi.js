@@ -1,12 +1,3 @@
-/**
- * Accesso.
- *
- * La destinazione la decide il SERVER: la risposta contiene la pagina che
- * spetta al ruolo. Il browser non sceglie e non sa scegliere — se decidesse
- * qui, cambiare una riga di JavaScript basterebbe a chiedere la dashboard
- * dello studio.
- */
-
 const $ = (id) => document.getElementById(id);
 
 function mostraErrore(messaggio) {
@@ -45,10 +36,6 @@ $('form').addEventListener('submit', async (evento) => {
     if (!risposta.ok) {
       mostraErrore(dati.errore ?? 'Accesso non riuscito.');
 
-      // Se il limite dei tentativi è scattato, non si invita a riprovare
-      // subito: il campo resta com'è e il bottone spento. Riproporre il cursore
-      // sulla password significherebbe far battere altri tentativi che il
-      // server rifiuterà comunque.
       if (dati.codice === 'troppi-tentativi') {
         bloccato = true;
         return;
@@ -63,8 +50,6 @@ $('form').addEventListener('submit', async (evento) => {
   } catch {
     mostraErrore('Connessione non disponibile. Riprova.');
   } finally {
-    // Il bottone resta spento solo quando il server ha detto di aspettare: il
-    // `finally` gira sempre, quindi la condizione va messa qui e non nel ramo.
     $('invia').disabled = bloccato;
     $('invia').textContent = bloccato ? 'Riprova più tardi' : 'Entra';
   }

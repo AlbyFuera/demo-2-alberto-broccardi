@@ -1,17 +1,3 @@
-/**
- * Una dieta di prova, scritta come la scriverebbe un professionista.
- *
- * Non è un dato di produzione e non finisce nel Worker: serve ai test, e
- * contiene di proposito i tre casi che rompono le cose —
- *
- *   · un alimento a quantità libera («zucchine q.b.»), che deve stare fuori dai
- *     conti senza renderli incompleti;
- *   · un alimento di cui il motore NON conosce la composizione («nduja»), che
- *     deve rendere il conto dichiaratamente parziale;
- *   · un nome scritto per esteso («petto di pollo») che il cliente nominerà per
- *     abbreviazione («pollo»).
- */
-
 import type { Dieta } from '../src/types.ts';
 
 export function dietaDiProva(): Dieta {
@@ -71,8 +57,7 @@ export function dietaDiProva(): Dieta {
           },
         ],
       },
-      // I giorni da 2 a 6 restano vuoti: la media deve calcolarsi sui due
-      // scritti, non su sette.
+      // I giorni da 2 a 6 restano vuoti.
       { indice: 2, pasti: [] },
       { indice: 3, pasti: [] },
       { indice: 4, pasti: [] },

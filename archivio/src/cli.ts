@@ -1,15 +1,3 @@
-/**
- * CLI di collaudo.
- *
- * Serve a far vedere il motore funzionante senza costruire prima
- * l'interfaccia: è quello che si mostra a un nutrizionista in cinque minuti.
- *
- *   node src/cli.ts settimana --seed 3
- *   node src/cli.ts settimana --libero sab:cena --fuori gio:cena
- *   node src/cli.ts sostituzioni lun pranzo carbo
- *   node src/cli.ts ripianifica --da mer --fuori gio:cena
- */
-
 import { pianoDeMarco } from './data/piano-demarco.ts';
 import { pianoAlimAB } from './data/piano-alim-ab.ts';
 import { pianoMacro } from './data/piano-macro.ts';

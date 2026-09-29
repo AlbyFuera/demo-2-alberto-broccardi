@@ -1,14 +1,13 @@
 #!/bin/bash
-# Prepara due account di dimostrazione con dati realistici:
-# una settimana di dieta scritta, sei giorni di pasti spuntati e di passi.
+# Prepara due account demo con una settimana di dati.
 set -u
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" && mkdir -p .lavoro && cd .lavoro
 B=${B:-https://pianificatore-dieta.matteojeleriu.workers.dev}
 
 EN="anna.verdi@nutrizione.it"
 EC="giulia.rossi@posta.it"
-PW_N="StudioVerdi2026"
-PW_C="GiuliaRossi2026"
+: "${PW_N:?imposta PW_N, la password del nutrizionista demo}"
+: "${PW_C:?imposta PW_C, la password del cliente demo}"
 
 rm -f dn.txt dc.txt
 j() { printf '%s' "$1" > c.json; }
@@ -39,8 +38,7 @@ DIETA=$(pn /api/studio/nuova-dieta | python3 -c "import json,sys; print(json.loa
 python3 - "$DIETA" > dieta-demo.json <<'PY'
 import json, sys
 
-# Due schemi che si alternano: è come scrive un nutrizionista, e serve al cambio
-# pasto automatico — senza giorni diversi non ci sarebbe nulla da proporre.
+# Due schemi alternati, servono al cambio pasto.
 A = [
   ("Colazione", "08:00", [("fette biscottate", 40, "g"), ("marmellata", 30, "g"),
                           ("latte scremato o parz. scremato", 200, "ml")]),
@@ -62,10 +60,7 @@ B = [
                           ("spinaci", None, "g"), ("olio extravergine", 10, "g")]),
 ]
 
-# Il piano a sostituzione: per alcuni posti il professionista dichiara l'elenco
-# chiuso di cosa ci si può mettere, e su quale grandezza si pareggiano le
-# porzioni. Le grammature non le scrive — le calcola il motore — tranne quella
-# delle uova, che si contano a pezzo e che nessuno vuole vedere come «5,5».
+# Piano a sostituzione su alcuni posti.
 PIANO = {
     "petto di pollo": ("fonte proteica", "proteine",
                        [{"nome": "merluzzo"}, {"nome": "tacchino"},
@@ -109,15 +104,13 @@ curl -s -b dn.txt -X POST "$B/api/studio/salva-dieta" -H 'content-type: applicat
 j "{\"id\":\"$DIETA\"}"; pn /api/studio/pubblica > /dev/null
 
 echo "· sei giorni di pasti spuntati e di passi"
-# Si popola indietro nel tempo: la serie e l'aderenza si leggono dallo storico,
-# e senza storico la dashboard mostrerebbe solo dei trattini.
+# Storico all'indietro per serie e aderenza.
 python3 - "$B" > riempi.sh <<'PY'
 import datetime, sys
 B = sys.argv[1]
 oggi = datetime.date.today()
 righe = []
-# Sei giorni pieni, poi oggi con la colazione e lo spuntino già fatti: così la
-# serie è viva e la giornata in corso è a metà, come sarebbe davvero.
+# Sei giorni pieni, oggi a metà.
 passi = {6: 9400, 5: 10200, 4: 8600, 3: 9800, 2: 11300, 1: 9100, 0: 6200}
 for indietro in range(6, -1, -1):
     g = (oggi - datetime.timedelta(days=indietro)).isoformat()
@@ -129,7 +122,7 @@ PY
 GIORNI=""
 . ./riempi.sh
 
-# I pasti di ciascun giorno vanno letti dalla dieta: gli id li ha fatti il server.
+# Gli id dei pasti vanno letti dalla dieta.
 python3 - "$DIETA" > pasti.txt <<'PY'
 import json, subprocess, sys
 d = json.loads(subprocess.run(
@@ -163,8 +156,8 @@ for indietro in range(6, -1, -1):
     idx = data.weekday()
     posta('/api/cliente/passi', {'giorno': g, 'passi': passi[indietro]})
 
-    # Oggi: solo i primi due pasti, la giornata è in corso.
-    # Cinque giorni fa: una cena saltata, così l'aderenza non è un finto 100%.
+    # Oggi: solo i primi due pasti.
+    # Cinque giorni fa: una cena saltata.
     elenco = pasti.get(idx, [])
     if indietro == 0:
         elenco = elenco[:2]

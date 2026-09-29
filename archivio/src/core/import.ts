@@ -1,29 +1,7 @@
-/**
- * Bozza di piano a partire dal testo.
- *
- * ATTENZIONE — questo è un estrattore MECCANICO, non l'AI.
- *
- * Nel prodotto finito questo passaggio lo fa un modello, che legge anche PDF
- * scansionati e formati mai visti. Ma il punto architetturale non cambia, ed è
- * il motivo per cui vale la pena scriverlo adesso: **qualunque cosa produca
- * questo modulo è una BOZZA**, e nessuna bozza diventa un piano senza che il
- * professionista l'abbia confermata campo per campo.
- *
- * Sostituire il regex con una chiamata a un modello tocca una funzione sola
- * (`draftFromText`). Tutto il resto — conferma, registro delle correzioni,
- * validazione — resta identico.
- */
-
 export interface DraftFood {
   label: string;
   qty: number | null;
   unit: 'g' | 'ml' | 'pz' | null;
-  /**
-   * Quantità libera: «verdure o insalata», senza peso. Non è un buco da
-   * riempire, è una prescrizione che il professionista fa apposta — e va
-   * distinta da un'estrazione mancata, o l'interfaccia chiederebbe di
-   * completare un dato che non esiste.
-   */
   freeQuantity?: boolean;
   /** Testo originale da cui è stato ricavato: serve al controllo umano. */
   raw: string;
@@ -83,8 +61,6 @@ function expandAlternatives(chunk: string): DraftFood[] {
     unit = UNITS[lead[2].toLowerCase()];
     rest = lead[3];
   } else if (lead && lead[1] && !UNITS[(lead[2] ?? '').toLowerCase()]) {
-    // "1 tuorlo", "2 uova", "1 mela": numero senza unità → pezzi, e la parola
-    // che segue fa parte del nome, non è un'unità di misura.
     qty = Number(lead[1].replace(',', '.'));
     unit = 'pz';
     rest = [lead[2], lead[3]].filter(Boolean).join(' ');
@@ -113,8 +89,6 @@ function slotsFromLine(line: string, index: number): DraftSlot[] {
         .flatMap(expandAlternatives)
         .filter((f) => f.label.length > 1);
 
-      // "15 g noci o mandorle" significa 15 g di entrambe: la quantità scritta
-      // una volta vale per le alternative che seguono, com'è scritto sui piani.
       let ultima: { qty: number; unit: 'g' | 'ml' | 'pz' } | null = null;
       for (const opt of options) {
         if (opt.qty !== null && opt.unit !== null) {
@@ -151,8 +125,6 @@ export function draftFromText(text: string): Draft {
   let patientName: string | null = null;
 
   for (const line of lines) {
-    // Intestazione del documento: è un dato del piano, non un alimento. Senza
-    // questo controllo "Paziente: Mario Rossi" finisce tra le pietanze.
     const anagrafica = line.match(/^(?:paziente|nome|assistit[oa])\s*:\s*(.+)$/i);
     if (anagrafica) {
       patientName ??= anagrafica[1].trim();
@@ -181,8 +153,6 @@ export function draftFromText(text: string): Draft {
       continue;
     }
     if (!current) {
-      // Righe con alimenti prima di qualunque intestazione: il piano non dice
-      // a quale pasto appartengono, e indovinarlo non è compito del software.
       current = { id: `pasto-${meals.length + 1}`, label: 'Pasto senza titolo', slots: [] };
       meals.push(current);
       warnings.push(
@@ -210,9 +180,7 @@ export function draftFromText(text: string): Draft {
   return { patientName, meals, generalRules, unparsed, warnings };
 }
 
-/* ------------------------------------------------------------------ */
-/* Dalla bozza confermata al piano vero                                */
-/* ------------------------------------------------------------------ */
+/* Dalla bozza confermata al piano */
 
 import type { NutritionPlan, MealTemplate } from '../types.ts';
 
@@ -226,12 +194,6 @@ export interface ConfirmInput {
   draft: Draft;
 }
 
-/**
- * Costruisce il piano definitivo dalla bozza **già corretta** dal professionista.
- *
- * Rifiuta di procedere se restano quantità mancanti: un piano con un buco
- * produce porzioni sbagliate, ed è meglio fermarsi qui che scoprirlo nel piatto.
- */
 export function planFromDraft(input: ConfirmInput): NutritionPlan {
   const buchi = input.draft.meals
     .flatMap((m) => m.slots.flatMap((s) => s.options.map((o) => ({ m, s, o }))))
@@ -255,8 +217,6 @@ export function planFromDraft(input: ConfirmInput): NutritionPlan {
       options: s.options.map((o) => ({
         id: `${s.id}-${o.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
         label: o.label,
-        // Un alimento "q.b." ha peso zero e il validatore non lo controlla:
-        // è la stessa forma che usano i piani scritti a mano.
         qty: o.freeQuantity ? 0 : o.qty!,
         unit: o.freeQuantity ? (o.unit ?? 'g') : o.unit!,
         ...(o.freeQuantity ? { freeQuantity: true } : {}),

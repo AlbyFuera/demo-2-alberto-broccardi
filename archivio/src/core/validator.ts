@@ -1,14 +1,3 @@
-/**
- * Validatore deterministico.
- *
- * È il guardiano del prodotto: nessuna settimana raggiunge il paziente senza
- * essere passata di qui. Non contiene euristiche, non chiama modelli, non
- * "interpreta" nulla — confronta la settimana proposta con il piano e basta.
- *
- * Regola d'oro: in caso di dubbio, ERRORE. Meglio rigenerare che mostrare
- * al paziente un pasto non conforme al piano del professionista.
- */
-
 import type {
   ComboRule,
   FoodOption,
@@ -24,14 +13,6 @@ import type {
 import { DAY_NAMES } from '../types.ts';
 import { expectedPortion, mealLabel, mealTemplate, mealsForDay } from './plan.ts';
 
-/**
- * Opzioni ammesse per uno slot.
- *
- * Gli alimenti che arrivano da una combo valgono SOLO se la combo è applicata
- * per intero. Altrimenti "100g di cereali", che nel piano esistono unicamente
- * in coppia con "100g di legumi", passerebbero come sostituto della porzione
- * piena da 130g: una porzione monca spacciata per conforme.
- */
 function allowedFoods(
   tpl: MealTemplate,
   slotId: string,
@@ -46,10 +27,6 @@ function allowedFoods(
   return out;
 }
 
-/**
- * Scarto ammesso, convertito da grammi di nutriente a grammi di alimento.
- * Il +1 assorbe l'arrotondamento al grammo della porzione calcolata.
- */
 function toleranceInGrams(slot: Slot | undefined, food: FoodOption): number {
   const target = slot?.target;
   const per100 = target && food.nutrients?.[target.nutrient];
@@ -81,16 +58,14 @@ export function validate(plan: NutritionPlan, week: WeekPlan): ValidationResult 
   const warn = (rule: string, message: string, where?: Violation['where']) =>
     warnings.push({ rule, severity: 'warning', message, where });
 
-  /* --- 0. struttura della settimana --------------------------------- */
+  /* 0. struttura della settimana */
   if (week.days.length !== 7) {
     err('settimana/giorni', `La settimana ha ${week.days.length} giorni invece di 7.`);
     return { ok: false, errors, warnings };
   }
 
-  /* --- 1. alimenti e quantità (il controllo critico) ---------------- */
+  /* 1. alimenti e quantità */
   for (const day of week.days) {
-    // Ogni pasto obbligatorio previsto per QUEL giorno deve esserci: con due
-    // regimi alternati i pasti cambiano da un giorno all'altro.
     for (const tpl of mealsForDay(plan, day.index)) {
       if (tpl.optional) continue;
       if (!day.meals.some((m) => m.mealId === tpl.id)) {
@@ -115,8 +90,6 @@ export function validate(plan: NutritionPlan, week: WeekPlan): ValidationResult 
         continue;
       }
 
-      // Una combo vale solo se applicata per intero: va riconosciuta PRIMA di
-      // giudicare i singoli alimenti.
       const comboUsed = (tpl.combos ?? []).find((c) =>
         c.parts.every((p) =>
           meal.items.some(
@@ -155,8 +128,6 @@ export function validate(plan: NutritionPlan, week: WeekPlan): ValidationResult 
 
         const min = portion.qty;
         const max = portion.derived ? portion.qty : (match.qtyMax ?? match.qty);
-        // Sulle porzioni calcolate si ammette lo scarto di arrotondamento
-        // dichiarato dal piano: 63 g di riso non si pesano al decimo.
         const slack = portion.derived ? toleranceInGrams(slot, match) : 0;
         const outOfRange =
           item.food.unit !== portion.unit ||
@@ -210,7 +181,7 @@ export function validate(plan: NutritionPlan, week: WeekPlan): ValidationResult 
 
   const S = plan.structure;
 
-  /* --- 2. pasti fissi (es. colazione identica 7/7) ------------------ */
+  /* 2. pasti fissi (es. colazione identica 7/7) */
   for (const mealId of S.fixedMeals) {
     const sigs = new Set(
       week.days
@@ -227,7 +198,7 @@ export function validate(plan: NutritionPlan, week: WeekPlan): ValidationResult 
     }
   }
 
-  /* --- 3. pasti tutti diversi (es. cene) ---------------------------- */
+  /* 3. pasti tutti diversi (es. cene) */
   for (const mealId of S.allDifferentMeals) {
     const seen = new Map<string, number>();
     for (const day of week.days) {
@@ -248,7 +219,7 @@ export function validate(plan: NutritionPlan, week: WeekPlan): ValidationResult 
     }
   }
 
-  /* --- 3b. pasti che nello stesso giorno devono differire ----------- */
+  /* 3b. pasti che nello stesso giorno devono differire */
   for (const group of S.distinctWithinDay ?? []) {
     for (const day of week.days) {
       const sigs = day.meals
@@ -265,7 +236,7 @@ export function validate(plan: NutritionPlan, week: WeekPlan): ValidationResult 
     }
   }
 
-  /* --- 4. pattern di ripetizione (es. pranzi 2+2+2+1) --------------- */
+  /* 4. pattern di ripetizione (es. pranzi 2+2+2+1) */
   for (const rp of S.repeatPatterns) {
     const sum = rp.pattern.reduce((a, b) => a + b, 0);
     if (sum !== 7) {
@@ -317,7 +288,7 @@ export function validate(plan: NutritionPlan, week: WeekPlan): ValidationResult 
     }
   }
 
-  /* --- 5. pasto libero ---------------------------------------------- */
+  /* 5. pasto libero */
   const freeMeals = week.days.flatMap((d) =>
     d.meals.filter((m) => m.kind === 'free').map((m) => ({ day: d.index, meal: m })),
   );
@@ -342,7 +313,7 @@ export function validate(plan: NutritionPlan, week: WeekPlan): ValidationResult 
     }
   }
 
-  /* --- 6. frequenze -------------------------------------------------- */
+  /* 6. frequenze */
   for (const rule of plan.frequencies) {
     const name = rule.label ?? rule.tag;
 
@@ -387,7 +358,7 @@ export function validate(plan: NutritionPlan, week: WeekPlan): ValidationResult 
     }
   }
 
-  /* --- 7. alcol ------------------------------------------------------ */
+  /* 7. alcol */
   if (week.alcoholUnits > S.alcoholUnitsMax) {
     err(
       'alcol/massimo',

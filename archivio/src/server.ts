@@ -1,19 +1,3 @@
-/**
- * Server di anteprima — NON è il prodotto.
- *
- * Il prodotto è il Worker in `worker/`, con autenticazione, ruoli e database.
- * Questo resta perché serve a un lavoro diverso: guardare il motore da solo,
- * senza account e senza D1, quando si sta lavorando su generatore, validatore o
- * sostituzioni. Zero dipendenze: `node:http` più i file statici in `prototipo/`.
- *
- *   node src/server.ts     →  http://localhost:4000
- *
- * È volutamente SENZA STATO: la settimana è funzione del seed e dei parametri,
- * quindi ogni richiesta la ricompone identica. Non serve un database per
- * guardare un'interfaccia, e non averlo evita di illudersi che il prodotto sia
- * più avanti di dov'è.
- */
-
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
@@ -50,7 +34,6 @@ import type { NutritionPlan, WeekPlan } from './types.ts';
 const WEB_DIR = fileURLToPath(new URL('../prototipo/', import.meta.url));
 const PORT = Number(process.env.PORT ?? 4000);
 
-/** I piani vivono nello store: quelli di collaudo sono solo i primi tre. */
 async function getPlan(key: string): Promise<NutritionPlan> {
   const entry = await store.findPlan(key);
   if (!entry) throw new HttpError(404, `Piano "${key}" sconosciuto.`);
@@ -108,13 +91,6 @@ function buildWeek(req: WeekRequest): WeekPlan {
   }).week;
 }
 
-/**
- * La settimana che il client sta guardando, ricostruita in UN SOLO posto.
- *
- * Senza questo, la tabella verrebbe da una via (ripianificazione) e l'elenco
- * delle sostituzioni da un'altra (rigenerazione): due settimane diverse, e
- * alternative calcolate su un piatto che l'utente non ha davanti.
- */
 function resolveWeek(
   req: WeekRequest,
   params: URLSearchParams,
@@ -324,8 +300,6 @@ async function handleApi(
       confirmedBy: professionalName ?? professionalId,
     });
 
-    // Le correzioni fatte in fase di conferma sono il carburante del profilo
-    // di stile: vanno registrate SEMPRE, anche prima di saperle usare.
     const corrections: Correction[] = (body.correzioni ?? []).map((c: any, i: number) => ({
       id: `${key}-${i}`,
       professionalId,
@@ -394,16 +368,13 @@ async function handleApi(
     const profile = await store.getProfile(plan.professional.id);
     const ctx = { plan, week, today, profile };
 
-    // 1. Capire la domanda. Con l'AI meglio; senza, le espressioni regolari.
     const meals = allMealTemplates(plan).map((m) => ({ id: m.id, label: m.label }));
     const intent =
       (await llm.interpretWithAi(question, meals, today)) ??
       assistant.interpret(question, plan, today);
 
-    // 2. Risolvere contro il motore. Questa parte non passa MAI dall'AI.
     const reply = assistant.resolve(ctx, intent, now.getHours());
 
-    // 3. Dirlo con la voce del professionista, se l'AI è disponibile.
     const voice = await llm.speakWithVoice(
       reply,
       assistant.styleBrief(plan, profile),
@@ -414,7 +385,6 @@ async function handleApi(
       reply.source = 'ai';
     }
 
-    // 4. Quello che il piano non copre torna allo studio, non viene inventato.
     if (reply.flag) {
       await store.addFlag({
         id: `flag-${now.getTime()}`,
@@ -467,7 +437,6 @@ async function handleApi(
       throw new HttpError(400, 'Servono giorno, pasto e slot.');
     }
 
-    // Stessa settimana che l'utente ha davanti, non una ricomposta a parte.
     const { week } = resolveWeek(req, params);
     const meal = week.days[day]?.meals.find((m) => m.mealId === mealId);
     const current = meal?.items.find((it) => it.slotId === slotId);
@@ -512,7 +481,6 @@ async function handleApi(
 
 async function serveStatic(pathname: string): Promise<{ body: Buffer; type: string }> {
   const rel = pathname === '/' ? 'index.html' : pathname.replace(/^\//, '');
-  // Nessuna risalita fuori da web/: è un server locale, ma le abitudini contano.
   const safe = normalize(rel).replace(/^(\.\.[/\\])+/, '');
   const file = join(WEB_DIR, safe);
   if (!file.startsWith(WEB_DIR)) throw new HttpError(403, 'Percorso non ammesso.');
@@ -532,7 +500,6 @@ async function readBody(req: import('node:http').IncomingMessage): Promise<any> 
   let size = 0;
   for await (const chunk of req) {
     size += chunk.length;
-    // Un piano incollato è testo: oltre questa soglia è un errore o un abuso.
     if (size > 2_000_000) throw new HttpError(413, 'Contenuto troppo grande.');
     chunks.push(chunk as Buffer);
   }

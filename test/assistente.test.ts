@@ -73,22 +73,12 @@ describe('coppia «cosa esce / cosa entra»', () => {
     assert.equal(c.alimentoNuovo, 'riso');
   });
 
-  /*
-   * Il professionista scrive «petto di pollo», il cliente chiede «il pollo».
-   * Senza il confronto per parole, questa coppia non veniva riconosciuta e la
-   * sostituzione finiva sul primo alimento del pasto.
-   */
   it('REGRESSIONE: «pollo» aggancia «petto di pollo»', () => {
     const c = coppia('posso mettere il tonno al posto del pollo a pranzo?', dieta);
     assert.equal(c.alimento, 'petto di pollo');
     assert.equal(c.alimentoNuovo, 'tonno');
   });
 
-  /*
-   * Un alimento fuori dalla dieta non si trova cercandolo tra gli alimenti
-   * della dieta: va preso così com'è scritto, o il professionista non viene mai
-   * a sapere che il suo cliente voleva la pizza.
-   */
   it('REGRESSIONE: prende il nome anche quando NON è nella dieta', () => {
     const c = coppia('posso mangiare una pizza al posto della pasta?', dieta);
     assert.equal(c.alimento, 'pasta');
@@ -134,10 +124,6 @@ describe('risoluzione contro il motore', () => {
     assert.equal(r.schede.length, 0);
   });
 
-  /*
-   * Un conto parziale non va MAI presentato come esatto: gli alimenti esclusi
-   * si dichiarano per nome, così il cliente sa cosa non è stato contato.
-   */
   it('un conto parziale dichiara quali alimenti sono fuori', () => {
     const r = risolvi(ctx, interpreta('quante calorie ho martedì?', dieta, LUN));
     assert.ok(r.citazioni.some((c) => c.includes('nduja')));
@@ -160,11 +146,6 @@ describe('risoluzione contro il motore', () => {
     assert.ok(r.risposta.includes('Dott. Rossi'));
   });
 
-  /*
-   * La funzione dice quanto manca — che è un conto — e NON quanto mangiare per
-   * recuperare, che è una decisione clinica. Un cliente in deficit a cui ogni
-   * sera si dice «recupera 600 kcal» mangia peggio di come mangiava prima.
-   */
   it('sul pasto saltato dà i conti e rimanda la decisione al professionista', () => {
     const domanda = interpreta('ho saltato il pranzo', dieta, LUN);
     const r = risolvi({ ...ctx, ora: 15 }, domanda);

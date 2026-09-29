@@ -1,24 +1,3 @@
-/**
- * Variazioni chieste dal cliente.
- *
- * È la funzione che vende il prodotto, e l'unica il cui esito arriva sul
- * tavolo del professionista. Tre domande, una risposta ciascuna:
- *
- *   «posso mettere X al posto di Y?»      → verificaSostituto()
- *   «trovami qualcosa che vada bene»       → alternativeOrdinate()
- *   «ok, cambio»                           → applicaVariazione()
- *
- * CHI DECIDE COSA — è il punto su cui si regge la responsabilità legale:
- *
- *   ammesso / non ammesso   →  il validatore, cioè il piano del professionista
- *   di quanto sposta        →  core/nutrition.ts, con la copertura dichiarata
- *   come lo si dice         →  l'AI, e solo questo
- *
- * L'AI non compare in questo file. Nessuna variazione viene mai concessa da un
- * modello linguistico: se il validatore dice no, è no, anche se il modello
- * saprebbe argomentare il contrario.
- */
-
 import type { FoodOption, NutritionPlan, WeekPlan } from '../types.ts';
 import { DAY_NAMES } from '../types.ts';
 import { unitDaysFor } from './generator.ts';
@@ -35,9 +14,7 @@ const NORM = (s: string) =>
     .replace(/\s+/g, ' ')
     .trim();
 
-/* ------------------------------------------------------------------ */
-/* Una variazione valutata                                             */
-/* ------------------------------------------------------------------ */
+/* Una variazione valutata */
 
 export interface Alternativa {
   foodId: string;
@@ -70,16 +47,6 @@ export interface Variazione {
   dayName: string;
 }
 
-/**
- * Alternative per uno slot, ordinate per SCOSTAMENTO CALORICO CRESCENTE.
- *
- * L'ordine è la risposta alla richiesta vera del cliente: non «cosa posso
- * mangiare» ma «cosa posso mangiare senza sfasare la giornata». La prima
- * alternativa ammessa dell'elenco è quella che sposta meno.
- *
- * Le non ammesse restano in coda, con il motivo: un elenco che le fa sparire
- * lascia il cliente a chiedersi perché, e a riprovare.
- */
 export function alternativeOrdinate(
   plan: NutritionPlan,
   week: WeekPlan,
@@ -143,10 +110,6 @@ export function alternativeOrdinate(
   };
 }
 
-/* ------------------------------------------------------------------ */
-/* «Posso mettere X?»                                                  */
-/* ------------------------------------------------------------------ */
-
 export type EsitoVerifica =
   /** Il piano lo prevede in questo slot e la settimana resta conforme. */
   | 'ammesso'
@@ -167,14 +130,6 @@ export interface Verifica {
   contesto: Variazione;
 }
 
-/**
- * Verifica un sostituto NOMINATO dal cliente.
- *
- * Il caso 'fuori-piano' è quello che conta di più: il cliente ha chiesto
- * qualcosa che il piano non elenca. Lo strumento non lo concede e non lo nega
- * — non è una decisione che possa prendere né il codice né un modello. Va al
- * professionista, e nel frattempo il cliente riceve alternative vere.
- */
 export function verificaSostituto(
   plan: NutritionPlan,
   week: WeekPlan,
@@ -187,8 +142,6 @@ export function verificaSostituto(
   const target = NORM(richiesto);
   const ripiego = contesto.alternative.filter((a) => a.ammessa).slice(0, 3);
 
-  // Corrispondenza esatta, poi per contenimento: "riso" trova "riso integrale"
-  // solo se non esiste un "riso" secco, così la scelta non cambia da sola.
   const trovata =
     contesto.alternative.find((a) => NORM(a.nome) === target) ??
     contesto.alternative.find((a) => NORM(a.nome).includes(target) && target.length > 2);
@@ -215,17 +168,8 @@ export function verificaSostituto(
   };
 }
 
-/* ------------------------------------------------------------------ */
-/* Applicazione e registrazione                                        */
-/* ------------------------------------------------------------------ */
+/* Applicazione e registrazione */
 
-/**
- * La variazione come finisce sulla dashboard del professionista.
- *
- * Contiene già tutto ciò che serve a giudicarla in tre secondi: cosa era, cosa
- * è diventata, di quanto si è spostata la giornata e quanto è affidabile quel
- * numero. Non contiene interpretazioni.
- */
 export interface RegistroVariazione {
   day: number;
   dayName: string;
@@ -258,12 +202,6 @@ export interface EsitoApplicazione {
   errore?: string;
 }
 
-/**
- * Applica la variazione, se ammessa.
- *
- * Rifiuta in modo esplicito: una variazione non conforme non viene applicata
- * «con un avviso». Il piano del professionista non è una linea guida.
- */
 export function applicaVariazione(
   plan: NutritionPlan,
   week: WeekPlan,
@@ -329,7 +267,7 @@ export function applicaVariazione(
   };
 }
 
-/** L'oggetto alimento vero, preso dal piano: mai ricostruito a mano. */
+/** L'alimento preso dal piano. */
 function optionById(
   plan: NutritionPlan,
   day: number,

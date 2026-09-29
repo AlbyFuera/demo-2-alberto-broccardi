@@ -1,286 +1,239 @@
 # Pianificatore dieta
 
 Il nutrizionista scrive la dieta a mano, giorno per giorno. Il software calcola i
-valori nutrizionali, la mostra al cliente e gli risponde quando ha un problema —
-senza mai decidere al posto di chi ha firmato.
+valori nutrizionali, la mostra al cliente e risponde alle sue domande. Le
+decisioni cliniche restano al professionista che ha firmato la dieta.
 
-Gira su Cloudflare: Workers + D1 + Workers AI. Nessuna chiave API da custodire.
+Gira su Cloudflare: Workers, D1 e Workers AI. Non servono chiavi API.
 
-## Come funziona, dall'inizio
+## Flusso
 
-1. **Ci si iscrive**, con sola email e password, scegliendo se si scrivono le
-   diete o se se ne segue una. Il nome si mette dalle impostazioni.
-2. **Il cliente aggiunge il suo nutrizionista** cercandolo per email e mandando
-   una richiesta. Finché non viene accettata non vede niente, e il
-   professionista non vede niente di lui oltre nome ed email.
-3. **Il professionista accetta**, e da quel momento sono collegati.
-4. **Scrive la dieta**, in due modi: a mano giorno per giorno, oppure
-   **caricando il PDF** che già ha — lo strumento lo trascrive in una bozza che
-   lui corregge. I valori nutrizionali si calcolano da soli. Finché è una bozza
-   il cliente non la vede; quando la **pubblica**, la vede subito.
-5. **Il cliente apre la sua dashboard**: cosa mangia oggi, quante calorie ha
-   consumato, i passi, da quanti giorni di fila sta seguendo la dieta. Spunta i
-   pasti che fa, e può **cambiare un pasto intero** prendendone uno di un altro
-   giorno della sua dieta.
-6. **Tocca un alimento e sceglie fra le sostituzioni previste** dal suo
-   nutrizionista, con la porzione già calcolata. Se resta dentro l'elenco,
-   **l'aderenza non scende**.
-7. **All'assistente chiede qualsiasi cosa** e riceve una risposta, non un
-   rimando: «posso bere un bicchiere di vino?», «ho saltato il pranzo, come sto
-   messo?», «perché devo bere tanta acqua?». Il professionista può **spegnere
-   l'assistente per un singolo cliente** e rispondergli di persona.
-8. **Il nutrizionista vede l'aderenza accanto a ogni nome** e ogni sostituzione
-   con la grammatura equivalente, marcata come prevista dal piano o come
-   deviazione. Può **annullarla**: il piatto torna quello prescritto e il
-   cliente legge il perché.
+1. Ci si iscrive con email e password, scegliendo il ruolo: professionista o
+   cliente. Il nome si imposta dalle impostazioni.
+2. Il cliente cerca il suo nutrizionista per email e gli manda una richiesta.
+   Finché non viene accettata il cliente non vede niente e il professionista
+   vede solo nome ed email.
+3. Il professionista accetta e i due account risultano collegati.
+4. Il professionista scrive la dieta a mano giorno per giorno, oppure carica il
+   PDF che ha già: lo strumento lo trascrive in una bozza da correggere. I
+   valori nutrizionali si calcolano in automatico. La bozza non è visibile al
+   cliente; lo diventa appena viene pubblicata.
+5. Il cliente ha una dashboard con i pasti di oggi, le calorie consumate, i
+   passi e i giorni consecutivi di dieta seguita. Spunta i pasti fatti e può
+   scambiare un pasto intero con quello di un altro giorno della sua dieta.
+6. Toccando un alimento sceglie tra le sostituzioni previste dal nutrizionista,
+   con la porzione già calcolata. Se resta nell'elenco l'aderenza non scende.
+7. Può fare domande all'assistente, per esempio "posso bere un bicchiere di
+   vino?", "ho saltato il pranzo, come sto messo?", "perché devo bere tanta
+   acqua?". Il professionista può spegnere l'assistente per un singolo cliente
+   e rispondere di persona.
+8. Il nutrizionista vede l'aderenza accanto a ogni nome e ogni sostituzione con
+   la grammatura equivalente, segnata come prevista dal piano o come
+   deviazione. Può annullarla: il piatto torna quello prescritto e il cliente
+   vede la motivazione.
 
-## La dashboard del cliente
+## Dashboard del cliente
 
-Non è la chat. La chat risponde a una domanda, e una domanda non ce l'hai tutti
-i giorni — la colazione sì.
-
-| | Cosa dice |
+| | Contenuto |
 |---|---|
-| **Mangiato oggi** | calorie dei pasti spuntati, sull'obiettivo |
-| **Pasti fatti** | quanti su quelli previsti, e quanti saltati |
-| **Passi** | quelli segnati, sull'obiettivo del nutrizionista |
-| **Giorni di fila** | la serie: giorni consecutivi con tutti i pasti fatti |
-| **Stai seguendo la dieta** | l'aderenza sulla settimana, con il colore |
+| Mangiato oggi | calorie dei pasti spuntati rispetto all'obiettivo |
+| Pasti fatti | fatti su previsti, e quanti saltati |
+| Passi | passi segnati rispetto all'obiettivo del nutrizionista |
+| Giorni di fila | giorni consecutivi con tutti i pasti fatti |
+| Stai seguendo la dieta | aderenza settimanale, con colore |
 
-Tre regole scritte in `core/aderenza.ts` che rendono i numeri onesti:
+Regole di calcolo, in `core/aderenza.ts`:
 
-- **la serie si conta da ieri se oggi non è ancora completo.** Senza, alle nove
-  del mattino segnerebbe zero e risalirebbe ogni sera: il numero più
-  demotivante da mostrare a chi sta facendo bene da due settimane;
-- **un giorno senza nessuna spunta non è zero, è ignoto.** Chi non ha capito che
-  deve spuntare non è uno che salta i pasti, e la differenza cambia la
-  telefonata che il professionista gli farà;
-- **chi rispetta il piano a sostituzione non perde niente.** Un pasto fatto
-  scegliendo fra le alternative ammesse vale quanto quello prescritto: è
-  esattamente ciò che gli è stato concesso di fare.
+- se oggi non è ancora completo, la serie si conta da ieri, altrimenti al
+  mattino sarebbe sempre zero;
+- un giorno senza spunte conta come dato mancante, non come zero;
+- un pasto fatto scegliendo tra le alternative ammesse vale quanto quello
+  prescritto.
 
-## Il cambio di un pasto intero
+## Cambio di un pasto intero
 
-`core/cambiopasto.ts`. I pasti proposti vengono dagli **altri giorni della sua
-stessa dieta**, con lo stesso nome e entro il 15% di scostamento calorico.
+`core/cambiopasto.ts`. I pasti proposti vengono dagli altri giorni della stessa
+dieta, con lo stesso nome e uno scostamento calorico entro il 15%.
 
-È questo che permette al cambio di avvenire **senza approvazione**: non si
-concede niente di nuovo, si permette al cliente di mangiare giovedì quello che
-avrebbe mangiato sabato. Un motore che inventasse pasti nuovi dovrebbe passare
-dal professionista, perché starebbe scrivendo dieta.
+Per questo il cambio non richiede approvazione: il cliente sposta di giorno un
+pasto che il professionista ha già scritto. Generare pasti nuovi richiederebbe
+invece il suo intervento.
 
-## Il PDF
+## Import del PDF
 
-`worker/pdf.ts`. Due passaggi: `AI.toMarkdown` estrae il testo — è un
-convertitore, non un modello — e un modello piccolo lo trascrive in righe piatte
-(`GIORNO|PASTO|ORARIO|ALIMENTO|QUANTITA|UNITA`).
+`worker/pdf.ts`. Due passaggi: `AI.toMarkdown` (un convertitore, non un
+modello) estrae il testo, poi un modello piccolo lo trascrive in righe piatte
+`GIORNO|PASTO|ORARIO|ALIMENTO|QUANTITA|UNITA`.
 
-Il formato piatto non è pigrizia: con il JSON annidato il modello sbagliava una
-graffa su duemila caratteri e buttava via tutta la lettura. Una riga storta si
-scarta e le altre restano.
+Si usano righe piatte perché con il JSON annidato bastava una graffa sbagliata
+per perdere tutta la lettura. Una riga malformata si scarta e le altre restano.
 
-Quello che ne esce è una **bozza**, e accanto c'è il testo che il software ha
-letto davvero. Il PDF originale resta allegato e il cliente lo apre: se la
-lettura ha sbagliato, la carta del suo nutrizionista è sempre lì.
+Il risultato è una bozza, mostrata accanto al testo effettivamente letto. Il
+PDF originale resta allegato e il cliente può aprirlo.
 
-## Il piano a sostituzione
+## Piano a sostituzione
 
-`src/core/piano.ts`. È la cosa che il nutrizionista chiede da sempre e che sul
-foglio non ci sta: **«a colazione la fonte proteica può essere lo yogurt greco,
-i fiocchi di latte o due uova — scegli tu, basta che resti in questo elenco».**
+`src/core/piano.ts`. Permette al nutrizionista di indicare, per esempio, che a
+colazione la fonte proteica può essere yogurt greco, fiocchi di latte o due
+uova, a scelta del cliente.
 
-Per ogni alimento della dieta il professionista può scrivere:
+Per ogni alimento della dieta il professionista può indicare:
 
 | | |
 |---|---|
-| **le alternative ammesse** | un elenco chiuso, e sono quelle |
-| **come si chiama quel posto** | «fonte proteica»: è quello che legge il cliente |
-| **su cosa si pareggia** | solo se fa eccezione: di regola vale quella della dieta |
+| alternative ammesse | elenco chiuso |
+| nome della voce | es. "fonte proteica", è ciò che legge il cliente |
+| base di pareggio | solo come eccezione; di default vale quella della dieta |
 
-Le **grammature non gliele si chiede**: le calcola il motore secondo la base che
-ha scelto. Ma il campo c'è, e quella singola alternativa che nella sua
-esperienza va scritta diversamente — «uova: 2 pezzi», non «5,5» — può scriverla,
-e quel numero non viene ricalcolato da nessuno.
+Le grammature le calcola il motore in base alla regola scelta. Il campo resta
+comunque modificabile: una quantità scritta a mano (es. "uova: 2 pezzi" invece
+di "5,5") non viene ricalcolata.
 
-Il cliente apre il suo pasto, tocca l'alimento e sceglie. Non chiede un
-permesso: **fa quello che gli è stato concesso.**
+Il cliente apre il pasto, tocca l'alimento e sceglie, senza chiedere permesso.
 
-### Se rispetta le sostituzioni, l'aderenza non scende
+### Effetto sull'aderenza
 
-È la promessa che rende il piano utile, ed è scritta in `core/aderenza.ts`:
+In `core/aderenza.ts`:
 
-- pasto fatto scegliendo **dentro l'elenco** → vale come il pasto prescritto;
-- pasto fatto con una sostituzione **fuori dall'elenco** → vale **metà**, e il
-  cliente lo legge **prima** di scegliere, non dopo;
-- **scambio di un pasto intero** con quello di un altro giorno → sempre dentro:
-  quel pasto l'ha scritto il professionista, si sposta solo di giorno.
+- pasto fatto con una scelta dentro l'elenco: vale come il pasto prescritto;
+- pasto fatto con una sostituzione fuori elenco: vale metà, e il cliente lo
+  vede prima di scegliere;
+- scambio di un pasto intero con quello di un altro giorno: sempre dentro,
+  perché il pasto l'ha scritto il professionista.
 
-Il mezzo punto non è una punizione, è un'informazione: dice «segue, ma a modo
-suo», che è diverso sia da «segue» sia da «non segue» e merita un numero diverso
-da entrambi.
+Il mezzo punto serve a distinguere chi segue la dieta a modo suo da chi la
+segue e da chi non la segue.
 
-Il fatto che una scelta fosse ammessa viene **congelato nella riga di
-variazione** (`variations.in_plan`) e non si ricalcola mai. Se il professionista
-domani toglie un'alternativa, non deve far scendere all'indietro l'aderenza di
-chi ieri aveva rispettato il piano di ieri.
+Il fatto che una scelta fosse ammessa viene salvato nella riga di variazione
+(`variations.in_plan`) e non viene più ricalcolato. Se il professionista toglie
+un'alternativa, l'aderenza dei giorni passati non cambia.
 
-### Isocalorica o isoproteica: due domande diverse
+### Isocalorica o isoproteica
 
-180 g di merluzzo portano 31 g di proteine e 128 kcal. Sostituirlo con del petto
-di pollo dà **due porzioni diverse** a seconda di cosa si vuole tenere fermo:
+180 g di merluzzo portano 31 g di proteine e 128 kcal. Sostituito con petto di
+pollo, la porzione cambia a seconda di cosa si pareggia:
 
 ```
 isoproteica  →  135 g di pollo    stessi 31 g di proteine
 isocalorica  →   85 g di pollo    stesse 128 kcal
 ```
 
-Quale delle due sia quella giusta è una decisione clinica, e **la prende il
-professionista** — una volta sola, in testa alla dieta:
+La scelta è clinica e la fa il professionista una volta, in testa alla dieta:
 
-> **Le sostituzioni si pareggiano:** isocalorica · isoproteica · isoglucidica ·
+> Le sostituzioni si pareggiano: isocalorica · isoproteica · isoglucidica ·
 > isolipidica · sul macronutriente principale
 
-Vale per tutto il piano, che è il livello a cui la decisione appartiene: un piano
-ipocalorico si tiene sulle calorie, uno ipertrofico sulle proteine. Sul singolo
-alimento resta un campo per **derogare** — la fonte proteica isoproteica dentro
-un piano per il resto isocalorico — e il predefinito lì è «come dice la dieta».
+La regola vale per tutto il piano (es. un piano ipocalorico sulle calorie, uno
+ipertrofico sulle proteine). Sul singolo alimento si può fare un'eccezione, per
+esempio una fonte proteica isoproteica in un piano isocalorico; il valore
+predefinito del campo è "come dice la dieta".
 
-Il cliente **non la sceglie e non la vede come una scelta**: legge quale regola è
-in vigore sotto le porzioni, e basta. La base non viaggia più nelle richieste del
-browser, quindi non c'è niente da falsificare: senza questo vincolo chi volesse
-mangiare di più cercherebbe la base che gli dà la porzione più grande, e la dieta
-la sceglierebbe il cliente.
+Il cliente non sceglie la regola: la vede indicata sotto le porzioni. La base
+non viene più inviata dal browser, quindi il cliente non può forzarla per
+ottenere porzioni più grandi.
 
-L'ordine con cui si decide, in `core/piano.ts`, è: eccezione sull'alimento →
-regola della dieta → `auto`.
+Ordine di risoluzione in `core/piano.ts`: eccezione sull'alimento, poi regola
+della dieta, poi `auto`.
 
-Quando il pareggio chiesto non è possibile — una isoproteica verso il miele
-chiederebbe undici chili di miele — il motore **ripiega sulle calorie e lo
-scrive**. Una porzione che non sta in un piatto è peggio di nessuna risposta:
-qualcuno potrebbe seguirla.
+Se il pareggio richiesto non è realistico (un'isoproteica verso il miele
+richiederebbe undici chili di miele) il motore ripiega sulle calorie e lo
+segnala.
 
-## Chi risponde al cliente: l'assistente o il professionista
+## Assistente o risposta del professionista
 
-Un interruttore per **ogni singolo cliente** (`links.auto_chat`), sulla scheda
-di quel cliente e non nelle impostazioni dello studio: al cliente autonomo si
-lascia l'assistente, a quello appena operato si vuole rispondere di persona, e
-un interruttore unico costringerebbe a scegliere il comportamento sbagliato per
-metà delle persone.
+Ogni cliente ha un interruttore (`links.auto_chat`) nella sua scheda, non nelle
+impostazioni dello studio, così il professionista può decidere cliente per
+cliente.
 
 | | |
 |---|---|
-| **acceso** | risponde l'assistente, come sempre. Domande e risposte finiscono comunque nel filo, e il professionista le legge quando vuole |
-| **spento** | nessuno risponde al posto suo: il messaggio resta lì e aspetta lui |
+| acceso | risponde l'assistente. Domande e risposte restano nel filo e il professionista può leggerle |
+| spento | nessuna risposta automatica: il messaggio aspetta il professionista |
 
-Le risposte dell'assistente si registrano **anche quando l'automazione è
-accesa**: è ciò che permette a chi la spegne a metà giornata di leggere cosa era
-stato detto al suo cliente, invece di rispondere alla cieca.
+Le risposte dell'assistente vengono registrate anche con l'automazione accesa,
+così chi la spegne vede cosa è già stato detto al cliente.
 
-Nel filo le tre voci non si confondono mai — il cliente, l'assistente, il
-professionista con il suo nome. Far passare per proprie le parole di un modello
-sarebbe la bugia più grave che questo prodotto possa dire.
+Nel filo le tre voci sono sempre distinte: cliente, assistente e professionista
+con il suo nome.
 
-## Le due decisioni architetturali che contano
+## Scelte architetturali
 
-### Le sostituzioni sono prima di tutto un calcolo
+### Sostituzioni calcolate
 
-Il piano a sostituzione è **facoltativo**: nessuno lo scrive per tutti e trenta
-gli alimenti di una settimana. Dove non c'è — ed è il caso di tutte le diete
-scritte finora — la domanda «posso mettere X al posto di Y?» si risolve come si
-è sempre risolta: `src/core/equivalenza.ts` **pareggia il macronutriente
-caratterizzante** dell'alimento che esce:
+Il piano a sostituzione è facoltativo. Dove non c'è (finora in tutte le diete)
+la sostituzione "X al posto di Y" la calcola `src/core/equivalenza.ts`
+pareggiando il macronutriente caratterizzante dell'alimento sostituito:
 
 ```
 100 g di pasta  →  95 g di riso      pareggiando i carboidrati (75 g)
 150 g di pollo  →  205 g di merluzzo pareggiando le proteine (34 g)
 ```
 
-Non le calorie. Pareggiare le kcal tra una fonte di carboidrati e una di grassi
-dà un numero giusto e una dieta sbagliata: stesse calorie, macronutrienti
-stravolti. Quando il pareggio sul caratterizzante è impossibile — pasta → pollo,
-che di carboidrati non ne ha — si ripiega sulle calorie **e lo si dichiara**,
-perché non è la sostituzione di un ingrediente ma un cambio di forma della
-giornata.
+Pareggiare le calorie tra una fonte di carboidrati e una di grassi
+stravolgerebbe i macronutrienti. Se il pareggio sul caratterizzante è
+impossibile (pasta → pollo, che non ha carboidrati) si ripiega sulle calorie e
+lo si segnala.
 
-Due limiti deliberati sulle proposte automatiche: solo alimenti della stessa
-famiglia, e con una concentrazione confrontabile. Cento grammi di pasta portano
-75 g di carboidrati e il latte ne ha 5 per 100 ml: il pareggio esiste, ed è un
-litro e mezzo di latte. Una proposta assurda fa perdere fiducia anche in quelle
-buone. Chi vuole comunque quella sostituzione la nomina, e il calcolo gliela
-dà con i suoi avvisi.
+Le proposte automatiche hanno due limiti: solo alimenti della stessa famiglia e
+con concentrazione confrontabile. 100 g di pasta portano 75 g di carboidrati, il
+latte 5 per 100 ml: il pareggio darebbe un litro e mezzo di latte. Una
+sostituzione richiesta esplicitamente viene comunque calcolata, con gli avvisi.
 
-### L'AI fa lingua, non decisioni
+### Ruolo dell'AI
 
 ```
-il MOTORE stabilisce i fatti  →  l'AI li dice con la voce del professionista
+il motore stabilisce i fatti  →  l'AI li riformula con la voce del professionista
 ```
 
-Mai il contrario. Il modello fa due cose: capisce la domanda meglio delle
-espressioni regolari, e riformula la risposta. Ogni grammatura viene da
-`equivalenza.ts`, ogni totale da `dieta.ts`. Il prompt di sistema gli vieta di
-cambiare quantità, inventare valori nutrizionali o dare consigli propri — e in
-particolare di dire al cliente **quanto mangiare** per recuperare un pasto
-saltato: quella è una decisione clinica. Il software dice quanto manca, che è un
-conto; a decidere è chi ha firmato la dieta.
+Il modello serve a capire la domanda meglio delle espressioni regolari e a
+riformulare la risposta. Le grammature vengono da `equivalenza.ts`, i totali da
+`dieta.ts`. Il prompt di sistema vieta di cambiare quantità, inventare valori
+nutrizionali, dare consigli propri e in particolare dire quanto mangiare per
+recuperare un pasto saltato. Il software indica solo quanto manca.
 
-Se il binding AI manca o la quota è esaurita, le risposte restano corrette: le
-compone il codice. L'assistente peggiora di lingua, mai di contenuto.
+Se il binding AI manca o la quota è esaurita, le risposte le compone il codice:
+cambia la forma, non il contenuto.
 
-E c'è un terzo caso, trovato in produzione e non prevedibile a tavolino: **il
-modello può restituire un impasto di token senza segnalare alcun errore.** La
-chiamata riesce, il testo arriva, ed è spazzatura — cirillico, ideogrammi,
-frammenti di codice. `worker/plausibile.ts` la riconosce e la butta, e il cliente
-vede la frase del motore, che era già pronta e corretta. Il caso reale che ha
-fatto scrivere quel file è nei test come regressione.
+In produzione è emerso un altro caso: il modello può restituire testo senza
+senso (cirillico, ideogrammi, frammenti di codice) senza segnalare errori.
+`worker/plausibile.ts` lo riconosce e lo scarta, e il cliente riceve la risposta
+del motore. Il caso reale è nei test come regressione.
 
-## I valori nutrizionali
+## Valori nutrizionali
 
-Il motore conosce ~130 alimenti comuni con valori **indicativi, dichiarati
-tali**. Quando il professionista scrive un alimento che non conosce, l'editor
-gliene chiede i valori per 100 g e li salva nella **libreria del suo studio**:
-da quel momento vincono su quelli interni per tutte le sue diete, e non glieli
-richiede mai più.
+Il motore conosce circa 130 alimenti comuni, con valori indicativi dichiarati
+come tali. Se il professionista usa un alimento sconosciuto, l'editor chiede i
+valori per 100 g e li salva nella libreria dello studio. Da lì in poi hanno la
+precedenza su quelli interni in tutte le sue diete.
 
-Non c'è una via in cui li proponga un modello. Un valore nutrizionale inventato
-entra in una dieta clinica e ci resta, e nessuno saprebbe più da dove è arrivato.
+I valori non vengono mai proposti da un modello.
 
-Finché un alimento resta senza valori, i totali sono **dichiarati parziali** —
-al professionista e al cliente. Un totale che nasconde ciò che non ha contato è
-peggio di un totale assente: chi lo legge si fiderebbe.
+Finché un alimento non ha valori, i totali vengono segnalati come parziali, sia
+al professionista sia al cliente.
 
-Distinzione che vale tutto il modulo dei conti:
-
-| | Cosa significa | Effetto sul totale |
+| | Significato | Effetto sul totale |
 |---|---|---|
-| **q.b.** | il professionista non prescrive un peso | il totale è corretto così |
-| **sconosciuto** | non si conosce la composizione | il totale è incompleto |
+| q.b. | il professionista non prescrive un peso | totale corretto |
+| sconosciuto | composizione non nota | totale incompleto |
 
-Confonderli farebbe apparire incompleta ogni dieta con delle verdure a volontà,
-e il professionista smetterebbe di guardare l'avviso.
+Vanno tenuti distinti, altrimenti ogni dieta con verdure a volontà risulterebbe
+incompleta.
 
-## La schermata del cliente è pensata per il telefono
+## Schermata del cliente su telefono
 
-Non è una versione ridotta di quella grande: è il caso normale. Il cliente apre
-l'applicazione in piedi, davanti al frigorifero, con una mano.
+La schermata del cliente è pensata prima di tutto per il telefono. È verificata
+a 320, 375 e 667 px e in orizzontale:
 
-Tre cose che di solito si sbagliano, qui misurate a 320, 375 e 667 px e in
-orizzontale:
+- campi di testo a 16 px sui telefoni, perché sotto quella dimensione iOS
+  ingrandisce la pagina al tocco;
+- bersagli di tocco intorno ai 44 px;
+- nessuno scorrimento orizzontale della pagina: testi lunghi e tabelle vanno a
+  capo o scorrono nel loro contenitore.
 
-- **niente ingrandimento involontario.** Sotto i 16 px iOS ingrandisce la pagina
-  a ogni tocco su un campo di testo, e non torna più indietro da sola. Sui
-  telefoni i campi sono a 16 px esatti;
-- **bersagli da pollice**, intorno ai 44 px. Toccare un alimento è *il* gesto del
-  prodotto: una pillola alta 30 px si sbaglia una volta su tre;
-- **niente scorrimento orizzontale, mai.** Nomi di alimenti lunghi, tabelle,
-  righe di numeri: vanno a capo o scorrono dentro il loro contenitore, non
-  spingono la pagina di lato.
+I simboli sono tipografici. Niente emoji, perché cambiano aspetto tra sistemi e
+a volte non vengono mostrate.
 
-L'insieme dei simboli è tipografico e chiuso — l'elenco completo sta in testa a
-`web/ui.css`. Nessuna emoji: un'emoji la disegna il sistema operativo, cambia
-forma tra un telefono e un computer, arriva a colori in un'interfaccia che ha un
-accento solo, e a volte non arriva affatto.
-
-## Metterlo in linea
+## Deploy
 
 ```bash
 npm install
@@ -291,7 +244,7 @@ npm run db:remoto        # applica lo schema
 npm run deploy
 ```
 
-Il database nasce vuoto: nessun dato di esempio. Il primo account si crea da
+Il database parte vuoto, senza dati di esempio. Il primo account si crea da
 `/registrazione`.
 
 ### In locale
@@ -305,133 +258,123 @@ npm run dev              # → http://localhost:8787
 ### Verifiche
 
 ```bash
-npm test                 # 136 test sul motore
+npm test                 # 140 test sul motore
 npm run tipi             # controllo dei tipi
-./collaudo.sh            # 123 controlli end-to-end, in locale
-B=https://…workers.dev ./collaudo.sh     # gli stessi, contro l'istanza vera
-./strumenti-demo.sh      # crea due account con una settimana di dati
+scripts/collaudo.sh      # 127 controlli end-to-end, in locale
+B=https://…workers.dev scripts/collaudo.sh    # gli stessi, contro l'istanza vera
+PW_N=… PW_C=… scripts/strumenti-demo.sh # crea due account con una settimana di dati
 ```
 
 ## Limitazione dei tentativi
 
-`worker/limite.ts` conta i tentativi falliti su due chiavi distinte, perché
-proteggono da due attacchi diversi: **per email** (un account preso di mira,
-provato con mille password: otto tentativi ogni quindici minuti) e **per
-indirizzo di rete** (una password comune provata su mille indirizzi: sessanta).
+`worker/limite.ts` conta i tentativi di accesso falliti su due chiavi:
 
-Il conteggio sta in D1 e non in KV — il prodotto ha già D1 e aggiungere un
-secondo archivio significherebbe un binding in più da configurare al deploy.
-Il controllo avviene **prima** della verifica della password, perché verificarla
-costa 600.000 iterazioni di PBKDF2 e chi prova a raffica non deve poter
-comprare tutto quel lavoro a ogni tentativo. Un accesso riuscito azzera il
-conteggio.
+- per email (un account attaccato con molte password): 8 tentativi ogni 15
+  minuti;
+- per indirizzo di rete (una password comune provata su molti account): 60.
 
-Il compromesso, dichiarato: chi conosce l'email di qualcuno può bloccarlo per
-quindici minuti sbagliando otto volte. La finestra si richiude da sé e il
-messaggio dice quanto aspettare — ma senza recupero password quel quarto d'ora
-va saputo.
+Il conteggio sta in D1 e non in KV, per non aggiungere un secondo binding da
+configurare. Il controllo avviene prima della verifica della password, che costa
+600.000 iterazioni di PBKDF2. Un accesso riuscito azzera il conteggio.
 
-## Due cose che il collaudo locale NON può trovare
+Limite noto: chi conosce l'email di qualcuno può bloccarne l'accesso per 15
+minuti sbagliando 8 volte. La finestra scade da sola e il messaggio indica
+quanto aspettare, ma finché non c'è il recupero password va tenuto presente.
 
-Entrambe sono uscite solo pubblicando, e sono il motivo per cui vale la pena
-pubblicare prima di averne bisogno:
+## Problemi visti solo in produzione
 
-1. **WebCrypto nei Worker rifiuta PBKDF2 oltre le 100.000 iterazioni.** In
-   locale passava, in produzione no: registrazione, accesso e cambio password
-   erano tutti rotti. Ora le iterazioni si concatenano a giri da 100.000 per
-   arrivare alle 600.000 effettive.
-2. **D1 in remoto può servire una lettura vecchia di un istante** subito dopo una
-   scrittura. Non è un difetto da correggere, è una caratteristica da conoscere:
-   nell'uso vero fra due azioni passano secondi, non millisecondi.
+1. WebCrypto nei Worker rifiuta PBKDF2 oltre 100.000 iterazioni. In locale
+   funzionava, in produzione registrazione, accesso e cambio password erano
+   rotti. Ora le iterazioni si fanno a blocchi da 100.000 fino a 600.000.
+2. D1 in remoto può restituire un dato vecchio subito dopo una scrittura. Non è
+   un bug da correggere: nell'uso reale tra due azioni passano secondi.
+
+Per questo conviene pubblicare e collaudare l'istanza vera prima che serva.
 
 ## Struttura
 
 ```
-worker/                  IL PRODOTTO — Cloudflare Worker
-  index.ts               routing e ruoli: il controllo sta DAVANTI agli asset
+worker/                  Cloudflare Worker
+  index.ts               routing e ruoli, controllo prima degli asset
   auth.ts                password (PBKDF2), sessioni, cookie
   db.ts                  tutto il SQL, sempre filtrato sul proprietario
   api-cliente.ts         stato, dieta, piano a sostituzione, chat, messaggi
   api-studio.ts          cruscotto, collegamenti, editor, libreria alimenti,
                          interruttore dell'assistente e conversazione
-  ai.ts                  Workers AI: comprensione e voce, mai decisione
-  sovrapposizione.ts     le sostituzioni del cliente sopra la dieta, che resta
-  nomi.ts                il nome da mostrare quando il nome non c'è ancora
-web/                     LE QUATTRO SCHERMATE — nessuna dipendenza esterna
+  ai.ts                  Workers AI: comprensione e formulazione
+  sovrapposizione.ts     applica le sostituzioni del cliente sopra la dieta
+  nomi.ts                nome da mostrare quando manca
+web/                     le quattro schermate, senza dipendenze esterne
   accedi · registrazione · studio · cliente · ui.css · comune.js
-                         un insieme di simboli tipografici, nessuna emoji:
-                         l'elenco completo è in testa a ui.css
+                         simboli tipografici, niente emoji
 migrations/               schema D1
   0001_init.sql            utenti, collegamenti, diete, variazioni, domande
-  0004_piano_e_messaggi.sql  la sostituzione era nel piano, l'interruttore
-                             dell'assistente, il filo dei messaggi
+  0004_piano_e_messaggi.sql  flag "nel piano" sulle variazioni, interruttore
+                             dell'assistente, filo dei messaggi
 
-src/                     IL MOTORE — non sa che esistono utenti o database
-  types.ts               lo schema della dieta, e nient'altro
+src/                     motore, indipendente da utenti e database
+  types.ts               schema della dieta
   core/composizione.ts   valori per 100 g: libreria dello studio, poi tabella
-  core/dieta.ts          i conti, con dichiarata la loro incertezza
-  core/equivalenza.ts    le sostituzioni calcolate (isocalorica, isoproteica)
-  core/piano.ts          le sostituzioni AMMESSE: l'elenco chiuso del professionista
-  core/recupero.ts       «ho saltato un pasto»: i conti, non la decisione
+  core/dieta.ts          totali, con indicazione dei dati mancanti
+  core/equivalenza.ts    sostituzioni calcolate (isocalorica, isoproteica)
+  core/piano.ts          sostituzioni ammesse dal professionista
+  core/recupero.ts       pasto saltato: calcolo di quanto manca
   core/assistente.ts     interpretazione della domanda e risposte del motore
-  core/spesa.ts          la settimana aggregata
-test/                    136 test
-archivio/                il sistema precedente, non collegato a nulla
+  core/spesa.ts          aggregato settimanale
+test/                    140 test
+scripts/                 collaudo end-to-end e account demo
+archivio/                sistema precedente, non collegato
 ```
 
-Il motore in `src/` non importa nulla da `worker/`: è il confine che lo tiene
-portabile e testabile senza un database. Il traffico va in una direzione sola.
+`src/` non importa nulla da `worker/`, così il motore resta testabile senza
+database.
 
-### Il pezzo su cui si regge la responsabilità
+### Sovrapposizione delle sostituzioni
 
-`worker/sovrapposizione.ts` — **la dieta non si tocca**. Quando il cliente
-sostituisce il riso con le patate, il professionista deve poter continuare a
-vedere che lui aveva scritto riso. La sostituzione non modifica il documento:
-vive nella riga di variazione e viene applicata al momento della lettura.
+`worker/sovrapposizione.ts`. La dieta non viene mai modificata dalle
+sostituzioni del cliente: se il cliente cambia il riso con le patate, il
+professionista continua a vedere che aveva prescritto riso. La sostituzione sta
+nella riga di variazione e viene applicata in lettura.
 
-Non c'è una tabella apposta: le sostituzioni attive **sono** le righe di
-`variations` non annullate. Una fonte di verità sola, con due conseguenze che
-vengono gratis — il veto del professionista funziona da sé (mette la riga ad
-`annullata` e il piatto torna quello prescritto), e non possono esistere una
-sostituzione di cui lo studio non sa nulla né una notifica senza il piatto
-corrispondente.
+Non esiste una tabella dedicata: le sostituzioni attive sono le righe di
+`variations` non annullate. Di conseguenza il veto del professionista consiste
+nel mettere la riga ad `annullata`, e non possono esistere sostituzioni o
+notifiche disallineate.
 
-## Stato e limiti dichiarati
+## Stato
 
-**Fatto e verificato.** 140 test sul motore e 127 controlli end-to-end, questi
-ultimi eseguiti **contro l'istanza pubblicata**, non solo in locale. Il giro
-completo: iscrizione dei due ruoli → il cliente cerca lo studio e manda
-la richiesta → il professionista accetta → scrive e pubblica una settimana → il
-cliente la vede con i valori calcolati → sostituisce un alimento per equivalenza
-→ la variazione arriva al professionista → lui la annulla e il piatto torna
-quello prescritto.
+### Fatto
 
-Il giro delle funzioni nuove, anch'esso coperto: il professionista sceglie la
-regola di pareggio della dieta e scrive le sostituzioni ammesse su un alimento →
-gli alimenti senza eccezione seguono la regola del piano, quello con eccezione la
-sua → il cliente le vede con le porzioni già calcolate → chiedere un'altra base
-non sposta di un grammo, né guardando né applicando → sceglierne una dell'elenco
-non gli tocca l'aderenza, sceglierne una fuori sì e glielo si dice prima → la
-porzione scritta a mano resta quella → il professionista spegne l'assistente per
-quel cliente → il messaggio successivo aspetta lui, che risponde di persona →
-riacceso, l'assistente torna a rispondere.
+140 test sul motore e 127 controlli end-to-end, eseguiti anche contro l'istanza
+pubblicata.
 
-Le prove end-to-end sono state eseguite **anche contro l'istanza pubblicata**,
-dopo aver applicato la migrazione `0004`: 123 su 123.
+Percorso base coperto: iscrizione dei due ruoli, richiesta del cliente allo
+studio, accettazione, scrittura e pubblicazione di una settimana, visualizzazione
+con i valori calcolati, sostituzione per equivalenza, notifica al professionista,
+annullamento e ritorno al piatto prescritto.
 
-**Non fatto — e va detto prima di aprire il servizio.**
+Funzioni più recenti coperte: regola di pareggio della dieta e sostituzioni
+ammesse su un alimento; alimenti senza eccezione che seguono la regola del piano
+e quello con eccezione la sua; porzioni già calcolate lato cliente; richiesta di
+un'altra base senza effetto né in lettura né in applicazione; aderenza invariata
+per scelte in elenco e ridotta (con avviso preventivo) per quelle fuori; porzione
+scritta a mano non ricalcolata; assistente spento per un cliente con risposta
+del professionista; assistente riacceso che torna a rispondere.
 
-- **Recupero password.** Se qualcuno la dimentica, non c'è modo di rientrare:
-  serve l'invio di email. È la mancanza più seria che resta.
-- **Registro di quello che il cliente mangia davvero.** Oggi il cliente dichiara
-  un pasto saltato e ottiene i conti sul momento, ma niente resta scritto. Un
-  diario alimentare è la cosa più utile da aggiungere dopo.
-- **I valori della tabella interna non sono validati da un nutrizionista.** Sono
-  stime plausibili e lo dicono. Uno studio che vuole numeri propri li sovrascrive
-  dalla sua libreria, alimento per alimento.
+Contro l'istanza pubblicata, dopo la migrazione `0004`: 123 controlli su 123.
 
-**Sostituito.** Il sistema precedente — piani a modello con slot e alternative,
-generatore deterministico della settimana, validatore di conformità, import da
-testo, profilo di stile — è stato rimpiazzato dalla dieta scritta a mano. Sta in
-`archivio/`, non è collegato a nulla e non viene distribuito: si può eliminare
-senza conseguenze.
+### Da fare prima di aprire il servizio
+
+- Recupero password: oggi chi la dimentica non può rientrare. Serve l'invio di
+  email. È la mancanza più seria.
+- Diario alimentare: il cliente può dichiarare un pasto saltato e avere i conti
+  sul momento, ma non resta registrato.
+- Tabella interna non validata da un nutrizionista: i valori sono stime
+  dichiarate. Lo studio può sovrascriverli dalla sua libreria.
+
+### Sostituito
+
+Il sistema precedente (piani a modello con slot e alternative, generatore
+deterministico della settimana, validatore di conformità, import da testo,
+profilo di stile) è stato sostituito dalla dieta scritta a mano. Sta in
+`archivio/`, non è collegato e non viene distribuito: si può eliminare.

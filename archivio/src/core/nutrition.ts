@@ -1,25 +1,3 @@
-/**
- * Energia e macronutrienti di ciò che finisce nel piatto.
- *
- * Serve a una domanda sola, ed è la domanda del prodotto: «se cambio questo
- * alimento con quest'altro, di quanto sposto la giornata?». Senza un numero
- * quella richiesta non si può né concedere né negare, e la notifica al
- * nutrizionista non avrebbe contenuto.
- *
- * TRE REGOLE, nell'ordine, e la prima batte le altre:
- *
- *  1. se il professionista ha dichiarato la composizione di un alimento
- *     (`FoodOption.composition`, oppure `nutrients` usato per le porzioni),
- *     vince la sua;
- *  2. altrimenti si usa la tabella qui sotto, che è una STIMA dichiarata tale;
- *  3. se l'alimento non è in tabella, il conto NON viene completato: si
- *     restituisce `unknown` e chi mostra il dato deve dire che è parziale.
- *
- * La terza regola è la più importante. Un delta calorico inventato è peggio
- * di un delta assente: il nutrizionista si fiderebbe di un numero che non ha
- * fondamento. Qui l'ignoranza è un valore di ritorno, non un valore stimato.
- */
-
 import type { FoodOption, PlannedDay, PlannedMeal, WeekPlan } from '../types.ts';
 
 /** Grammi di macronutriente per 100 g/ml, oppure per pezzo. */
@@ -29,21 +7,11 @@ export interface FoodComposition {
   fat: number;
   /** Base di riferimento dei valori: 100 g/ml oppure un pezzo. */
   per: 'g100' | 'pz';
-  /** Da dove viene il dato. Mostrato all'utente, mai nascosto. */
+  /** Da dove viene il dato. */
   source: string;
-  /**
-   * Confermato dal professionista. La tabella interna è tutta `false`:
-   * sono valori plausibili, non validati da un nutrizionista.
-   */
   confirmed: boolean;
 }
 
-/**
- * Le kcal si DERIVANO dai macronutrienti (4/4/9) invece di essere un quarto
- * numero in tabella. Un quarto numero può contraddire i primi tre; una formula
- * non può. Lo scarto rispetto alle tabelle ufficiali (fibra, polioli) è
- * inferiore all'incertezza della stima stessa.
- */
 export const KCAL_PER_GRAM = { protein: 4, carbs: 4, fat: 9 } as const;
 
 export function kcalOf(macros: { protein: number; carbs: number; fat: number }): number {
@@ -54,28 +22,11 @@ export function kcalOf(macros: { protein: number; carbs: number; fat: number }):
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Tabella di composizione — STIMA, DA CONFERMARE                      */
-/* ------------------------------------------------------------------ */
-
-/**
- * Valori indicativi in grammi per 100 g/ml di parte edibile, alimento crudo
- * salvo dove indicato «cotto» nell'etichetta del piano.
- *
- * DA CONFERMARE — nessuno di questi valori è stato validato da un
- * nutrizionista. Prima dell'uso clinico vanno sostituiti con quelli delle
- * tabelle di riferimento adottate dallo studio (in Italia, tipicamente CREA):
- * `SOURCE` sotto è il punto unico in cui dichiararne la provenienza.
- *
- * Chiave: etichetta normalizzata. Non l'id, perché gli id appartengono al
- * singolo piano mentre le etichette si ripetono tra professionisti diversi —
- * un piano nuovo trova già coperti gli alimenti comuni.
- */
 const SOURCE = 'stima interna, non validata';
 
-/** [proteine, carboidrati, grassi] per 100 g/ml. */
+/** [proteine, carboidrati, grassi] per 100 g/ml. Valori stimati, da confermare. */
 const PER_100: Record<string, [number, number, number]> = {
-  /* --- cereali e derivati, a crudo --- */
+  /* cereali e derivati, a crudo */
   pasta: [13, 75, 1.5],
   'pasta integrale': [13, 67, 2.5],
   riso: [7, 80, 0.6],
@@ -90,7 +41,7 @@ const PER_100: Record<string, [number, number, number]> = {
   'avena in fiocchi': [13, 60, 7],
   'cereali da colazione': [8, 78, 4],
 
-  /* --- pane, gallette, sostituti --- */
+  /* pane, gallette, sostituti */
   pane: [8.5, 58, 1],
   'pane bianco': [8.5, 58, 1],
   'pane integrale': [9, 49, 1.5],
@@ -105,13 +56,13 @@ const PER_100: Record<string, [number, number, number]> = {
   crackers: [10, 70, 10],
   pavesini: [9, 76, 5],
 
-  /* --- tuberi e derivati --- */
+  /* tuberi e derivati */
   patate: [2, 17, 0.1],
   'patate americane': [1.6, 20, 0.1],
   'gnocchi di patate': [4, 33, 0.5],
   polenta: [2, 20, 0.4], // già pronta, non farina
 
-  /* --- carne --- */
+  /* carne */
   pollo: [23, 0, 1.5],
   'petto di pollo': [23, 0, 1.5],
   tacchino: [24, 0, 1],
@@ -130,7 +81,7 @@ const PER_100: Record<string, [number, number, number]> = {
   'tartare di manzo magro': [21, 0, 4],
   'filetto di maiale': [21, 0, 4],
 
-  /* --- pesce --- */
+  /* pesce */
   merluzzo: [17, 0, 0.7],
   nasello: [17, 0, 1.5],
   platessa: [16.5, 0, 1.5],
@@ -152,7 +103,7 @@ const PER_100: Record<string, [number, number, number]> = {
   seppie: [14, 1, 1.5],
   polpo: [16, 1, 1],
 
-  /* --- uova e latticini --- */
+  /* uova e latticini */
   albume: [11, 0.7, 0.2],
   'mozzarella light': [19, 1.5, 11],
   ricotta: [8.8, 3.5, 10.9],
@@ -168,7 +119,7 @@ const PER_100: Record<string, [number, number, number]> = {
   'bevanda vegetale': [1, 3, 1.5],
   'budino o mousse proteica': [10, 5, 2],
 
-  /* --- legumi e fonti vegetali, cotti dove indicato --- */
+  /* legumi e fonti vegetali, cotti dove indicato */
   'ceci cotti': [7, 17, 2.5],
   'fagioli cotti': [7, 15, 0.5],
   'fagioli neri cotti': [8, 16, 0.5],
@@ -179,7 +130,7 @@ const PER_100: Record<string, [number, number, number]> = {
   seitan: [24, 4, 2],
   'hamburger vegetale': [17, 6, 9],
 
-  /* --- verdura --- */
+  /* verdura */
   asparagi: [3, 2, 0.2],
   broccoli: [3, 3, 0.4],
   carote: [1, 8, 0.2],
@@ -198,7 +149,7 @@ const PER_100: Record<string, [number, number, number]> = {
   'passato di verdure': [1.5, 5, 1],
   'vellutata di verdure': [1.5, 6, 2],
 
-  /* --- grassi --- */
+  /* grassi */
   'olio extravergine': [0, 0, 100],
   burro: [0.8, 0.6, 83],
   avocado: [2, 1.8, 15],
@@ -207,7 +158,7 @@ const PER_100: Record<string, [number, number, number]> = {
   noci: [15, 3.5, 65],
   'crema di frutta secca': [20, 10, 52],
 
-  /* --- zuccheri e dolci --- */
+  /* zuccheri e dolci */
   miele: [0.3, 80, 0],
   marmellata: [0.5, 60, 0],
   "sciroppo d'acero": [0, 67, 0],
@@ -218,21 +169,16 @@ const PER_100: Record<string, [number, number, number]> = {
   'succo di frutta': [0.5, 11, 0],
   'barretta proteica o a zona': [30, 40, 12],
 
-  /* --- frutta --- */
+  /* frutta */
   'frutta fresca': [0.8, 12, 0.3],
   banana: [1.2, 23, 0.3],
 
-  /* --- integratori proteici --- */
+  /* integratori proteici */
   'proteine in polvere': [80, 5, 3],
   'proteine isolate': [88, 2, 1],
   'proteine idrolizzate': [85, 2, 1],
 };
 
-/**
- * Alimenti misurati a pezzo: qui la base è UN pezzo, non 100 g.
- * Il peso di un pezzo dipende dalla pezzatura, quindi questi valori sono
- * ancora più indicativi degli altri.
- */
 const PER_PIECE: Record<string, [number, number, number]> = {
   uova: [6.5, 0.4, 5.5], // un uovo medio, ~55 g edibili
   tuorlo: [2.7, 0.3, 4.5],
@@ -244,9 +190,7 @@ const PER_PIECE: Record<string, [number, number, number]> = {
   '2 uova + 150ml albume': [29.5, 1.8, 11.3],
 };
 
-/* ------------------------------------------------------------------ */
-/* Ricerca della composizione                                          */
-/* ------------------------------------------------------------------ */
+/* Ricerca della composizione */
 
 const NORM = (s: string) =>
   s
@@ -269,14 +213,12 @@ function lookup(
 ): FoodComposition | null {
   const norm = NORM(label);
 
-  // Corrispondenza esatta prima di tutto: è l'unica che non può sbagliare.
+  // Prima la corrispondenza esatta.
   const exact = table[norm] ?? table[label];
   if (exact) {
     return { protein: exact[0], carbs: exact[1], fat: exact[2], per, source: SOURCE, confirmed: false };
   }
 
-  // Poi la chiave più lunga contenuta nell'etichetta. L'ordine per lunghezza
-  // decrescente è ciò che impedisce a "pane" di catturare "pane integrale".
   for (const key of keys) {
     if (norm.includes(NORM(key))) {
       const v = table[key];
@@ -286,12 +228,8 @@ function lookup(
   return null;
 }
 
-/**
- * Composizione di un alimento. `null` significa «non lo so», e chi chiama
- * deve trattarlo come tale: non c'è un valore di riserva.
- */
 export function compositionOf(food: FoodOption): FoodComposition | null {
-  // 1. Il professionista ha dichiarato la composizione: vince sempre.
+  // 1. Composizione dichiarata dal professionista.
   if (food.composition) return food.composition;
 
   // 2. Tabella interna, per pezzo o per 100 g secondo l'unità dell'alimento.
@@ -301,9 +239,6 @@ export function compositionOf(food: FoodOption): FoodComposition | null {
       : lookup(food.label, PER_100, KEYS_100, 'g100');
   if (!fromTable) return null;
 
-  // 3. Se il piano dichiara un valore di nutriente per quell'alimento (serve
-  //    già a calcolare le porzioni), quello del professionista sostituisce la
-  //    stima: è un dato suo, non nostro.
   if (food.nutrients && fromTable.per === 'g100') {
     const carbs = food.nutrients['carboidrati'] ?? food.nutrients['carbs'];
     const protein = food.nutrients['proteine'] ?? food.nutrients['protein'];
@@ -319,9 +254,7 @@ export function compositionOf(food: FoodOption): FoodComposition | null {
   return fromTable;
 }
 
-/* ------------------------------------------------------------------ */
-/* Energia di un alimento, un pasto, un giorno, una settimana          */
-/* ------------------------------------------------------------------ */
+/* Energia di un alimento, un pasto, un giorno, una settimana */
 
 export interface Energy {
   kcal: number;
@@ -330,7 +263,7 @@ export interface Energy {
   fat: number;
   /** Alimenti di cui non si conosce la composizione: il conto è parziale. */
   unknown: string[];
-  /** Alimenti senza peso ("q.b."): esclusi per definizione, non ignorati. */
+  /** Alimenti senza peso ("q.b."), esclusi dal conto. */
   free: string[];
   /** Alimenti la cui composizione è una stima non confermata. */
   estimated: string[];
@@ -358,13 +291,6 @@ function add(a: Energy, b: Energy): Energy {
   };
 }
 
-/**
- * Energia della porzione effettiva di un alimento.
- *
- * Per le quantità a intervallo (125–150 g) si usa il valore MINIMO, non la
- * media: è la quantità che il paziente ha certamente diritto di mangiare, e
- * un delta calcolato sul minimo non promette calorie che il piano non dà.
- */
 export function foodEnergy(food: FoodOption): Energy {
   const out = ZERO();
 
@@ -389,8 +315,6 @@ export function foodEnergy(food: FoodOption): Energy {
 }
 
 export function mealEnergy(meal: PlannedMeal): Energy {
-  // Un pasto libero o fuori casa non è quantificabile dal piano: dire "0 kcal"
-  // sarebbe falso, e dire una stima sarebbe inventato. Resta dichiarato ignoto.
   if (meal.kind !== 'plan') {
     const out = ZERO();
     out.unknown.push(meal.kind === 'free' ? 'pasto libero' : (meal.note ?? 'pasto fuori casa'));
@@ -407,21 +331,13 @@ export function weekEnergy(week: WeekPlan): Energy {
   return week.days.reduce((acc, day) => add(acc, dayEnergy(day)), ZERO());
 }
 
-/* ------------------------------------------------------------------ */
-/* Scostamento                                                         */
-/* ------------------------------------------------------------------ */
+/* Scostamento */
 
 export interface EnergyDelta {
   kcal: number;
   protein: number;
   carbs: number;
   fat: number;
-  /**
-   * 'completa'  → tutte le composizioni coinvolte sono note: il delta è un
-   *               numero utilizzabile.
-   * 'parziale'  → qualcosa non si conosce: il delta è un limite inferiore e
-   *               va presentato come tale, mai come esatto.
-   */
   coverage: 'completa' | 'parziale';
   /** Cosa manca, per poterlo dire a schermo. */
   unknown: string[];
@@ -445,7 +361,7 @@ export function energyDelta(before: Energy, after: Energy): EnergyDelta {
   };
 }
 
-/** Frase pronta per la notifica al professionista. Nessun giudizio, solo il fatto. */
+/** Frase pronta per la notifica al professionista. */
 export function describeDelta(delta: EnergyDelta): string {
   const segno = delta.kcal > 0 ? '+' : '';
   const base =

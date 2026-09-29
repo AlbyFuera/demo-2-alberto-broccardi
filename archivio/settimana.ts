@@ -1,15 +1,3 @@
-/**
- * Dalla riga di database alla settimana in memoria.
- *
- * Non si salvano i pasti: si salva ciò che non è ricalcolabile — il seed, gli
- * imprevisti dichiarati, le variazioni accettate. La settimana viene ricomposta
- * a ogni richiesta dal motore, in pochi millisecondi.
- *
- * Il vantaggio non è lo spazio, è che una correzione al generatore o al
- * validatore raggiunge subito tutti i clienti. Un menù congelato in tabella
- * resterebbe sbagliato per sempre.
- */
-
 import type { NutritionPlan, WeekPlan } from '../src/types.ts';
 import { generateWeek } from '../src/core/generator.ts';
 import { applySubstitution } from '../src/core/substitutions.ts';
@@ -47,7 +35,6 @@ function parseDayMeal(token: string): { day: number; meal: string } | null {
   return { day, meal: m };
 }
 
-/** L'alimento vero, preso dal piano. Mai ricostruito da un id e un'etichetta. */
 function optionById(
   plan: NutritionPlan,
   day: number,
@@ -69,16 +56,6 @@ function optionById(
   return null;
 }
 
-/**
- * Ricompone la settimana del cliente.
- *
- * Le variazioni salvate si RIAPPLICANO senza rivalidare: erano già state
- * validate quando il cliente le ha accettate, e una rivalidazione qui
- * cancellerebbe in silenzio scelte già comunicate al professionista. Se il
- * piano cambia e una vecchia variazione non è più conforme, chi lo deve sapere
- * è il validatore chiamato sulla settimana finita — e lo dirà a voce alta,
- * invece di far sparire il pasto.
- */
 export function componiSettimana(
   plan: NutritionPlan,
   stato: StatoSettimana,
@@ -99,8 +76,6 @@ export function componiSettimana(
   for (const ov of stato.overrides) {
     const food = optionById(plan, ov.day, ov.mealId, ov.slotId, ov.foodId);
     if (!food) {
-      // L'alimento non esiste più nel piano: il professionista lo ha rimosso.
-      // Si scarta la variazione e si dichiara — non si finge che non ci fosse.
       scartate.push(ov);
       continue;
     }
@@ -116,14 +91,6 @@ export function componiSettimana(
   return { week, scartate };
 }
 
-/**
- * Registra una variazione nello stato.
- *
- * Una sola variazione per (giorno, pasto, slot): la seconda sostituzione dello
- * stesso slot rimpiazza la prima invece di accumularsi. Senza questo, lo stato
- * crescerebbe senza limite e la cronologia delle sostituzioni finirebbe per
- * decidere il piatto in base all'ordine di inserimento.
- */
 export function conVariazione(stato: StatoSettimana, ov: Override): StatoSettimana {
   const altri = stato.overrides.filter(
     (o) => !(o.day === ov.day && o.mealId === ov.mealId && o.slotId === ov.slotId),

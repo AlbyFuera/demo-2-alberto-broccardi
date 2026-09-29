@@ -1,22 +1,3 @@
-/**
- * Le sostituzioni del cliente, sovrapposte alla dieta del professionista.
- *
- * LA DIETA NON SI TOCCA. È il documento di chi la firma: quando il cliente
- * sostituisce il riso con le patate, il professionista deve poter continuare a
- * vedere che lui aveva scritto riso. La sostituzione vive altrove e viene
- * applicata al momento della lettura.
- *
- * Non c'è una tabella apposta: le sostituzioni attive SONO le righe di
- * `variations` non annullate. Una fonte di verità sola, con due conseguenze
- * che vengono gratis:
- *
- *   · il veto del professionista funziona da sé — mette la riga ad
- *     'annullata' e il piatto torna quello prescritto, senza una seconda
- *     scrittura che potrebbe fallire a metà;
- *   · non possono esistere una sostituzione applicata di cui lo studio non sa
- *     nulla, o una notifica senza il piatto corrispondente.
- */
-
 import type { Dieta } from '../src/types.ts';
 import type { SostituzioneAttiva } from '../src/core/aderenza.ts';
 import type { VariazioneRiga } from './db.ts';
@@ -31,14 +12,7 @@ export interface Sostituzione {
   originale: { nome: string; quantita: string };
 }
 
-/**
- * Applica le sostituzioni attive e restituisce una dieta nuova.
- *
- * L'ordine è dal più vecchio al più recente, così l'ultima sostituzione su uno
- * stesso alimento vince. Le variazioni che puntano a una posizione che non
- * esiste più — il professionista ha riscritto quel pasto — vengono SCARTATE e
- * dichiarate, mai applicate a caso su ciò che si trova a quell'indice.
- */
+/** Applica le sostituzioni attive; l'ultima su uno stesso alimento vince. */
 export function conSostituzioni(
   dieta: Dieta,
   variazioni: VariazioneRiga[],
@@ -65,8 +39,7 @@ export function conSostituzioni(
       continue;
     }
 
-    // Si conserva quello che il professionista aveva scritto: è ciò che il
-    // cliente vede barrato accanto alla sostituzione, e ciò a cui si torna.
+    // Resta visibile barrato accanto alla sostituzione.
     const originale = { nome: v.daNome, quantita: v.daQuantita };
 
     const { quantita, unita } = leggiQuantita(v.aQuantita);
@@ -76,10 +49,7 @@ export function conSostituzioni(
       unita,
       libera: quantita === null,
       nota: alimento.nota,
-      // Il piano a sostituzione appartiene al POSTO, non all'alimento che ci
-      // sta dentro: chi ha già scelto i fiocchi di latte deve continuare a
-      // vedere tutte le alternative previste per la sua fonte proteica, non
-      // ritrovarsi senza scelte proprio perché ne ha fatta una.
+    // Le alternative restano quelle del posto nel pasto.
       alternative: alimento.alternative,
       base: alimento.base,
       gruppo: alimento.gruppo,
@@ -97,14 +67,7 @@ export function conSostituzioni(
   return { dieta: copia, applicate, scartate };
 }
 
-/**
- * Le variazioni tradotte in quello che serve all'aderenza.
- *
- * Le annullate escono: il piatto è tornato quello prescritto, e continuare a
- * contarle come deviazioni significherebbe far scendere l'aderenza di qualcuno
- * per una scelta che non è più nel suo piatto — o peggio, per un veto del suo
- * nutrizionista.
- */
+/** Le variazioni non annullate, nel formato dell'aderenza. */
 export function sostituzioniAttive(variazioni: VariazioneRiga[]): SostituzioneAttiva[] {
   return variazioni
     .filter((v) => v.stato !== 'annullata')
@@ -116,14 +79,7 @@ export function sostituzioniAttive(variazioni: VariazioneRiga[]): SostituzioneAt
     }));
 }
 
-/**
- * Da "205g" o "1.5 pz" ai due campi separati.
- *
- * La quantità viaggia come testo nella riga di variazione perché è così che la
- * legge un umano nella notifica. Qui torna numero, e un testo non riconosciuto
- * diventa una quantità libera invece di uno zero: zero significherebbe «niente
- * nel piatto», che è un'affermazione forte e sbagliata.
- */
+/** Da "205g" o "1.5 pz" ai due campi; se non si riconosce, quantità libera. */
 export function leggiQuantita(testo: string): {
   quantita: number | null;
   unita: 'g' | 'ml' | 'pz';

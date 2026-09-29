@@ -1,18 +1,3 @@
-/**
- * L'applicazione del cliente.
- *
- * La schermata principale è la DASHBOARD: cosa mangi oggi, come stai andando,
- * quanti passi ti mancano. La conversazione è una linguetta, non l'ingresso —
- * si apre quando hai una domanda, e una domanda non ce l'hai tutti i giorni.
- *
- * Due gesti reggono tutto il resto:
- *
- *   la SPUNTA su un pasto  → da lì esce l'aderenza che vede il nutrizionista
- *   il CAMBIO di un pasto  → prende un pasto di un altro giorno della sua dieta
- *
- * Nessun numero viene da questa pagina: arrivano tutti dal server.
- */
-
 import {
   $,
   GIORNI,
@@ -35,16 +20,13 @@ const stato = {
   tab: 'oggi',
   occupato: false,
   filo: [],
-  /** L'assistente risponde, oppure risponde il nutrizionista. Lo decide lui. */
   automazione: true,
 };
 
 const contenuto = () => $('contenuto');
 const arrotonda = (n) => Math.round(Number(n) || 0);
 
-/* ------------------------------------------------------------------ */
-/* Primo passo: trovare il proprio nutrizionista                       */
-/* ------------------------------------------------------------------ */
+// Primo passo: trovare il proprio nutrizionista
 
 function disegnaIngresso() {
   const p = stato.situazione.professionista;
@@ -123,8 +105,6 @@ async function cercaStudio() {
     $('cerca').textContent = 'Manda la richiesta';
     $('cerca').disabled = false;
 
-    // Il bottone cambia mestiere: si sostituisce il gestore invece di
-    // aggiungerne uno, o al secondo clic partirebbero due richieste identiche.
     const nuovo = $('cerca').cloneNode(true);
     $('cerca').replaceWith(nuovo);
     nuovo.addEventListener('click', async (e) => {
@@ -151,9 +131,7 @@ async function cercaStudio() {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* Oggi — la schermata principale                                      */
-/* ------------------------------------------------------------------ */
+// Oggi, la schermata principale
 
 /** Un riquadro con una cifra grande e, se serve, una barra sotto. */
 function riquadro(etichetta, cifra, sotto, avanzamento) {
@@ -214,10 +192,7 @@ function disegnaOggi() {
       a.percentuale === null ? '—' : `${a.percentuale}%`,
       a.percentuale === null
         ? 'segna i pasti per saperlo'
-        : // Quando ha usato le sostituzioni previste glielo si dice qui, sotto
-          // il numero: è il posto dove sta guardando quando si chiede se
-          // cambiare un alimento gli è costato qualcosa.
-          a.pastiConSostituzioniAmmesse
+        : a.pastiConSostituzioniAmmesse
           ? `${a.pastiConSostituzioniAmmesse} pasti cambiati restando nelle sostituzioni previste`
           : a.pastiFuoriPiano
             ? `${a.pastiFuoriPiano} pasti fuori dalle sostituzioni previste`
@@ -242,8 +217,7 @@ function disegnaOggi() {
     (o.nota ? `<div class="avviso neutro sotto"><span class="segno" aria-hidden="true">i</span><span>${esc(o.nota)}</span></div>` : '') +
     `<div class="pila">${pasti}</div>`;
 
-  // Le larghezze delle barre non stanno negli attributi `style` — la
-  // Content-Security-Policy li ignora — quindi si mettono qui.
+  // Larghezze impostate qui: la CSP ignora gli attributi style.
   for (const i of contenuto().querySelectorAll('.barra-avanzamento i')) {
     i.style.width = `${Math.max(0, Math.min(100, Number(i.getAttribute('style-width')) || 0))}%`;
   }
@@ -256,12 +230,6 @@ function pastoDiOggi(p) {
   const fatto = p.stato === 'fatto';
   const saltato = p.stato === 'saltato';
 
-  /*
-   * Ogni alimento è toccabile, ed è il gesto principale del prodotto: «questo
-   * non lo mangio, cosa ci metto?». Quelli per cui il nutrizionista ha scritto
-   * delle sostituzioni si vedono da fuori — bordo pieno e il simbolo ⇄ — perché
-   * lì la risposta è già pronta e non costa niente all'aderenza.
-   */
   const alimenti = p.alimenti
     .map(
       (a) =>
@@ -324,9 +292,7 @@ async function spunta(pastoId, nuovoStato) {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* Passi                                                               */
-/* ------------------------------------------------------------------ */
+// Passi
 
 function apriPassi() {
   const d = stato.dati;
@@ -373,9 +339,7 @@ function apriPassi() {
   });
 }
 
-/* ------------------------------------------------------------------ */
-/* Scegliere dentro il piano a sostituzione                            */
-/* ------------------------------------------------------------------ */
+// Scegliere dentro il piano a sostituzione
 
 const NOME_BASE = {
   auto: 'come l’ha scritta lui',
@@ -385,19 +349,6 @@ const NOME_BASE = {
   grassi: 'stessi grassi',
 };
 
-/**
- * «Cosa posso mettere al posto di questo?»
- *
- * Due elenchi, e la differenza fra i due è tutto il valore della schermata:
- *
- *   SOPRA   quello che il nutrizionista ha già ammesso, con la porzione
- *           pronta. Sceglierlo non toglie niente all'aderenza, e c'è scritto;
- *   SOTTO   il resto, calcolato. Si può fare, ma è una deviazione, e anche
- *           questo c'è scritto — prima di toccare, non dopo.
- *
- * Chi non ha un piano scritto dal suo professionista vede solo il secondo
- * elenco, che è il prodotto di prima e continua a funzionare uguale.
- */
 async function apriScelta(pastoId, indice) {
   const giorno = stato.dati.oggi.indice;
   const zona = document.createElement('div');
@@ -408,9 +359,6 @@ async function apriScelta(pastoId, indice) {
   const esistente = $('scelta-alimento');
   if (esistente) esistente.remove();
   contenuto().prepend(zona);
-  // Il pannello nasce in cima alla schermata e il pasto toccato può essere il
-  // quinto: senza questo, chi tocca la cena vede sparire il piatto e comparire
-  // niente, e pensa che il tocco non sia servito.
   zona.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 
   const parametri = new URLSearchParams({
@@ -423,16 +371,9 @@ async function apriScelta(pastoId, indice) {
     const v = await leggi('/api/cliente/alternative', parametri);
     const p = v.piano;
 
-    /*
-     * L'avviso sui valori indicativi vale per tutta la tabella interna, non per
-     * la singola scelta: ripeterlo sotto ogni riga lo fa smettere di essere un
-     * avviso e diventa sfondo. Si dice una volta, sotto l'elenco.
-     */
     const generico = (a) => a.startsWith('Il conto usa valori');
     const indicativi = p.opzioni.some((o) => o.avvisi.some(generico));
 
-    // La prescritta resta nell'elenco: tornare a quello che il nutrizionista
-    // aveva scritto deve costare un tocco quanto allontanarsene.
     const previste = p.opzioni
       .map((o) => {
         const suo = o.avvisi.find((a) => !generico(a));
@@ -458,8 +399,6 @@ async function apriScelta(pastoId, indice) {
           `<button class="opzione fuori" data-scegli="${esc(x.nome)}" data-fuori="1">` +
           `<span class="marca" aria-hidden="true">·</span>` +
           `<span>${esc(x.nome)}</span>` +
-          // Porzione e scostamento in una cella sola: la griglia dell'opzione
-          // ha tre colonne, e una quarta cosa finirebbe a capo sotto il nome.
           `<span class="fine"><span class="peso">${esc(x.etichetta)}</span>${delta(x.delta.kcal)}</span>` +
           `</button>`,
       )
@@ -474,13 +413,6 @@ async function apriScelta(pastoId, indice) {
           `<strong>scegliere fra queste non fa scendere la tua aderenza</strong>. ` +
           `Le porzioni sono equivalenti — sostituzione ${esc(p.nomeBase)}, ` +
           `${esc(NOME_BASE[p.base] ?? '')}.</p>`) +
-      /*
-       * Qui c'erano i bottoni per guardare le porzioni isocaloriche o
-       * isoproteiche a scelta. Sono stati tolti, e non per fare pulizia: la
-       * base è una decisione clinica del nutrizionista, e mostrarla come una
-       * scelta — anche solo in lettura — insegnava che si può scegliere.
-       * L'unica regola in vigore è la sua, e la riga sopra la nomina.
-       */
       (v.regola === 'alimento'
         ? `<p class="piccolo muto sotto">Per questo alimento il tuo nutrizionista ha chiesto ` +
           `una regola diversa dal resto della dieta.</p>`
@@ -504,8 +436,7 @@ async function apriScelta(pastoId, indice) {
       el.addEventListener('click', async () => {
         el.disabled = true;
         try {
-          // Niente `base` nel corpo: la decide il server leggendo la dieta, e
-          // mandargliela da qui sarebbe solo un modo per farsela ignorare.
+          // Niente base nel corpo: la decide il server dalla dieta.
           await invia('/api/cliente/applica', {
             giorno,
             pasto: pastoId,
@@ -529,16 +460,8 @@ async function apriScelta(pastoId, indice) {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* Cambiare un pasto intero                                            */
-/* ------------------------------------------------------------------ */
+// Cambiare un pasto intero
 
-/**
- * I pasti proposti vengono dagli altri giorni della sua stessa dieta, entro il
- * 15% di scostamento calorico. Non serve l'approvazione del nutrizionista
- * perché non si sta concedendo niente di nuovo: si sta spostando di giorno un
- * pasto che lui aveva già scritto.
- */
 async function apriCambioPasto(pastoId) {
   const giorno = stato.dati.oggi.indice;
   const zona = document.createElement('div');
@@ -603,9 +526,7 @@ async function apriCambioPasto(pastoId) {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* La settimana                                                        */
-/* ------------------------------------------------------------------ */
+// La settimana
 
 async function disegnaSettimana() {
   contenuto().innerHTML = `<div class="vuoto"><p class="grande">·</p><p>Caricamento…</p></div>`;
@@ -674,22 +595,8 @@ async function disegnaSettimana() {
     `</div></div>`;
 }
 
-/* ------------------------------------------------------------------ */
-/* Assistente                                                          */
-/* ------------------------------------------------------------------ */
+// Assistente
 
-/**
- * La conversazione.
- *
- * Chi risponde non lo decide il cliente: lo decide il suo nutrizionista, con un
- * interruttore sulla sua schermata. Qui la differenza si vede subito e sempre —
- * l'intestazione, il segnaposto del campo, l'etichetta sotto ogni bolla — perché
- * scrivere a un modello credendo di scrivere a una persona, o il contrario, è la
- * cosa peggiore che possa succedere in questa pagina.
- *
- * Il filo arriva dal server: la conversazione con il proprio nutrizionista non
- * è una cosa che vive finché la scheda resta aperta.
- */
 async function disegnaAssistente() {
   contenuto().innerHTML =
     `<div class="chat-incassata">` +
@@ -770,14 +677,6 @@ function messaggio(chi, html, ricorda = true) {
   return el;
 }
 
-/**
- * Chi ha scritto la bolla, sotto la bolla.
- *
- * Quattro casi e tre etichette diverse: quello che scrive il professionista
- * porta il suo nome, quello che scrive il software dice che è software. Non è
- * una finezza: è l'unica cosa che permette al cliente di sapere se quello che
- * sta leggendo è un consiglio clinico o un conto.
- */
 const fonte = (f, nomeStudio) => {
   if (f === 'studio') {
     return (
@@ -811,8 +710,6 @@ async function chiedi(testo) {
     const dati = await invia('/api/cliente/chat', { domanda: testo });
     punti.remove();
 
-    // La risposta può arrivare dal professionista solo dopo, quando la scrive
-    // lui: quello che torna qui con l'automazione spenta è la ricevuta.
     if (dati.automazione === false) stato.automazione = false;
 
     const pezzi = [
@@ -850,9 +747,7 @@ async function chiedi(testo) {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* La mia dieta                                                        */
-/* ------------------------------------------------------------------ */
+// La mia dieta
 
 function disegnaDieta() {
   const d = stato.dati;
@@ -914,9 +809,7 @@ function disegnaDieta() {
     `</div></div>`;
 }
 
-/* ------------------------------------------------------------------ */
-/* Il mio conto                                                        */
-/* ------------------------------------------------------------------ */
+// Il mio conto
 
 function disegnaConto() {
   const d = stato.dati;
@@ -973,9 +866,7 @@ function disegnaConto() {
   $('esci').addEventListener('click', esci);
 }
 
-/* ------------------------------------------------------------------ */
-/* Impalcatura                                                         */
-/* ------------------------------------------------------------------ */
+// Impalcatura
 
 function avvisa(messaggio, tipo = 'attenzione') {
   contenuto().insertAdjacentHTML(
@@ -1033,7 +924,6 @@ async function inizia() {
   try {
     stato.dati = await leggi('/api/cliente/dashboard');
   } catch (e) {
-    // Collegato ma senza dieta pubblicata: non è un guasto, è un'attesa.
     $('chi-sotto').textContent = `seguito da ${p.nome}`;
     $('schede').hidden = true;
     contenuto().innerHTML = vuoto('—', e.message);

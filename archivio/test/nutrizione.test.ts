@@ -1,11 +1,3 @@
-/**
- * Il calcolo calorico e le variazioni.
- *
- * Il test che conta davvero è `copertura`: se la tabella smette di coprire un
- * alimento dei piani reali, il delta diventa parziale e il prodotto lo dice —
- * ma noi vogliamo saperlo prima, non scoprirlo dal cliente.
- */
-
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
@@ -260,7 +252,7 @@ test('REGRESSIONE: una variazione non ammessa non viene applicata', () => {
   const { week } = generateWeek(pianoDeMarco, { seed: 3 });
   const v = alternativeOrdinate(pianoDeMarco, week, 0, 'pranzo', 'carbo');
   const vietata = v.alternative.find((a) => !a.ammessa);
-  if (!vietata) return; // con questo seed non ci sono rifiuti: nulla da provare
+  if (!vietata) return;
 
   const esito = applicaVariazione(pianoDeMarco, week, 0, 'pranzo', 'carbo', vietata.foodId);
   assert.equal(esito.ok, false);
@@ -303,8 +295,6 @@ test('piano a quote di nutriente: la variazione ricalcola il peso, non lo copia'
   const ammesse = v.alternative.filter((a) => a.ammessa);
   assert.ok(ammesse.length > 0, 'nessuna alternativa ammessa nel piano a quote');
 
-  // Le quantità non sono tutte uguali: se lo fossero, il peso sarebbe copiato
-  // dal piano invece di essere derivato dalla quota di nutriente.
   const quantita = new Set(ammesse.map((a) => a.quantita));
   assert.ok(quantita.size > 1, `tutte le porzioni identiche: ${[...quantita].join(', ')}`);
 });

@@ -1,18 +1,3 @@
-/**
- * Piano alimentare di Luca De Marco (dott. Giovanni Di Giusto, 18/02/2026)
- * trascritto nello schema generico.
- *
- * ATTENZIONE: questo file è un DATO DI COLLAUDO, non fa parte del motore.
- * Nel prodotto finale un file come questo viene prodotto dal parsing del PDF
- * e confermato dal professionista prima di essere usato.
- *
- * Punti che in produzione DEVONO essere confermati dal nutrizionista
- * (qui sono state fatte scelte prudenti, segnalate con "DA CONFERMARE"):
- *  - quali alimenti contano come "formaggio grasso" ai fini della frequenza;
- *  - se il vitello vada conteggiato come carne rossa;
- *  - quali varianti siano da considerare "cereali integrali".
- */
-
 import type { FoodOption, MealTemplate, NutritionPlan } from '../types.ts';
 
 type Extra = Partial<Omit<FoodOption, 'id' | 'label' | 'qty' | 'unit'>>;
@@ -178,8 +163,6 @@ const LEGUMI_PIENI: FoodOption[] = [
 );
 
 /* ------------------------------------------------------------------ */
-/* Spuntini: UNA sola lista, usata sia la mattina che il pomeriggio.    */
-/* Gli id sono condivisi di proposito: è così che il motore si accorge  */
 /* che i due spuntini della giornata sono uguali.                       */
 /* ------------------------------------------------------------------ */
 
@@ -277,7 +260,6 @@ export const pianoDeMarco: NutritionPlan = {
   ],
 
   meals: [
-    /* ---------------- COLAZIONE ---------------- */
     {
       id: 'colazione',
       label: 'Colazione',
@@ -341,7 +323,7 @@ export const pianoDeMarco: NutritionPlan = {
             }),
             f('col-uova', 'uova', 2, 'pz', 'Uova', { cook: 'quick' }),
             f('col-albume', 'albume', 200, 'ml', 'Uova', { cook: 'quick' }),
-            // DA CONFERMARE: il salmone affumicato è conteggiato come pesce.
+            // Da confermare: salmone affumicato conteggiato come pesce.
             f('col-salmone-aff', 'salmone affumicato', 60, 'g', 'Pesce', {
               tags: ['pesce'],
               cook: 'none',
@@ -386,10 +368,8 @@ export const pianoDeMarco: NutritionPlan = {
       ],
     },
 
-    /* ---------------- SPUNTINI ---------------- */
     spuntino('spuntino-mattina', 'Spuntino mattina'),
 
-    /* ---------------- PRANZO ---------------- */
     {
       id: 'pranzo',
       label: 'Pranzo',
@@ -404,7 +384,7 @@ export const pianoDeMarco: NutritionPlan = {
               cook: 'batch',
               keepsDays: 3,
             }),
-            // DA CONFERMARE: vitello conteggiato come carne rossa (scelta prudente).
+            // Da confermare: vitello conteggiato come carne rossa.
             f('pr-vitello', 'vitello', 200, 'g', 'Carne', {
               tags: ['carne-rossa'],
               cook: 'quick',
@@ -468,7 +448,6 @@ export const pianoDeMarco: NutritionPlan = {
 
     spuntino('spuntino-pomeriggio', 'Spuntino pomeriggio'),
 
-    /* ---------------- CENA ---------------- */
     {
       id: 'cena',
       label: 'Cena',
@@ -512,7 +491,7 @@ export const pianoDeMarco: NutritionPlan = {
               tags: ['pesce'],
               cook: 'none',
             }),
-            // DA CONFERMARE: questi contano come "formaggi grassi" (max 2/settimana).
+            // Da confermare: contano come formaggi grassi (max 2/settimana).
             ...[
               ['ce-grana', 'grana'],
               ['ce-scamorza', 'scamorza'],
@@ -558,7 +537,6 @@ export const pianoDeMarco: NutritionPlan = {
     repeatPatterns: [{ meal: 'pranzo', pattern: [2, 2, 2, 1] }],
     freeMeals: 1,
     freeMealDefaultMeal: 'cena',
-    // Il pranzo della domenica è il "giorno diverso" del pattern: non va sacrificato.
     freeMealForbidden: [{ meal: 'pranzo', days: [6] }],
     proteinSwap: { between: ['pranzo', 'cena'], slot: 'proteine' },
     alcoholUnitsMax: 2,

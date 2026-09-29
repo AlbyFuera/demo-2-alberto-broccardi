@@ -1,15 +1,3 @@
-/**
- * Il piano a sostituzione e le basi iso.
- *
- * Due cose si verificano qui, e sono le due promesse che il prodotto fa al
- * nutrizionista:
- *
- *  1. le alternative che scrive lui sono un elenco CHIUSO, con le grammature
- *     già calcolate secondo la base che ha scelto;
- *  2. isocalorica e isoproteica danno due porzioni DIVERSE, e chi legge sa
- *     sempre quale delle due sta guardando.
- */
-
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
@@ -25,13 +13,6 @@ const g = (nome: string, quantita: number, resto: Partial<Alimento> = {}): Alime
 });
 
 describe('sostituzione isocalorica e isoproteica', () => {
-  /*
-   * L'esempio del committente: 180 g di merluzzo portano ~31 g di proteine e
-   * ~128 kcal. La isoproteica pareggia i 31 g; la isocalorica le 128 kcal. Sul
-   * petto di pollo — più proteico e più calorico per grammo — le due porzioni
-   * non possono coincidere, ed è esattamente il motivo per cui il
-   * professionista deve poter scegliere quale delle due vuole.
-   */
   it('la isoproteica pareggia le proteine, non le calorie', () => {
     const e = equivalenza(g('merluzzo', 180), 'petto di pollo', undefined, 'proteine');
     assert.equal(e.esito, 'calcolata');
@@ -61,12 +42,6 @@ describe('sostituzione isocalorica e isoproteica', () => {
     assert.equal(auto.baseRipiegata, false);
   });
 
-  /*
-   * Chiedere una isoproteica verso un alimento che di proteine non ne ha non
-   * deve produrre un numero inventato: si ripiega sulle calorie E LO SI DICE,
-   * perché una porzione calcolata su un pareggio che non è avvenuto è peggio
-   * di nessuna porzione.
-   */
   it('quando la base chiesta non è applicabile lo dichiara invece di fingere', () => {
     const e = equivalenza(g('petto di pollo', 150), 'olio extravergine', undefined, 'proteine');
     assert.equal(e.esito, 'calcolata');
@@ -75,12 +50,6 @@ describe('sostituzione isocalorica e isoproteica', () => {
     assert.ok(e.avvisi.some((a) => a.includes('isoproteica')));
   });
 
-  /*
-   * Il miele ha 0,3 g di proteine per 100 g: il pareggio isoproteico con un
-   * petto di pollo esiste, ed è undici chili di miele. Il conto è giusto e la
-   * porzione non sta in un piatto — stamparla sarebbe peggio che non
-   * rispondere, perché qualcuno potrebbe seguirla.
-   */
   it('non produce porzioni fuori scala: ripiega e lo scrive', () => {
     const e = equivalenza(g('petto di pollo', 150), 'miele', undefined, 'proteine');
     assert.equal(e.esito, 'calcolata');
@@ -131,11 +100,6 @@ describe('slot del piano a sostituzione', () => {
     assert.equal(s.opzioni[0].scelta, false);
   });
 
-  /*
-   * Le porzioni si calcolano SEMPRE dall'alimento prescritto, mai da quello
-   * che il cliente ci ha già messo: sostituendo il sostituto le deviazioni si
-   * accumulerebbero fino a portare il piatto lontano da quello firmato.
-   */
   it('le porzioni restano ancorate al prescritto anche dopo una sostituzione', () => {
     const primo = slotDi(colazione);
     const dopo = slotDi(colazione, undefined, 'ricotta');
@@ -158,12 +122,6 @@ describe('slot del piano a sostituzione', () => {
   });
 });
 
-/*
- * La regola di pareggio è del PIANO, non del piatto e tanto meno di chi lo
- * mangia. Questi tre controlli tengono ferma la gerarchia: eccezione
- * sull'alimento, poi regola della dieta, poi 'auto'. Sono la garanzia che il
- * nutrizionista scriva «isoproteica» una volta e valga dappertutto.
- */
 describe('la base la decide il professionista', () => {
   const senzaRegola = g('petto di pollo', 150, {
     alternative: [{ nome: 'merluzzo' }],
@@ -189,12 +147,6 @@ describe('la base la decide il professionista', () => {
     assert.equal(s.nomeBase, 'isoglucidica');
   });
 
-  /*
-   * Il caso che ha motivato tutto: 90 g di pasta diventano ~85 g di riso
-   * pareggiando i carboidrati e quasi il doppio pareggiando le proteine.
-   * Entrambe le letture sono corrette, e proprio per questo la scelta non può
-   * stare dalla parte di chi ha fame.
-   */
   it('due basi diverse danno porzioni diverse, ed è il motivo del vincolo', () => {
     const pasta = g('pasta', 90, { alternative: [{ nome: 'riso' }] });
     const suCarbo = slotDi(pasta, undefined, undefined, 'carboidrati').opzioni.find(
@@ -226,11 +178,6 @@ describe('dentro o fuori dal piano', () => {
     assert.equal(nelPiano(con, 'salmone'), false);
   });
 
-  /*
-   * Senza un piano scritto non c'è niente da rispettare: dire il contrario
-   * renderebbe conforme qualunque cosa, e la promessa «se rispetti le
-   * sostituzioni l'aderenza non scende» non varrebbe più niente.
-   */
   it('senza alternative scritte nessuna sostituzione è dentro il piano', () => {
     assert.equal(nelPiano(g('pasta', 100), 'riso'), false);
   });

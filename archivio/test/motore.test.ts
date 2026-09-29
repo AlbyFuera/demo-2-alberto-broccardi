@@ -16,7 +16,6 @@ function week(seed = 1): WeekPlan {
   return generateWeek(plan, { seed }).week;
 }
 
-/** Modifica una copia della settimana, per fabbricare i casi non conformi. */
 function tamper(base: WeekPlan, fn: (w: WeekPlan) => void): WeekPlan {
   const copy: WeekPlan = structuredClone(base);
   fn(copy);
@@ -132,8 +131,6 @@ describe('validatore', () => {
   });
 
   it('REGRESSIONE: rifiuta la mezza porzione della combo senza la sua coppia', () => {
-    // 100g di cereali esistono nel piano SOLO insieme a 100g di legumi.
-    // Da soli, al posto della porzione piena da 130g, sono una porzione monca.
     const bad = tamper(week(), (w) => {
       const pranzo = w.days[0].meals.find((m) => m.mealId === 'pranzo')!;
       const carbo = pranzo.items.find((it) => it.slotId === 'carbo')!;
@@ -204,7 +201,6 @@ describe('validatore', () => {
       const tpl = plan.meals.find((m) => m.id === 'cena')!;
       const slot = tpl.slots.find((s) => s.id === 'proteine')!;
       const rosse = slot.options.filter((o) => o.tags?.includes('carne-rossa'));
-      // Tre carni rosse in tre cene diverse: il piano ne ammette due.
       const target = w.days.filter((d) =>
         d.meals.some((m) => m.mealId === 'cena' && m.kind === 'plan'),
       );
@@ -282,8 +278,6 @@ describe('sostituzioni', () => {
       .days.filter((d) => d.meals.find((m) => m.mealId === 'cena')!.kind === 'plan')
       .map((d) => d.index);
 
-    // Porto la settimana al limite usando le sostituzioni ammesse dal motore:
-    // due cene con carne rossa, che è il massimo previsto dal piano.
     let saturata = week(3);
     let messe = 0;
     for (const day of cene) {
@@ -301,8 +295,6 @@ describe('sostituzioni', () => {
     assert.equal(messe, 2, 'il piano deve permettere due carni rosse');
     assert.equal(validate(plan, saturata).ok, true, 'la settimana satura resta conforme');
 
-    // La terza deve essere rifiutata. Scelgo una cena la cui proteina non sia
-    // né carne rossa né legumi: così l'unico vincolo in gioco è il massimale.
     const terza = cene.find((d) => {
       const tags =
         saturata.days[d].meals
@@ -374,8 +366,6 @@ describe('ripianificazione', () => {
           )
           .map((d) => d.index),
       );
-      // Restano 5 giorni modificabili: toccarne più di 3 significa aver
-      // ricomposto la settimana invece di adattarla.
       assert.ok(
         giorniToccati.size <= 3,
         `seed ${seed}: toccati ${giorniToccati.size} giorni per una sola cena fuori`,
