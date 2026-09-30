@@ -167,5 +167,56 @@ export async function avvia(ruoloAtteso) {
     window.location.href = io.pagina;
     return null;
   }
+  menuAccount(io);
   return io;
+}
+
+/** Il nome in alto apre un menu con l'uscita, per cambiare account. */
+function menuAccount(io) {
+  for (const chi of document.querySelectorAll('.barra .chi')) {
+    chi.classList.add('cliccabile');
+    chi.setAttribute('role', 'button');
+    chi.setAttribute('tabindex', '0');
+    chi.setAttribute('aria-haspopup', 'true');
+    chi.setAttribute('aria-expanded', 'false');
+    chi.title = 'Il tuo account';
+
+    const menu = document.createElement('div');
+    menu.className = 'menu-account';
+    menu.hidden = true;
+    menu.innerHTML =
+      `<div class="piccolo muto">Hai fatto l'accesso come</div>` +
+      `<div class="menu-email">${esc(io.email)}</div>` +
+      `<div class="piccolo muto">${io.ruolo === 'nutrizionista' ? 'Nutrizionista' : 'Cliente'}</div>` +
+      `<button class="btn mini pericolo" type="button">Esci e cambia account</button>`;
+    chi.closest('.barra').appendChild(menu);
+    menu.querySelector('button').addEventListener('click', esci);
+
+    const chiudi = () => {
+      menu.hidden = true;
+      chi.setAttribute('aria-expanded', 'false');
+    };
+    const alterna = () => {
+      menu.hidden = !menu.hidden;
+      chi.setAttribute('aria-expanded', String(!menu.hidden));
+      if (!menu.hidden) menu.querySelector('button').focus();
+    };
+
+    chi.addEventListener('click', (e) => {
+      e.stopPropagation();
+      alterna();
+    });
+    chi.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        alterna();
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if (!menu.contains(e.target)) chiudi();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') chiudi();
+    });
+  }
 }

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Demo locale — Pianificatore</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="stylesheet" href="/ui.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231f6b46'/><text x='16' y='23' font-family='-apple-system,Helvetica,Arial,sans-serif' font-size='20' font-weight='700' fill='%23ffffff' text-anchor='middle'>P</text></svg>"
+    />
+  </head>
+  <!-- Solo in locale: il Worker la serve su / quando .dev.vars ha ACCOUNT_DEMO. -->
+  <body>
+    <main class="centrata">
+      <div class="scheda accesso">
+        <div class="marchio">
+          <span class="segno" aria-hidden="true">P</span>
+          <div>
+            <div class="nome">Pianificatore</div>
+            <div class="sotto">demo in locale</div>
+          </div>
+        </div>
+
+        <h1>Con chi entri?</h1>
+        <p class="muto piccolo sotto-molto" id="attuale">Un clic e sei dentro, senza password.</p>
+
+        <div id="errore" class="avviso grave sotto" hidden>
+          <span class="segno" aria-hidden="true">!</span>
+          <span id="errore-testo"></span>
+        </div>
+
+        <h2 class="sotto-poco">Nutrizionisti</h2>
+        <div class="pila sotto" id="nutrizionisti"></div>
+
+        <h2 class="sotto-poco sopra">Clienti</h2>
+        <div class="pila sotto" id="clienti"></div>
+
+        <p class="muto piccolo sopra centro">
+          Un altro account? <a href="/accedi">Accedi con email e password</a>
+        </p>
+        <p class="muto piccolo centro">
+          Per avere due account aperti insieme, usa una finestra in incognito per il secondo.
+        </p>
+      </div>
+    </main>
+
+    <script type="module" src="/index.js"></script>
+  </body>
+</html>

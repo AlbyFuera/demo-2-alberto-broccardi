@@ -46,9 +46,9 @@ const differenza = (previsto: Valori, assunto: Valori): Mancanza => ({
   grassi: previsto.grassi - assunto.grassi,
 });
 
-/** I pasti senza orario si considerano ancora da fare. */
-function ancoraDaFare(pasto: Pasto, ora: number, saltati: Set<string>): boolean {
-  if (saltati.has(pasto.id)) return false;
+/** I pasti senza orario si considerano ancora da fare, salvo se già segnati. */
+function ancoraDaFare(pasto: Pasto, ora: number, saltati: Set<string>, fatti: Set<string>): boolean {
+  if (saltati.has(pasto.id) || fatti.has(pasto.id)) return false;
   if (!pasto.orario) return true;
 
   const m = /^(\d{1,2})[:.]?(\d{2})?/.exec(pasto.orario.trim());
@@ -56,25 +56,27 @@ function ancoraDaFare(pasto: Pasto, ora: number, saltati: Set<string>): boolean 
   return Number(m[1]) >= ora;
 }
 
-/** `pastiSaltati`: id dei pasti dichiarati saltati. */
+/** `pastiSaltati`: id dei pasti dichiarati saltati; `pastiFatti`: già segnati come fatti. */
 export function recupero(
   dieta: Dieta,
   indiceGiorno: number,
   pastiSaltati: string[],
   ora: number,
   libreria?: Libreria,
+  pastiFatti: string[] = [],
 ): Recupero | null {
   const giorno = giornoDi(dieta, indiceGiorno);
   if (!giorno) return null;
 
   const saltati = new Set(pastiSaltati);
+  const fatti = new Set(pastiFatti.filter((id) => !saltati.has(id)));
   const previsto = totaleGiorno(giorno, libreria);
 
   const assunto = giorno.pasti
     .filter((p) => !saltati.has(p.id))
     .reduce((acc, p) => sommaTotali(acc, totalePasto(p, libreria)), TOTALE_ZERO);
 
-  const rimanenti = giorno.pasti.filter((p) => ancoraDaFare(p, ora, saltati));
+  const rimanenti = giorno.pasti.filter((p) => ancoraDaFare(p, ora, saltati, fatti));
   const copertoDaiRimanenti = soloValori(
     rimanenti.reduce((acc, p) => sommaTotali(acc, totalePasto(p, libreria)), TOTALE_ZERO),
   );

@@ -206,6 +206,36 @@ prova "gli obiettivi ci sono" '"kcal":1900'
 
 PASTO=$(printf '%s' "$SCHEDA" | python3 -c "import json,sys; s=json.load(sys.stdin); print([p['id'] for p in s['giorni'][0]['pasti'] if p['nome']=='Pranzo'][0])")
 
+titolo "9b · Lo studio vede in tempo reale i pasti segnati oggi"
+# Oggi è escluso dall'aderenza: la scheda deve mostrarlo a parte.
+OGGI=$(python3 -c "import datetime; print(datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d'))")
+COLAZ=$(printf '%s' "$SCHEDA" | python3 -c "import json,sys,datetime; s=json.load(sys.stdin); i=datetime.datetime.now(datetime.timezone.utc).weekday(); print([p['id'] for g in s['giorni'] if g['indice']==i for p in g['pasti'] if p['nome']=='Colazione'][0])")
+get n.txt "/api/studio/cliente?cliente=$CLI"
+prova "prima di segnare: oggi 0 fatti" '"oggi":{[^}]*"pastiFatti":0'
+json "{\"giorno\":\"$OGGI\",\"pasto\":\"$COLAZ\",\"stato\":\"fatto\"}"
+post c.txt /api/cliente/spunta corpo.json
+prova "il cliente segna la colazione" '"stato":"fatto"'
+get n.txt "/api/studio/cliente?cliente=$CLI"
+prova "lo studio vede subito il pasto fatto" '"oggi":{[^}]*"pastiFatti":1'
+prova "e quale pasto" "\"fatti\":\[\"$COLAZ\"\]"
+get n.txt /api/studio/cruscotto
+prova "anche nella lista clienti" '"oggi":{[^}]*"pastiFatti":1'
+# Si toglie la spunta, per non falsare i controlli successivi.
+json "{\"giorno\":\"$OGGI\",\"pasto\":\"$COLAZ\",\"stato\":null}"
+post c.txt /api/cliente/spunta corpo.json
+prova "la spunta si toglie" '"stato":null'
+
+titolo "9c · Passi"
+json '{"passi":""}'
+post c.txt /api/cliente/passi corpo.json
+prova "passi vuoti: rifiutati, non salvati come 0" 'non è valido'
+json '{}'
+post c.txt /api/cliente/passi corpo.json
+prova "passi mancanti: rifiutati" 'non è valido'
+json '{"passi":6500}'
+post c.txt /api/cliente/passi corpo.json
+prova "passi veri: salvati" '"passi":6500'
+
 titolo "10 · Sostituzione per equivalenza"
 get c.txt "/api/cliente/alternative?giorno=0&pasto=$PASTO&indice=1"
 prova "proposte per il pollo" '"proposte"'

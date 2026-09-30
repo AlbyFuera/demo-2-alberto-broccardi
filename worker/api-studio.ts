@@ -20,7 +20,8 @@ import {
   totaleSettimana,
 } from '../src/core/dieta.ts';
 import { composizioneDi, normalizza } from '../src/core/composizione.ts';
-import { calcolaAderenza, giorniPrima } from '../src/core/aderenza.ts';
+import { calcolaAderenza, giorniPrima, statoDiOggi } from '../src/core/aderenza.ts';
+import type { Aderenza, StatoOggi } from '../src/core/aderenza.ts';
 
 import * as db from './db.ts';
 import { conNome } from './nomi.ts';
@@ -72,7 +73,8 @@ export async function cruscotto(env: Env, utente: Utente) {
         dieta: dieta
           ? { id: dieta.id, titolo: dieta.titolo, stato: dieta.stato, vuota: dietaVuotaDavvero(dieta.dieta) }
           : null,
-        aderenza: aderenze.get(c.clienteId) ?? null,
+        aderenza: aderenze.get(c.clienteId)?.aderenza ?? null,
+        oggi: aderenze.get(c.clienteId)?.oggi ?? null,
         variazioniNuove: variazioni.filter((v) => v.clienteId === c.clienteId && v.stato === 'nuova').length,
         domandeAperte: domande.filter((d) => d.clienteId === c.clienteId && d.stato === 'aperta').length,
         /** L'assistente risponde per lui a questo cliente, oppure no. */
@@ -111,14 +113,14 @@ async function dietePerClienti(
   return per;
 }
 
-/** L'aderenza di ogni cliente; null se non ci sono dati. */
+/** L'aderenza di ogni cliente, più i pasti di oggi che l'aderenza esclude. */
 async function aderenzePerClienti(
   env: Env,
   clienti: string[],
   diete: Map<string, db.DietaRiga>,
   variazioni: db.VariazioneRiga[],
-): Promise<Map<string, ReturnType<typeof calcolaAderenza>>> {
-  const per = new Map<string, ReturnType<typeof calcolaAderenza>>();
+): Promise<Map<string, { aderenza: Aderenza; oggi: StatoOggi }>> {
+  const per = new Map<string, { aderenza: Aderenza; oggi: StatoOggi }>();
   const oggi = new Date().toISOString().slice(0, 10);
 
   for (const clienteId of clienti) {
@@ -126,16 +128,16 @@ async function aderenzePerClienti(
     if (!dieta) continue;
 
     const spunte = await db.spunteRecenti(env, clienteId, giorniPrima(oggi, 8));
-    per.set(
-      clienteId,
-      calcolaAderenza(
+    per.set(clienteId, {
+      aderenza: calcolaAderenza(
         dieta.dieta,
         spunte,
         oggi,
         7,
         sostituzioniAttive(variazioni.filter((v) => v.clienteId === clienteId)),
       ),
-    );
+      oggi: statoDiOggi(dieta.dieta, spunte, oggi),
+    });
   }
   return per;
 }
@@ -208,6 +210,9 @@ export async function cliente(env: Env, utente: Utente, params: URLSearchParams)
   // Aprire la scheda segna i messaggi come letti.
   await db.segnaMessaggiLetti(env, clienteId, utente.id, 'studio');
 
+  const oggi = new Date().toISOString().slice(0, 10);
+  const spunte = attuale ? await db.spunteRecenti(env, clienteId, giorniPrima(oggi, 15)) : [];
+
   return {
     cliente: {
       id: clienteId,
@@ -232,14 +237,10 @@ export async function cliente(env: Env, utente: Utente, params: URLSearchParams)
     })),
     dietaAttuale: attuale ? riepilogoDieta(attuale, libreria, variazioni) : null,
     aderenza: attuale
-      ? calcolaAderenza(
-          attuale.dieta,
-          await db.spunteRecenti(env, clienteId, giorniPrima(new Date().toISOString().slice(0, 10), 15)),
-          new Date().toISOString().slice(0, 10),
-          14,
-          sostituzioniAttive(variazioni),
-        )
+      ? calcolaAderenza(attuale.dieta, spunte, oggi, 14, sostituzioniAttive(variazioni))
       : null,
+    /** L'aderenza esclude oggi: questo lo mostra in tempo reale. */
+    oggi: attuale ? statoDiOggi(attuale.dieta, spunte, oggi) : null,
     passi: await db.passiRecenti(env, clienteId, 14),
     variazioni: variazioni.map(conNome),
     domande: domande.filter((d) => d.clienteId === clienteId).map(conNome),

@@ -23,10 +23,13 @@ $('form').addEventListener('submit', async (evento) => {
   const email = $('email').value.trim();
   const password = $('password').value;
 
-  if (!email || !password) {
-    mostraErrore('Servono email e password.');
-    return;
+  // Lo stesso controllo del server, per dire subito cosa non va.
+  if (!email) return mostraErrore('Scrivi la tua email.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    return mostraErrore('L’email non sembra scritta bene: controlla che ci sia la @ e il dominio (es. nome@gmail.com).');
   }
+  if (!password) return mostraErrore('Scegli una password.');
+  if (password.length < 10) return mostraErrore('La password deve avere almeno 10 caratteri.');
 
   $('invia').disabled = true;
   $('invia').textContent = 'Un momento…';

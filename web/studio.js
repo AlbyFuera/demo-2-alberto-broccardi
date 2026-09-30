@@ -213,13 +213,20 @@ function chiediAnnullamento(bottone) {
 
 // Clienti
 
-function scriviAderenza(a) {
+function scriviAderenza(a, oggi) {
+  const diOggi = oggi?.pastiPrevisti
+    ? `<div class="piccolo muto">oggi ${oggi.pastiFatti}/${oggi.pastiPrevisti}</div>`
+    : '';
   if (!a || a.percentuale === null) {
-    return `<span class="aderenza ignota" title="Non ha ancora segnato nessun pasto">— nessun dato</span>`;
+    return (
+      `<span class="aderenza ignota" title="Non ha ancora segnato nessun pasto nei giorni passati">— nessun dato</span>` +
+      diOggi
+    );
   }
   return (
     `<span class="aderenza ${esc(a.livello)}" title="${esc(a.descrizione)}">` +
-    `<span class="pallina"></span>${a.percentuale}%</span>`
+    `<span class="pallina"></span>${a.percentuale}%</span>` +
+    diOggi
   );
 }
 
@@ -247,9 +254,10 @@ function disegnaClienti() {
     clienti
       .map(
         (c) =>
-          `<tr><td><strong>${esc(c.nome)}</strong>` +
+          `<tr class="cliccabile" data-riga-cliente="${esc(c.id)}">` +
+          `<td><button class="link-nome" data-apri-cliente="${esc(c.id)}">${esc(c.nome)}</button>` +
           `<div class="piccolo muto">${esc(c.email)}</div></td>` +
-          `<td>${scriviAderenza(c.aderenza)}</td>` +
+          `<td>${scriviAderenza(c.aderenza, c.oggi)}</td>` +
           `<td>${
             c.dieta
               ? `<span class="tag ${c.dieta.stato === 'pubblicata' ? 'ok' : 'attenzione'}">` +
@@ -269,6 +277,14 @@ function disegnaClienti() {
     `</tbody></table></div></div>`;
 
   collegaAzioniComuni();
+
+  // Tutta la riga apre il cliente, non solo il bottone in fondo.
+  for (const riga of contenuto().querySelectorAll('[data-riga-cliente]')) {
+    riga.addEventListener('click', (e) => {
+      if (e.target.closest('button, a')) return;
+      apriCliente(riga.dataset.rigaCliente);
+    });
+  }
 }
 
 async function apriCliente(id) {
@@ -302,7 +318,13 @@ function disegnaCliente() {
               ? g.pasti
                   .map(
                     (p) =>
-                      `<div class="pasto"><div class="pasto-nome">${esc(p.nome)} · ${p.kcal} kcal</div>` +
+                      `<div class="pasto"><div class="pasto-nome">${esc(p.nome)} · ${p.kcal} kcal` +
+                      (g.indice === d.oggi?.indice && d.oggi.fatti.includes(p.id)
+                        ? ` <span class="tag ok">✓ fatto oggi</span>`
+                        : g.indice === d.oggi?.indice && d.oggi.saltati.includes(p.id)
+                          ? ` <span class="tag attenzione">saltato oggi</span>`
+                          : '') +
+                      `</div>` +
                       `<div class="alimenti">` +
                       p.alimenti
                         .map(
@@ -345,6 +367,21 @@ function disegnaCliente() {
       );
 
   const storiche = d.diete.filter((x) => !dieta || x.id !== dieta.id);
+  // Una bozza nuova accanto a una dieta pubblicata non deve finire in fondo alla pagina.
+  const bozzeInCorso = dieta?.stato === 'pubblicata' ? storiche.filter((x) => x.stato === 'bozza') : [];
+  const avvisoBozze = bozzeInCorso.length
+    ? `<div class="pila sotto">` +
+      bozzeInCorso
+        .map(
+          (x) =>
+            `<div class="avviso attenzione"><span class="segno" aria-hidden="true">!</span>` +
+            `<span>Bozza in corso, non ancora pubblicata: <strong>${esc(x.titolo)}</strong> ` +
+            `(aggiornata ${esc(quando(x.aggiornataIl))}).</span>` +
+            `<button class="btn mini spinge" data-modifica="${esc(x.id)}">Continua la bozza</button></div>`,
+        )
+        .join('') +
+      `</div>`
+    : '';
 
   const passiMedi = d.passi.length
     ? Math.round(d.passi.reduce((s, p) => s + p.passi, 0) / d.passi.length)
@@ -357,10 +394,23 @@ function disegnaCliente() {
     `<span class="piccolo muto">${esc(d.cliente.email)}</span>` +
     `<button class="btn mini neutra spinge" id="carica-pdf">Carica un PDF</button>` +
     `<button class="btn mini" id="nuova-dieta">Nuova dieta</button></div>` +
+    avvisoBozze +
     `<div class="riquadri">` +
     `<div class="riquadro"><div class="etichetta">Segue la dieta</div>` +
     `<div class="cifra">${d.aderenza?.percentuale ?? '—'}${d.aderenza?.percentuale != null ? '%' : ''}</div>` +
-    `<div class="sotto-cifra">${esc(d.aderenza?.descrizione ?? 'non ha ancora segnato nessun pasto')}</div></div>` +
+    `<div class="sotto-cifra">${esc(
+      d.oggi?.pastiFatti || d.oggi?.pastiSaltati
+        ? d.aderenza?.percentuale != null
+          ? d.aderenza.descrizione
+          : 'I giorni precedenti non hanno ancora dati: la percentuale arriva da domani.'
+        : (d.aderenza?.descrizione ?? 'non ha ancora segnato nessun pasto'),
+    )}</div>` +
+    (d.oggi?.pastiPrevisti
+      ? `<div class="sotto-cifra"><strong>Oggi: ${d.oggi.pastiFatti}/${d.oggi.pastiPrevisti} fatti</strong>` +
+        (d.oggi.pastiSaltati ? ` · ${d.oggi.pastiSaltati} saltati` : '') +
+        `</div>`
+      : '') +
+    `</div>` +
     `<div class="riquadro"><div class="etichetta">Passi al giorno</div>` +
     `<div class="cifra">${passiMedi ?? '—'}</div>` +
     `<div class="sotto-cifra">${passiMedi ? `media sugli ultimi ${d.passi.length} giorni segnati` : 'non li segna'}</div></div>` +
@@ -1320,7 +1370,12 @@ function apriCaricamentoPdf(clienteId) {
   }
   area.addEventListener('drop', (e) => prendi(e.dataTransfer?.files?.[0]));
 
-  $('chiudi-pdf').addEventListener('click', () => zona.remove());
+  // Se è stata creata una bozza, la scheda va ricaricata per mostrarla.
+  let caricato = false;
+  $('chiudi-pdf').addEventListener('click', () => {
+    zona.remove();
+    if (caricato) apriCliente(clienteId);
+  });
 
   $('invia-pdf').addEventListener('click', async () => {
     if (!scelto) return;
@@ -1336,6 +1391,7 @@ function apriCaricamentoPdf(clienteId) {
         titolo: $('titolo-pdf').value.trim(),
         contenuto: base64,
       });
+      caricato = true;
 
       $('esito-pdf').innerHTML =
         (esito.lettaAutomaticamente

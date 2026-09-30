@@ -232,6 +232,10 @@ export interface Contesto {
   nomeProfessionista: string;
   nomeCliente: string;
   libreria?: Libreria;
+  /** Gli id dei pasti di oggi già segnati come fatti. */
+  fattiOggi?: string[];
+  /** Gli id dei pasti di oggi già segnati come saltati. */
+  saltatiOggi?: string[];
 }
 
 const arr = (n: number) => Math.round(n);
@@ -256,17 +260,18 @@ function schedaPasto(ctx: Contesto, giorno: number, pastoId: string): Scheda | n
   };
 }
 
-/** Il prossimo pasto in programma, secondo l'ora. */
+/** Il prossimo pasto in programma, secondo l'ora; quelli già segnati non contano. */
 function prossimoPasto(ctx: Contesto): { giorno: number; pastoId: string } | null {
-  const oggi = giornoDi(ctx.dieta, ctx.oggi);
+  const segnati = new Set([...(ctx.fattiOggi ?? []), ...(ctx.saltatiOggi ?? [])]);
+  const daFare = giornoDi(ctx.dieta, ctx.oggi)?.pasti.filter((p) => !segnati.has(p.id)) ?? [];
 
-  for (const pasto of oggi?.pasti ?? []) {
+  for (const pasto of daFare) {
     if (!pasto.orario) continue;
     const m = /^(\d{1,2})/.exec(pasto.orario.trim());
     if (m && Number(m[1]) >= ctx.ora) return { giorno: ctx.oggi, pastoId: pasto.id };
   }
 
-  if (oggi?.pasti.length) return { giorno: ctx.oggi, pastoId: oggi.pasti[0].id };
+  if (daFare.length) return { giorno: ctx.oggi, pastoId: daFare[0].id };
 
   const domani = giornoDi(ctx.dieta, (ctx.oggi + 1) % 7);
   return domani?.pasti.length
@@ -371,7 +376,20 @@ export function risolvi(ctx: Contesto, d: Domanda): Risposta {
   }
 
   if (d.tipo === 'saltato') {
-    const r = recupero(ctx.dieta, giorno, d.pastoId ? [d.pastoId] : [], ctx.ora, ctx.libreria);
+    // Per oggi contano anche i pasti già segnati.
+    const diOggi = giorno === ctx.oggi;
+    const saltati = [
+      ...(d.pastoId ? [d.pastoId] : []),
+      ...(diOggi ? (ctx.saltatiOggi ?? []) : []),
+    ];
+    const r = recupero(
+      ctx.dieta,
+      giorno,
+      [...new Set(saltati)],
+      ctx.ora,
+      ctx.libreria,
+      diOggi ? (ctx.fattiOggi ?? []) : [],
+    );
     if (!r) return { ...base, risposta: 'Non trovo quel giorno nella tua dieta.' };
 
     return {

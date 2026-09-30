@@ -509,7 +509,10 @@ export async function saltato(env: Env, utente: Utente, body: any) {
     : (new Date().getDay() + 6) % 7;
   const saltati = Array.isArray(body?.pasti) ? body.pasti.map(String).slice(0, 6) : [];
 
-  const r = recupero(ctx.dieta, giorno, saltati, new Date().getHours(), ctx.libreria);
+  // Per oggi, i pasti già segnati come fatti non sono "da fare".
+  const diOggi = giorno === (new Date().getDay() + 6) % 7;
+  const fatti = diOggi ? (await spunteDiOggi(env, utente.id)).fatti : [];
+  const r = recupero(ctx.dieta, giorno, saltati, new Date().getHours(), ctx.libreria, fatti);
   if (!r) throw new ErroreHttp(404, 'Quel giorno non è nella tua dieta.');
 
   // Oltre 150 kcal scoperte si avvisa il professionista.
@@ -589,6 +592,7 @@ async function rispostaAutomatica(
 ) {
   const adesso = new Date();
   const oggi = (adesso.getDay() + 6) % 7;
+  const segnati = await spunteDiOggi(env, utente.id);
 
   const contestoAssistente: assistente.Contesto = {
     dieta: ctx.dieta,
@@ -597,6 +601,8 @@ async function rispostaAutomatica(
     nomeProfessionista: ctx.nomeStudio,
     nomeCliente: nomeDi(utente),
     libreria: ctx.libreria,
+    fattiOggi: segnati.fatti,
+    saltatiOggi: segnati.saltati,
   };
 
   /* 1. Capire la domanda: con il modello se c'è, altrimenti con le regex. */
@@ -616,7 +622,7 @@ async function rispostaAutomatica(
 
   /* 3b. Se il motore non sa rispondere, prova il modello. */
   if (risposta.daGirare || !risposta.risposta) {
-    const libera = await ai.rispondiLibero(env, testo, fattiDellaDieta(ctx, oggi), ctx.nomeStudio);
+    const libera = await ai.rispondiLibero(env, testo, fattiDellaDieta(ctx, oggi, segnati), ctx.nomeStudio);
     if (libera) {
       return {
         tipo: domanda.tipo,
@@ -647,8 +653,21 @@ async function rispostaAutomatica(
   return { tipo: domanda.tipo, ...risposta, daGirare: undefined };
 }
 
+/** I pasti di oggi già segnati dal cliente. */
+async function spunteDiOggi(env: Env, clienteId: string) {
+  const spunte = (await db.spunteRecenti(env, clienteId, oggiData())).filter((s) => s.giorno === oggiData());
+  return {
+    fatti: spunte.filter((s) => s.stato === 'fatto').map((s) => s.pastoId),
+    saltati: spunte.filter((s) => s.stato === 'saltato').map((s) => s.pastoId),
+  };
+}
+
 /** I dati della dieta in forma di elenco, per la risposta libera. */
-function fattiDellaDieta(ctx: Awaited<ReturnType<typeof esigiDieta>>, oggi: number): string[] {
+function fattiDellaDieta(
+  ctx: Awaited<ReturnType<typeof esigiDieta>>,
+  oggi: number,
+  segnati: { fatti: string[]; saltati: string[] } = { fatti: [], saltati: [] },
+): string[] {
   const g = giornoDi(ctx.dieta, oggi);
   const o = ctx.dieta.obiettivi;
 
@@ -667,7 +686,13 @@ function fattiDellaDieta(ctx: Awaited<ReturnType<typeof esigiDieta>>, oggi: numb
     ...(g?.pasti.length
       ? g.pasti.map(
           (p) =>
-            `  ${p.nome}${p.orario ? ` (${p.orario})` : ''}: ` +
+            `  ${p.nome}${p.orario ? ` (${p.orario})` : ''}` +
+            (segnati.fatti.includes(p.id)
+              ? ' [già mangiato oggi]'
+              : segnati.saltati.includes(p.id)
+                ? ' [saltato oggi]'
+                : '') +
+            `: ` +
             p.alimenti.map((a) => `${a.nome} ${scriviQuantita(a)}`).join(', '),
         )
       : ['  niente scritto per oggi']),
@@ -930,8 +955,10 @@ export async function dashboard(env: Env, utente: Utente) {
 /* ------------------------------------------------------------------ */
 
 export async function passi(env: Env, utente: Utente, body: any) {
-  const quanti = Number(body?.passi);
-  if (!Number.isFinite(quanti) || quanti < 0 || quanti > 200_000) {
+  // Number('') e Number(null) valgono 0: un campo vuoto non è "zero passi".
+  const grezzo = body?.passi;
+  const quanti = grezzo === '' || grezzo === null || grezzo === undefined ? NaN : Number(grezzo);
+  if (!Number.isInteger(quanti) || quanti < 0 || quanti > 200_000) {
     throw new ErroreHttp(400, 'Il numero di passi non è valido.');
   }
 

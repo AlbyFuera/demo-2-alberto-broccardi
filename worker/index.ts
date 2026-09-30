@@ -97,6 +97,13 @@ function paginaDi(utente: Utente): string {
   return utente.ruolo === 'nutrizionista' ? '/studio' : '/cliente';
 }
 
+/** Gli account demo: servono ACCOUNT_DEMO (solo in .dev.vars) e un host locale. */
+function accountDemo(env: Env, request: Request): string[] {
+  const host = new URL(request.url).hostname;
+  if (!env.ACCOUNT_DEMO || !['localhost', '127.0.0.1', '[::1]'].includes(host)) return [];
+  return env.ACCOUNT_DEMO.split(',').map(db.normEmail).filter(Boolean);
+}
+
 /** Ritardo fisso sui fallimenti: stesso tempo di risposta se l'email esiste o no. */
 const ritardoCostante = () => new Promise((r) => setTimeout(r, 400));
 
@@ -207,6 +214,41 @@ async function api(
     return json({ ok: true, ruolo, pagina: ruolo === 'nutrizionista' ? '/studio' : '/cliente' }, 200, {
       'set-cookie': cookieDiSessione(sessione, https),
     });
+  }
+
+  /* ---------- demo in locale ---------- */
+
+  if (percorso === '/api/demo') {
+    const elenco = accountDemo(env, request);
+    if (!elenco.length) throw new ErroreHttp(404, `Endpoint sconosciuto: ${percorso}`);
+
+    const account = [];
+    for (const email of elenco) {
+      const c = await db.credenzialiPerEmail(env, email);
+      account.push({ email, ruolo: c?.role ?? null, nome: c?.name ?? '' });
+    }
+    return json({ attuale: utente ? { email: utente.email, ruolo: utente.ruolo } : null, account });
+  }
+
+  // Entra senza password: solo per gli account elencati in ACCOUNT_DEMO, solo in locale.
+  if (percorso === '/api/demo/entra') {
+    const email = db.normEmail(String(body?.email ?? ''));
+    if (request.method !== 'POST' || !accountDemo(env, request).includes(email)) {
+      throw new ErroreHttp(404, `Endpoint sconosciuto: ${percorso}`);
+    }
+
+    const c = await db.credenzialiPerEmail(env, email);
+    if (!c) throw new ErroreHttp(404, 'Questo account non esiste nel database locale.');
+
+    const vecchio = leggiCookie(request);
+    if (vecchio) await chiudiSessione(env, vecchio);
+    const sessione = await apriSessione(env, c.id, request.headers.get('user-agent'), new Date());
+
+    return json(
+      { ok: true, pagina: c.role === 'nutrizionista' ? '/studio' : '/cliente' },
+      200,
+      { 'set-cookie': cookieDiSessione(sessione, https) },
+    );
   }
 
   if (percorso === '/api/esci') {
@@ -328,6 +370,11 @@ async function api(
 async function pagine(request: Request, env: Env, percorso: string): Promise<Response | null> {
   const utente = await utenteCorrente(env, request);
 
+  // In locale con gli account demo, / è la pagina di scelta, anche già dentro.
+  if (percorso === '/' && accountDemo(env, request).length) {
+    return await pagina(env, request, 'index.html');
+  }
+
   if (percorso === '/' || percorso === '/accedi') {
     // Utente già dentro: va alla sua pagina.
     return utente ? vaiA(paginaDi(utente)) : await pagina(env, request, 'accedi.html');
@@ -381,6 +428,9 @@ export default {
       if (risposta) return risposta;
 
       if (STATICI.has(percorso)) return await pagina(env, request, percorso.slice(1));
+      if (percorso === '/index.js' && accountDemo(env, request).length) {
+        return await pagina(env, request, 'index.js');
+      }
 
       return new Response('Pagina non trovata.', { status: 404, headers: SICUREZZA });
     } catch (e) {

@@ -166,3 +166,29 @@ describe('risoluzione contro il motore', () => {
     assert.equal(r.risposta, '');
   });
 });
+
+describe('pasti già segnati', () => {
+  it('il prossimo pasto salta quelli già fatti', () => {
+    const r = risolvi({ ...ctx, ora: 7, fattiOggi: ['pas_col'] }, interpreta('cosa mangio adesso?', dieta, LUN));
+    assert.match(r.risposta, /Pranzo/);
+    assert.doesNotMatch(r.risposta, /Colazione/);
+  });
+
+  it('anche a tarda sera non ripropone un pasto già fatto', () => {
+    const r = risolvi({ ...ctx, ora: 23, fattiOggi: ['pas_col'] }, interpreta('cosa mangio adesso?', dieta, LUN));
+    assert.doesNotMatch(r.risposta, /Colazione/);
+  });
+
+  it('tutti segnati: oggi hai finito', () => {
+    const r = risolvi(
+      { ...ctx, fattiOggi: ['pas_col', 'pas_pra'], saltatiOggi: ['pas_cen'] },
+      interpreta('cosa mangio adesso?', dieta, LUN),
+    );
+    assert.match(r.risposta, /Oggi hai finito/);
+  });
+
+  it('nel recupero un pasto già fatto non è fra quelli che restano', () => {
+    const r = risolvi({ ...ctx, ora: 7, fattiOggi: ['pas_col'] }, interpreta('ho saltato il pranzo', dieta, LUN));
+    assert.doesNotMatch(r.risposta, /Ti restano[^.]*colazione/);
+  });
+});

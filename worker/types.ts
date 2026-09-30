@@ -8,6 +8,11 @@ export interface Env {
   /** Modello da usare, per poterlo cambiare senza toccare il codice. */
   MODELLO_AI?: string;
   ASSETS?: Fetcher;
+  /**
+   * Solo in locale, da .dev.vars: email degli account demo separate da virgola.
+   * Attiva la pagina di scelta account su localhost. Mai in produzione.
+   */
+  ACCOUNT_DEMO?: string;
 }
 
 export interface Utente {

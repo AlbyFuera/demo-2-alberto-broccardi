@@ -162,6 +162,41 @@ export function calcolaAderenza(
   };
 }
 
+export interface StatoOggi {
+  /** L'indice 0-6 di oggi. */
+  indice: number;
+  pastiPrevisti: number;
+  pastiFatti: number;
+  pastiSaltati: number;
+  /** Gli id dei pasti di oggi segnati come fatti. */
+  fatti: string[];
+  /** Gli id dei pasti di oggi segnati come saltati. */
+  saltati: string[];
+}
+
+/** I pasti di oggi, che l'aderenza esclude: per vederli in tempo reale. */
+export function statoDiOggi(dieta: Dieta, spunte: Spunta[], oggi: string): StatoOggi {
+  const indice = indiceGiorno(oggi);
+  const previsti = giornoDi(dieta, indice)?.pasti ?? [];
+  const validi = new Set(previsti.map((p) => p.id));
+
+  const fatti: string[] = [];
+  const saltati: string[] = [];
+  for (const s of spunte) {
+    if (s.giorno !== oggi || !validi.has(s.pastoId)) continue;
+    (s.stato === 'fatto' ? fatti : saltati).push(s.pastoId);
+  }
+
+  return {
+    indice,
+    pastiPrevisti: previsti.length,
+    pastiFatti: fatti.length,
+    pastiSaltati: saltati.length,
+    fatti,
+    saltati,
+  };
+}
+
 export interface Serie {
   /** Giorni consecutivi in cui ha seguito la dieta. */
   giorni: number;

@@ -85,3 +85,11 @@ describe('pasto saltato', () => {
     assert.equal(recupero(dieta, 9, [], 12), null);
   });
 });
+
+describe('pasti già segnati come fatti', () => {
+  it('non restano da fare, ma contano come mangiati', () => {
+    const r = recupero(dieta, LUN, [], 7, undefined, ['pas_col'])!;
+    assert.deepEqual(r.rimanenti.map((p) => p.id), ['pas_pra', 'pas_cen']);
+    assert.equal(Math.round(r.scoperto.kcal), Math.round(recupero(dieta, LUN, [], 7)!.scoperto.kcal));
+  });
+});

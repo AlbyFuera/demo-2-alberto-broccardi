@@ -327,8 +327,14 @@ function apriPassi() {
 
   $('chiudi-passi').addEventListener('click', () => zona.remove());
   $('salva-passi').addEventListener('click', async () => {
-    const n = Number($('quanti-passi').value);
-    if (!Number.isFinite(n) || n < 0) return;
+    // Il campo vuoto non vale 0: l'8000 in grigio è solo un esempio.
+    const scritto = $('quanti-passi').value.trim();
+    const n = Number(scritto);
+    if (!scritto || !Number.isInteger(n) || n < 0 || n > 200000) {
+      avvisa('Scrivi quanti passi hai fatto oggi (un numero, es. 6500).');
+      $('quanti-passi').focus();
+      return;
+    }
     $('salva-passi').disabled = true;
     try {
       await invia('/api/cliente/passi', { passi: n });
@@ -427,6 +433,13 @@ async function apriScelta(pastoId, indice) {
           `<p class="piccolo muto sotto">Sono alimenti che stanno nella tua dieta in altri giorni. ` +
           `Puoi sceglierli, ma il pasto conterà a metà nella tua aderenza.</p>` +
           altre
+        : '') +
+      // Le proposte vengono solo da alimenti già presenti altrove nella dieta.
+      (v.nessuna
+        ? `<div class="avviso attenzione sopra"><span class="segno" aria-hidden="true">!</span><span>` +
+          `Nella tua dieta non c'è un altro alimento abbastanza simile a ` +
+          `${esc(p.prescritto.nome)} da proporti al suo posto. Se vuoi cambiarlo, chiedi ` +
+          `all'assistente con cosa: se non lo sa, gira la domanda al tuo nutrizionista.</span></div>`
         : '') +
       `<button class="btn neutra sopra" data-chiudi="1">Lascia com'è</button>`;
 
@@ -896,6 +909,7 @@ for (const b of $('schede').querySelectorAll('button')) {
 }
 
 $('ingresso-esci').addEventListener('click', esci);
+$('app-esci').addEventListener('click', esci);
 
 async function ricarica() {
   stato.dati = await leggi('/api/cliente/dashboard');
