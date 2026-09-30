@@ -1,0 +1,3 @@
+# Solo in locale (wrangler dev). Mai in produzione.
+# Copialo in .dev.vars: attiva la pagina di scelta account su http://localhost:8787
+ACCOUNT_DEMO="anna.nutrizionista@gmail.com,andrea.nutrizionista@gmail.com,luca.cliente@gmail.com,luisa.cliente@gmail.com"

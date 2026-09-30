@@ -255,12 +255,34 @@ npm run db:locale
 npm run dev              # → http://localhost:8787
 ```
 
+### Demo in locale con account pronti
+
+```bash
+cp .dev.vars.example .dev.vars          # attiva la pagina di scelta account
+npx wrangler dev --local --port 8787    # --local: senza AI, non chiede il login Cloudflare
+python3 scripts/dati-demo-locali.py     # in un altro terminale, una volta sola
+```
+
+Poi `http://localhost:8787`: si sceglie con chi entrare, senza password.
+Quattro account con una settimana di dati:
+
+| Ruolo | Email | Password |
+|---|---|---|
+| Nutrizionista | anna.nutrizionista@gmail.com | nutrizionista |
+| Nutrizionista | andrea.nutrizionista@gmail.com | nutrizionista |
+| Cliente (di Anna) | luca.cliente@gmail.com | cliente123 |
+| Cliente (di Andrea) | luisa.cliente@gmail.com | cliente123 |
+
+Esistono solo nel database locale (`.wrangler/`). La pagina di scelta si attiva
+solo con `ACCOUNT_DEMO` in `.dev.vars` e su `localhost`: online non esiste.
+Per avere due account aperti insieme, il secondo in una finestra in incognito.
+
 ### Verifiche
 
 ```bash
-npm test                 # 140 test sul motore
+npm test                 # 145 test sul motore
 npm run tipi             # controllo dei tipi
-scripts/collaudo.sh      # 127 controlli end-to-end, in locale
+scripts/collaudo.sh      # 136 controlli end-to-end, in locale
 B=https://…workers.dev scripts/collaudo.sh    # gli stessi, contro l'istanza vera
 PW_N=… PW_C=… scripts/strumenti-demo.sh # crea due account con una settimana di dati
 ```

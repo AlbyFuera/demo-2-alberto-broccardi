@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Dati mock per la demo in locale: collega clienti e nutrizionisti, scrive e
-pubblica una dieta per coppia, riempie una settimana di pasti e passi.
+"""Dati mock per la demo in locale: crea i quattro account se mancano, collega
+clienti e nutrizionisti, scrive e pubblica una dieta per coppia, riempie una
+settimana di pasti e passi.
 
 Entra con /api/demo/entra, quindi serve ACCOUNT_DEMO in .dev.vars e il server
 avviato con `npx wrangler dev --local --port 8787`. Va lanciato una volta sola.
@@ -45,6 +46,28 @@ class Sessione:
 
     def get(self, percorso):
         return self._chiama(urllib.request.Request(B + percorso))
+
+
+# Account di esempio, solo per il database locale. Vanno anche in ACCOUNT_DEMO.
+ACCOUNT = [
+    ('anna.nutrizionista@gmail.com', 'nutrizionista', 'nutrizionista'),
+    ('andrea.nutrizionista@gmail.com', 'nutrizionista', 'nutrizionista'),
+    ('luca.cliente@gmail.com', 'cliente123', 'cliente'),
+    ('luisa.cliente@gmail.com', 'cliente123', 'cliente'),
+]
+
+
+def crea_account():
+    for email, password, ruolo in ACCOUNT:
+        req = urllib.request.Request(
+            B + '/api/registrati', method='POST', headers={'content-type': 'application/json'},
+            data=json.dumps({'email': email, 'password': password, 'ruolo': ruolo}).encode())
+        try:
+            urllib.request.urlopen(req).close()
+            print(f'· creato {email}')
+        except urllib.error.HTTPError as e:
+            if 'già un account' not in json.load(e).get('errore', ''):
+                raise
 
 
 def voce(nome, quantita, unita='g', alternative=None):
@@ -223,6 +246,7 @@ def prepara(c):
     print(f'    → {(risposta.get("risposta") or "")[:140]}')
 
 
+crea_account()
 for coppia in COPPIE:
     prepara(coppia)
 print('\nFatto. Apri http://localhost:8787 e scegli un account.')
