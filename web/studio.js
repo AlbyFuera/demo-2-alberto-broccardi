@@ -396,7 +396,7 @@ function disegnaCliente() {
     `<button class="btn mini" id="nuova-dieta">Nuova dieta</button></div>` +
     avvisoBozze +
     `<div class="riquadri">` +
-    `<div class="riquadro"><div class="etichetta">Segue la dieta</div>` +
+    `<div class="riquadro tinta-aderenza"><div class="etichetta">Segue la dieta</div>` +
     `<div class="cifra">${d.aderenza?.percentuale ?? '—'}${d.aderenza?.percentuale != null ? '%' : ''}</div>` +
     `<div class="sotto-cifra">${esc(
       d.oggi?.pastiFatti || d.oggi?.pastiSaltati
@@ -411,7 +411,7 @@ function disegnaCliente() {
         `</div>`
       : '') +
     `</div>` +
-    `<div class="riquadro"><div class="etichetta">Passi al giorno</div>` +
+    `<div class="riquadro tinta-passi"><div class="etichetta">Passi al giorno</div>` +
     `<div class="cifra">${passiMedi ?? '—'}</div>` +
     `<div class="sotto-cifra">${passiMedi ? `media sugli ultimi ${d.passi.length} giorni segnati` : 'non li segna'}</div></div>` +
     `</div>` +

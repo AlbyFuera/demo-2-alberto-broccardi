@@ -1,32 +1,45 @@
 :root {
   color-scheme: light;
 
-  --sfondo: #f6f7f5;
+  /* Tema "wellness": crema caldo, smeraldo, un colore per ogni indicatore. */
+  --sfondo: #f7f4ee;
   --superficie: #ffffff;
-  --superficie-2: #f0f2ef;
-  --bordo: #dfe3dd;
-  --bordo-forte: #c6ccc2;
+  --superficie-2: #f3f0e9;
+  --bordo: #ebe6dc;
+  --bordo-forte: #d9d2c4;
 
-  --testo: #16201a;
-  --testo-2: #5c665e;
-  --testo-3: #8a938c;
+  --testo: #17201b;
+  --testo-2: #58625b;
+  --testo-3: #8d958e;
 
-  --accento: #1f6b46;
-  --accento-chiaro: #e8f2ec;
-  --accento-scuro: #175135;
+  --accento: #16825a;
+  --accento-chiaro: #e3f4ea;
+  --accento-scuro: #0f6445;
+  --gradiente: linear-gradient(135deg, #0f7a52 0%, #22a86d 100%);
 
-  --ok: #1f6b46;
-  --avviso: #9a6414;
-  --avviso-chiaro: #fdf4e3;
-  --errore: #a32a26;
-  --errore-chiaro: #fdecec;
+  /* Tinte degli indicatori */
+  --corallo: #f2703f;
+  --verde: #16a06a;
+  --blu: #3b7cf5;
+  --ambra: #e7a21a;
+  --viola: #8b5cf6;
 
-  --raggio: 12px;
-  --raggio-s: 8px;
-  --ombra: 0 1px 2px rgb(22 32 26 / 6%), 0 4px 12px rgb(22 32 26 / 4%);
-  --ombra-alta: 0 8px 32px rgb(22 32 26 / 12%);
+  --ok: #16825a;
+  --avviso: #a8690c;
+  --avviso-chiaro: #fdf2dc;
+  --errore: #c2362f;
+  --errore-chiaro: #fdecea;
+
+  --raggio: 18px;
+  --raggio-s: 12px;
+  --ombra: 0 1px 2px rgb(23 32 27 / 4%), 0 6px 20px rgb(23 32 27 / 6%);
+  --ombra-media: 0 2px 4px rgb(23 32 27 / 5%), 0 12px 32px rgb(23 32 27 / 9%);
+  --ombra-alta: 0 24px 60px rgb(23 32 27 / 18%);
 
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  /* Titoli e numeri: arrotondato dove c'è (SF Pro Rounded su Apple). */
+  --font-titoli: ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    sans-serif;
   --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
 }
 
@@ -2022,4 +2035,412 @@ label .aiuto {
   align-items: center;
   gap: 0.5rem;
   justify-content: flex-end;
+}
+
+/* ================================================================== */
+/* Tema: strato visivo sopra le regole di base.                        */
+/* Tocca solo l'aspetto (colori, ombre, raggi, caratteri): spaziature  */
+/* e bersagli da pollice restano quelli delle regole per il telefono.  */
+/* ================================================================== */
+
+body {
+  background:
+    radial-gradient(60rem 28rem at 0% -8rem, rgb(34 168 109 / 11%), transparent 70%),
+    radial-gradient(48rem 24rem at 100% -6rem, rgb(242 112 63 / 8%), transparent 70%),
+    var(--sfondo);
+  background-repeat: no-repeat;
+}
+
+h1,
+h2,
+.marchio .nome,
+.barra .chi strong {
+  font-family: var(--font-titoli);
+}
+h1 {
+  font-size: 1.75rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+}
+
+/* Controlli */
+
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='number'],
+input[type='date'],
+select,
+textarea {
+  border-color: var(--bordo-forte);
+  border-radius: var(--raggio-s);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  box-shadow: 0 0 0 4px rgb(22 130 90 / 14%);
+}
+
+.btn {
+  background: var(--gradiente);
+  border-radius: 999px;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgb(15 100 69 / 20%), 0 4px 12px rgb(15 100 69 / 18%);
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s, opacity 0.15s;
+}
+.btn:hover:not(:disabled) {
+  background: var(--gradiente);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgb(15 100 69 / 22%), 0 8px 20px rgb(15 100 69 / 22%);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+.btn.neutra {
+  background: var(--superficie);
+  border-color: var(--bordo-forte);
+  box-shadow: 0 1px 2px rgb(23 32 27 / 5%);
+}
+.btn.neutra:hover:not(:disabled) {
+  background: var(--superficie);
+  border-color: var(--testo-3);
+  box-shadow: 0 2px 8px rgb(23 32 27 / 8%);
+}
+.btn.pericolo {
+  background: var(--superficie);
+  box-shadow: none;
+}
+.btn.pericolo:hover:not(:disabled) {
+  background: var(--errore-chiaro);
+  box-shadow: none;
+}
+.btn.mini {
+  border-radius: 999px;
+}
+
+/* Marchio e barra superiore */
+
+.marchio .segno,
+.barra .segno {
+  background: var(--gradiente);
+  box-shadow: 0 4px 12px rgb(15 100 69 / 28%), inset 0 1px 0 rgb(255 255 255 / 25%);
+}
+.barra .segno {
+  border-radius: 11px;
+}
+.barra {
+  background: color-mix(in srgb, var(--superficie) 78%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--bordo) 70%, transparent);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 60%) inset;
+}
+.menu-account {
+  border-color: var(--bordo);
+  border-radius: var(--raggio);
+}
+
+/* Linguette a pillola */
+
+.schede {
+  gap: 0.25rem;
+  width: max-content;
+  max-width: 100%;
+  padding: 0.25rem;
+  background: color-mix(in srgb, var(--superficie-2) 85%, white);
+  border: 1px solid var(--bordo);
+  border-radius: 999px;
+}
+.schede button {
+  border: 0;
+  margin-bottom: 0;
+  border-radius: 999px;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.schede button:hover {
+  color: var(--testo);
+}
+.schede button[aria-selected='true'] {
+  background: var(--superficie);
+  color: var(--accento-scuro);
+  box-shadow: 0 1px 2px rgb(23 32 27 / 8%), 0 3px 10px rgb(23 32 27 / 8%);
+}
+
+/* Superfici: card morbide invece di bordi netti */
+
+.scheda,
+.riga,
+.giorno,
+.riquadro,
+.pasto-oggi,
+.variazione,
+.opzioni {
+  border-color: color-mix(in srgb, var(--bordo) 80%, transparent);
+  box-shadow: var(--ombra);
+}
+.scheda,
+.riquadro,
+.giorno {
+  border-radius: var(--raggio);
+}
+.riga,
+.pasto-oggi {
+  border-radius: 14px;
+}
+.riga {
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.accesso {
+  box-shadow: var(--ombra-alta);
+}
+
+/* Avvisi con barra laterale */
+
+.avviso {
+  border-radius: 14px;
+  border-left-width: 4px;
+}
+
+/* Etichette */
+
+.tag {
+  padding: 0.1875rem 0.5625rem;
+  font-weight: 600;
+}
+
+/* Indicatori: ogni riquadro ha la sua tinta */
+
+.riquadri {
+  gap: 0.875rem;
+}
+.riquadro {
+  --tinta: var(--verde);
+  position: relative;
+  overflow: hidden;
+  padding: 1rem 1.125rem 1.125rem;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--tinta) 8%, white) 0%, var(--superficie) 70%);
+}
+.riquadro::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--tinta);
+  opacity: 0.85;
+}
+.riquadri > .riquadro:nth-child(5n + 1) {
+  --tinta: var(--corallo);
+}
+.riquadri > .riquadro:nth-child(5n + 2) {
+  --tinta: var(--verde);
+}
+.riquadri > .riquadro:nth-child(5n + 3) {
+  --tinta: var(--blu);
+}
+.riquadri > .riquadro:nth-child(5n + 4) {
+  --tinta: var(--ambra);
+}
+.riquadri > .riquadro:nth-child(5n + 5) {
+  --tinta: var(--viola);
+}
+/* Quando conta il significato più della posizione. */
+.riquadri > .riquadro.tinta-aderenza {
+  --tinta: var(--viola);
+}
+.riquadri > .riquadro.tinta-passi {
+  --tinta: var(--blu);
+}
+.riquadro .etichetta {
+  color: color-mix(in srgb, var(--tinta) 70%, var(--testo));
+  letter-spacing: 0.07em;
+}
+.riquadro .cifra {
+  font-family: var(--font-titoli);
+  font-size: 2rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.barra-avanzamento {
+  height: 0.5rem;
+  background: color-mix(in srgb, var(--tinta, var(--verde)) 14%, var(--superficie-2));
+}
+.barra-avanzamento i {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--tinta, var(--verde)) 75%, white),
+    var(--tinta, var(--verde))
+  );
+}
+.barra-avanzamento.attenzione i {
+  background: var(--ambra);
+}
+.barra-avanzamento.grave i {
+  background: var(--errore);
+}
+
+/* Pasti di oggi */
+
+.pasto-oggi {
+  background: var(--superficie);
+  transition: box-shadow 0.15s, background 0.15s, border-color 0.15s;
+}
+.pasto-oggi.fatto {
+  background: linear-gradient(135deg, #eaf7ef 0%, var(--superficie) 80%);
+  border-color: color-mix(in srgb, var(--verde) 35%, transparent);
+}
+.spunta {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-color: var(--bordo-forte);
+  transition: transform 0.15s, border-color 0.15s, background 0.15s, color 0.15s;
+}
+.spunta:hover {
+  transform: scale(1.06);
+}
+.spunta[aria-pressed='true'] {
+  background: var(--gradiente);
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgb(15 100 69 / 30%);
+}
+.nome-pasto-oggi {
+  font-family: var(--font-titoli);
+  font-weight: 700;
+}
+
+/* Alimenti a pillola */
+
+.alimento {
+  background: var(--superficie);
+  border-color: var(--bordo);
+  box-shadow: 0 1px 2px rgb(23 32 27 / 4%);
+}
+.alimento:hover {
+  background: var(--accento-chiaro);
+  border-color: color-mix(in srgb, var(--accento) 45%, transparent);
+}
+
+/* Settimana */
+
+.giorno.oggi {
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--accento), var(--ombra-media);
+}
+.giorno-testa .nome {
+  font-family: var(--font-titoli);
+  font-weight: 700;
+}
+.pasto-nome {
+  color: var(--accento);
+}
+
+/* Grafico dei passi */
+
+.barre i {
+  background: color-mix(in srgb, var(--blu) 22%, white);
+  border-radius: 4px 4px 0 0;
+}
+.barre i.raggiunto {
+  background: linear-gradient(180deg, #6fa0ff, var(--blu));
+}
+
+/* Tabella dello studio dentro una card */
+
+.scorri:has(> .tabella) {
+  background: var(--superficie);
+  border: 1px solid color-mix(in srgb, var(--bordo) 80%, transparent);
+  border-radius: var(--raggio);
+  box-shadow: var(--ombra);
+}
+.tabella th {
+  background: color-mix(in srgb, var(--superficie-2) 60%, white);
+}
+.tabella tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Stato vuoto */
+
+.vuoto .grande {
+  display: inline-grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 0.875rem;
+  background: var(--accento-chiaro);
+  color: var(--accento);
+  border-radius: 999px;
+  font-size: 1.25rem;
+}
+
+/* Entrata morbida dei blocchi */
+
+@keyframes entra {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.riquadro,
+.pasto-oggi,
+.giorno,
+.riga,
+.scheda {
+  animation: entra 0.35s ease-out both;
+}
+.riquadri > .riquadro:nth-child(2) {
+  animation-delay: 0.04s;
+}
+.riquadri > .riquadro:nth-child(3) {
+  animation-delay: 0.08s;
+}
+.riquadri > .riquadro:nth-child(4) {
+  animation-delay: 0.12s;
+}
+.riquadri > .riquadro:nth-child(5) {
+  animation-delay: 0.16s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .riquadro,
+  .pasto-oggi,
+  .giorno,
+  .riga,
+  .scheda {
+    animation: none;
+  }
+  .btn,
+  .spunta,
+  .riga {
+    transition: none;
+  }
+}
+
+/* Telefono: le card restano leggere, lo sfondo fa da cornice. */
+@media (max-width: 40rem) {
+  .schede {
+    width: 100%;
+  }
+  .riquadro .cifra {
+    font-size: 1.75rem;
+  }
+}
+
+/* Numeri nei pasti: stesso carattere dei titoli, cifre allineate. */
+.pasto-oggi .kcal-pasto,
+.alimento .peso,
+.aderenza,
+.delta {
+  font-family: var(--font-titoli);
+  font-variant-numeric: tabular-nums;
+}
+.pasto-oggi .kcal-pasto {
+  color: var(--corallo);
+  font-weight: 700;
 }
