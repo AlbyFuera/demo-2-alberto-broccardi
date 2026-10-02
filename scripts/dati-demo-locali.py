@@ -272,7 +272,149 @@ def prepara(c):
     print(f'    → {(risposta.get("risposta") or "")[:140]}')
 
 
+class SessioneConPassword(Sessione):
+    """Un cliente in più, fuori dalla pagina di scelta: si iscrive o entra con la password."""
+
+    def __init__(self, email, password='cliente123'):
+        self.email = email
+        self.apri = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+        try:
+            self.post_grezzo('/api/registrati', {'email': email, 'password': password, 'ruolo': 'cliente'})
+        except urllib.error.HTTPError:
+            self.post('/api/accedi', {'email': email, 'password': password})
+
+    def post_grezzo(self, percorso, corpo):
+        req = urllib.request.Request(B + percorso, data=json.dumps(corpo).encode(), method='POST',
+                                     headers={'content-type': 'application/json'})
+        with self.apri.open(req) as r:
+            return json.load(r)
+
+
+def con_titolo(dieta, titolo, obiettivi=None):
+    return {**dieta, 'titolo': titolo, 'obiettivi': {**dieta['obiettivi'], **(obiettivi or {})}}
+
+
+# Altri clienti di Anna, ognuno in una situazione diversa. Le email sono quelle
+# che hanno una foto di esempio in web/demo-foto.js. Password: cliente123.
+ALTRI_DI_ANNA = [
+    {'email': 'giulia.damico@gmail.com', 'nome': 'Giulia D\'Amico', 'obiettivo': 'Tornare al peso di prima della gravidanza',
+     'dieta': con_titolo(DIETA_LUCA, 'Piano graduale — ottobre', {'kcal': 1600}), 'pubblica': True,
+     # Quota di pasti fatti per giorno, da 6 giorni fa a ieri.
+     'costanza': [1, 1, 1, 1, 1, 1], 'passi': [9800, 10200, 8700, 11000, 9400, 10100],
+     'cartella': {'nascita': '1989-02-21', 'sesso': 'F', 'altezza': 164, 'allergie': ''}, 'visita': (1, '10:00'),
+     'pesi': [71.8, 70.9, 70.1, 69.6], 'acqua': 1750, 'nota': 'Molto costante. Valutare un aumento delle kcal a novembre.'},
+    {'email': 'marco.catalano@gmail.com', 'nome': 'Marco Catalano', 'obiettivo': 'Perdere la pancia',
+     'dieta': con_titolo(DIETA_LUCA, 'Rientro — settembre', {'kcal': 2000}), 'pubblica': True,
+     'costanza': [0.6, 0.4, 0.2, None, None, None], 'passi': [5200, 3100, None, None, None, None],
+     'cartella': {'nascita': '1982-07-30', 'sesso': 'M', 'altezza': 181, 'allergie': ''}, 'visita': None,
+     'pesi': [96.2, 96.5, 96.0, 96.8], 'acqua': 0, 'automazione': False,
+     'messaggio': 'Questa settimana è dura, con i turni al lavoro salto quasi sempre la cena. Possiamo sentirci?',
+     'nota': 'Turni serali: la cena va spostata o resa più semplice.'},
+    {'email': 'gaia.carta@gmail.com', 'nome': 'Gaia Carta', 'obiettivo': 'Mangiare meglio senza latticini',
+     'dieta': con_titolo(DIETA_LUISA, 'Prima proposta — da rivedere'), 'pubblica': False,
+     'costanza': [], 'passi': [],
+     'cartella': {'nascita': '1998-11-05', 'sesso': 'F', 'altezza': 170, 'allergie': 'lattosio'}, 'visita': (3, '18:00'),
+     'pesi': [61.5], 'acqua': 0, 'nota': 'Intollerante al lattosio: togliere yogurt e latte dalla bozza.'},
+    {'email': 'ale.berti@email.it', 'nome': 'Alessandro Berti', 'obiettivo': 'Massa muscolare',
+     'dieta': None, 'costanza': [], 'passi': [],
+     'cartella': None, 'visita': (6, '09:30'), 'pesi': [], 'acqua': 0, 'nota': None},
+    {'email': 'francesco.neri@email.it', 'nome': 'Francesco Neri', 'obiettivo': 'Correre la mezza maratona a marzo',
+     'dieta': con_titolo(DIETA_LUISA, 'Preparazione mezza maratona', {'kcal': 2300}), 'pubblica': True,
+     'costanza': [1, 0.8, 1, 0.8, 1, 0.6], 'passi': [14200, 12800, 15100, 9900, 16300, 13700],
+     'cartella': {'nascita': '1991-05-14', 'sesso': 'M', 'altezza': 176, 'allergie': 'frutta a guscio'}, 'visita': (12, '17:00'),
+     'pesi': [72.4, 72.1, 72.3, 71.9], 'acqua': 2250, 'sostituzione': ('Pranzo', 1, 'petto di pollo'),
+     'nota': 'Aumentare i carboidrati nei giorni di lungo.'},
+]
+
+# Chi ha chiesto ad Anna di seguirlo e aspetta la risposta.
+IN_ATTESA_DI_ANNA = [('giulio.rossi@posta.it', 'Giulio Rossi',
+                      'Buongiorno, mi ha consigliato lei un amico. Vorrei iniziare a ottobre.')]
+
+
+def prepara_altri():
+    print('\n· Altri clienti di Anna')
+    anna = Sessione('anna.nutrizionista@gmail.com')
+
+    for c in ALTRI_DI_ANNA:
+        cliente = SessioneConPassword(c['email'])
+        cliente.post('/api/cliente/impostazioni', {'nome': c['nome'], 'obiettivo': c['obiettivo']})
+        suo = cliente.get('/api/cliente/stato')['professionista']
+        if suo and suo['email'] != 'anna.nutrizionista@gmail.com':
+            print(f'  {c["nome"]}: seguito da un altro studio, lo salto')
+            continue
+        if not suo:
+            cliente.post('/api/cliente/richiedi', {'email': 'anna.nutrizionista@gmail.com', 'messaggio': None})
+        richiesta = next((r for r in anna.get('/api/studio/cruscotto')['richieste'] if r['email'] == c['email']), None)
+        if richiesta:
+            anna.post('/api/studio/decidi', {'link': richiesta['linkId'], 'accetta': True})
+        scheda = next(x for x in anna.get('/api/studio/cruscotto')['clienti'] if x['email'] == c['email'])
+        cli = scheda['id']
+        if scheda['dieta'] or (c['dieta'] is None and scheda['prossimaVisita']):
+            print(f'  {c["nome"]}: già pronto')
+            continue
+
+        if c['cartella'] or c['visita']:
+            visita = None
+            if c['visita']:
+                giorni, ora = c['visita']
+                visita = f'{(OGGI + datetime.timedelta(days=giorni)).isoformat()}T{ora}'
+            anna.post('/api/studio/cartella', {'cliente': cli, **(c['cartella'] or {}), 'prossimaVisita': visita or ''})
+        for settimane, kg in enumerate(reversed(c['pesi'])):
+            giorno = OGGI - datetime.timedelta(days=7 * (settimane + 1))
+            anna.post('/api/studio/misura', {'cliente': cli, 'giorno': giorno.isoformat(), 'peso': kg})
+        if c['nota']:
+            anna.post('/api/studio/nota', {'cliente': cli, 'testo': c['nota']})
+
+        if c['dieta']:
+            d = c['dieta']
+            dieta_id = anna.post('/api/studio/nuova-dieta', {'cliente': cli, 'titolo': d['titolo']})['id']
+            giorni = [{'indice': i, 'allenamento': i in (0, 2, 4),
+                       'pasti': [{'nome': n, 'orario': o, 'alimenti': al} for n, o, al in d['schemi'][i % 2]]}
+                      for i in range(7)]
+            anna.post('/api/studio/salva-dieta', {'id': dieta_id, 'dieta': {
+                'titolo': d['titolo'], 'indicazioni': d['indicazioni'], 'obiettivi': d['obiettivi'], 'giorni': giorni}})
+            if c['pubblica']:
+                anna.post('/api/studio/pubblica', {'id': dieta_id})
+                pasti = {g['indice']: g['pasti'] for g in anna.get(f'/api/studio/dieta?dieta={dieta_id}')['dieta']['giorni']}
+                for i, quota in enumerate(c['costanza']):
+                    if quota is None:
+                        continue
+                    data = OGGI - datetime.timedelta(days=6 - i)
+                    del_giorno = pasti.get(data.weekday(), [])
+                    fatti = round(len(del_giorno) * quota)
+                    for k, p in enumerate(del_giorno):
+                        cliente.post('/api/cliente/spunta', {'giorno': data.isoformat(), 'pasto': p['id'],
+                                                             'stato': 'fatto' if k < fatti else 'saltato'})
+                for i, passi in enumerate(c['passi']):
+                    if passi is not None:
+                        data = OGGI - datetime.timedelta(days=6 - i)
+                        cliente.post('/api/cliente/passi', {'giorno': data.isoformat(), 'passi': passi})
+                if c['acqua']:
+                    cliente.post('/api/cliente/acqua', {'ml': c['acqua']})
+                if c.get('sostituzione'):
+                    nome, indice, alimento = c['sostituzione']
+                    oggi = cliente.get('/api/cliente/dashboard')['oggi']
+                    pasto = next((p for p in oggi['pasti'] if p['nome'] == nome), None)
+                    if pasto:
+                        cliente.post('/api/cliente/applica', {'giorno': oggi['indice'], 'pasto': pasto['id'],
+                                                              'indice': indice, 'alimento': alimento})
+                if c.get('messaggio'):
+                    if c.get('automazione') is False:
+                        anna.post('/api/studio/automazione', {'cliente': cli, 'attiva': False})
+                    cliente.post('/api/cliente/chat', {'domanda': c['messaggio']})
+        print(f'  {c["nome"]}: {"dieta pubblicata" if c["dieta"] and c["pubblica"] else "dieta in bozza" if c["dieta"] else "senza dieta"}')
+
+    for email, nome, messaggio in IN_ATTESA_DI_ANNA:
+        cliente = SessioneConPassword(email)
+        cliente.post('/api/cliente/impostazioni', {'nome': nome})
+        if not cliente.get('/api/cliente/stato')['professionista']:
+            cliente.post('/api/cliente/richiedi', {'email': 'anna.nutrizionista@gmail.com', 'messaggio': messaggio})
+        print(f'  {nome}: richiesta in attesa')
+
+
 crea_account()
 for coppia in COPPIE:
     prepara(coppia)
+prepara_altri()
 print('\nFatto. Apri http://localhost:8787 e scegli un account.')

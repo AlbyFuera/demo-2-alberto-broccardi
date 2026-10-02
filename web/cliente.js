@@ -239,8 +239,8 @@ function disegnaOggi() {
   contenuto().innerHTML =
     `<div class="oggi-griglia">` +
     `<div class="oggi-riepilogo">${riepilogo}${visita}${o.nota ? avviso('neutro', o.nota) : ''}</div>` +
+    `<div class="oggi-extra"><h2 class="sezione-titolo">Attività e misure</h2>${tessere}${progressi}</div>` +
     `<div class="oggi-pasti"><h2 class="sezione-titolo">Pasti di oggi</h2>${pasti}</div>` +
-    `<div class="oggi-extra"><h2 class="sezione-titolo">Acqua e passi</h2>${tessere}${progressi}</div>` +
     `</div>`;
 
   applicaMisure(contenuto());
@@ -780,6 +780,10 @@ const fonte = (f, nomeStudio, at) => {
   return `<div class="fonte">${[chi && `<span class="${f === 'studio' ? 'di-persona' : ''}">${chi}</span>`, tempo].filter(Boolean).join(' · ')}</div>`;
 };
 
+/** Da 1,2 a 3 secondi, un po' di più per le domande lunghe. */
+const attesaRisposta = (testo) =>
+  new Promise((r) => setTimeout(r, Math.min(3000, 1200 + testo.length * 18 + Math.random() * 600)));
+
 async function chiedi(testo) {
   if (stato.occupato || !testo.trim()) return;
   stato.occupato = true;
@@ -790,7 +794,9 @@ async function chiedi(testo) {
   const punti = messaggio('lui', `<div class="bolla"><span class="attesa"><i></i><i></i><i></i></span></div>`, false);
 
   try {
-    const dati = await invia('/api/cliente/chat', { domanda: testo });
+    // Le risposte del motore arrivano in pochi millisecondi: un'attesa breve,
+    // proporzionata alla domanda, rende la conversazione meno meccanica.
+    const [dati] = await Promise.all([invia('/api/cliente/chat', { domanda: testo }), attesaRisposta(testo)]);
     punti.remove();
     if (dati.automazione === false) stato.automazione = false;
 

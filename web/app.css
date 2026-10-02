@@ -1657,7 +1657,7 @@ input[type='checkbox'] {
 .oggi-griglia {
   display: grid;
   gap: 12px;
-  grid-template-areas: 'riepilogo' 'pasti' 'extra';
+  grid-template-areas: 'riepilogo' 'extra' 'pasti';
 }
 
 .oggi-riepilogo,

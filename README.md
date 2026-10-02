@@ -352,6 +352,13 @@ Quattro account con una settimana di dati:
 | Cliente (di Anna) | luca.cliente@gmail.com | cliente123 |
 | Cliente (di Andrea) | luisa.cliente@gmail.com | cliente123 |
 
+Anna segue anche altri clienti, ognuno in una situazione diversa, per vedere
+la home "da seguire" piena: Giulia (costante, visita domani), Marco (non segna
+da giorni, ha scritto un messaggio), Gaia (intollerante al lattosio, dieta in
+bozza), Alessandro (appena collegato, senza dieta), Francesco (sportivo, una
+sostituzione nuova) e Giulio (richiesta in attesa). Non sono nella pagina di
+scelta: si entra da `/accedi` con la loro email e la password `cliente123`.
+
 Esistono solo nel database locale (`.wrangler/`). La pagina di scelta si attiva
 solo con `ACCOUNT_DEMO` in `.dev.vars` e su `localhost`: online non esiste.
 Per avere due account aperti insieme, il secondo in una finestra in incognito.
@@ -468,8 +475,9 @@ scritta a mano non ricalcolata; assistente spento per un cliente con risposta
 del professionista; assistente riacceso che torna a rispondere.
 
 Contro l'istanza pubblicata, dopo la migrazione `0004`: 123 controlli su 123.
-La migrazione `0005` va applicata (`npm run db:remoto`) prima di pubblicare
-questa versione.
+In locale il database è quello di `.wrangler/` e lo schema si aggiorna con
+`npm run db:locale`. Solo se si pubblica su Cloudflare la migrazione `0005` va
+applicata anche al database remoto (`npm run db:remoto`).
 
 ### Da fare prima di aprire il servizio
 

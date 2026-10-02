@@ -273,7 +273,8 @@ export async function collegamentiDelloStudio(
     `${SELECT_COLLEGAMENTO}
       WHERE l.nutritionist_id = ? AND l.status IN ('in-attesa', 'attivo')
       ORDER BY CASE l.status WHEN 'in-attesa' THEN 0 ELSE 1 END,
-               l.requested_at DESC`,
+               -- Prima chi è seguito da più tempo: l'elenco non si rimescola a ogni nuovo cliente.
+               l.requested_at ASC`,
   )
     .bind(studioId)
     .all<RigaCollegamento>();
