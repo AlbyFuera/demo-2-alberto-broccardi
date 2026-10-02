@@ -174,7 +174,9 @@ PRANZO=$(curl -s -b dc.txt "$B/api/cliente/dashboard" | python3 -c "
 import json,sys
 for p in json.load(sys.stdin)['oggi']['pasti']:
     if p['nome'] == 'Pranzo': print(p['id']); break")
-j "{\"giorno\":$OGGI,\"pasto\":\"$PRANZO\",\"indice\":1,\"alimento\":\"tonno al naturale\"}"
+# Nei giorni dispari alla posizione 2 del pranzo c'è già il tonno: si propone il merluzzo.
+if [ $((OGGI % 2)) -eq 1 ]; then NUOVO="merluzzo"; else NUOVO="tonno al naturale"; fi
+j "{\"giorno\":$OGGI,\"pasto\":\"$PRANZO\",\"indice\":1,\"alimento\":\"$NUOVO\"}"
 pc /api/cliente/applica > /dev/null
 
 printf '\n\033[1mDue account pronti\033[0m\n'

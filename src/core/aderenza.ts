@@ -5,7 +5,8 @@ export interface Spunta {
   /** 'AAAA-MM-GG' */
   giorno: string;
   pastoId: string;
-  stato: 'fatto' | 'saltato';
+  /** 'libero': il pasto libero concesso dal professionista, vale come fatto. */
+  stato: 'fatto' | 'saltato' | 'libero';
 }
 
 /** `giorno` è l'indice 0-6, non una data. */
@@ -20,6 +21,9 @@ export interface SostituzioneAttiva {
 
 /** Quanto vale un pasto fatto con una sostituzione fuori dal piano. */
 const PESO_FUORI_PIANO = 0.5;
+
+/** Giorni su cui si misura l'aderenza: uguale per cliente e professionista. */
+export const FINESTRA_ADERENZA = 7;
 
 export type LivelloAderenza = 'buona' | 'parziale' | 'scarsa' | 'ignota';
 
@@ -38,6 +42,8 @@ export interface Aderenza {
   pastiConSostituzioniAmmesse: number;
   /** Pasti fatti con una sostituzione che il piano non prevedeva. */
   pastiFuoriPiano: number;
+  /** Pasti liberi concessi dal professionista: contano come fatti. */
+  pastiLiberi: number;
   /** Frase pronta per l'interfaccia. */
   descrizione: string;
 }
@@ -60,7 +66,7 @@ export function calcolaAderenza(
   dieta: Dieta,
   spunte: Spunta[],
   oggi: string,
-  finestra = 7,
+  finestra = FINESTRA_ADERENZA,
   sostituzioni: SostituzioneAttiva[] = [],
 ): Aderenza {
   const perGiorno = new Map<string, Spunta[]>();
@@ -79,6 +85,7 @@ export function calcolaAderenza(
   let giorniOsservati = 0;
   let ammesse = 0;
   let fuoriPiano = 0;
+  let liberi = 0;
   /** I pasti fuori piano valgono metà. */
   let punteggio = 0;
 
@@ -99,12 +106,18 @@ export function calcolaAderenza(
     const validi = new Set(previsti.map((p) => p.id));
     for (const s of delGiorno) {
       if (!validi.has(s.pastoId)) continue; // spunta di un pasto non più previsto
-      if (s.stato !== 'fatto') {
+      if (s.stato === 'saltato') {
         pastiSaltati++;
         continue;
       }
 
       pastiFatti++;
+
+      if (s.stato === 'libero') {
+        liberi++;
+        punteggio += 1;
+        continue;
+      }
 
       const sue = sostituzioni.filter(
         (v) => v.giorno === indice && v.pastoId === s.pastoId && v.dal <= data,
@@ -131,6 +144,7 @@ export function calcolaAderenza(
       pastiPrevisti: 0,
       pastiConSostituzioniAmmesse: 0,
       pastiFuoriPiano: 0,
+      pastiLiberi: 0,
       descrizione: 'Non ha ancora segnato nessun pasto: non c’è modo di dirlo.',
     };
   }
@@ -149,9 +163,12 @@ export function calcolaAderenza(
     pastiPrevisti,
     pastiConSostituzioniAmmesse: ammesse,
     pastiFuoriPiano: fuoriPiano,
+    pastiLiberi: liberi,
     descrizione:
-      `${pastiFatti} pasti su ${pastiPrevisti} negli ultimi ${giorniConDati} ` +
-      `giorn${giorniConDati === 1 ? 'o' : 'i'} in cui ha segnato qualcosa` +
+      `${pastiFatti} pasti fatti su ${pastiPrevisti} previsti negli ultimi ${finestra} giorni` +
+      (giorniConDati < giorniOsservati
+        ? ` (${giorniOsservati - giorniConDati} senza spunte, non contano)`
+        : '') +
       (ammesse > 0
         ? `, ${ammesse} con sostituzioni previste dal piano (non contano contro)`
         : '') +
@@ -172,6 +189,8 @@ export interface StatoOggi {
   fatti: string[];
   /** Gli id dei pasti di oggi segnati come saltati. */
   saltati: string[];
+  /** Gli id dei pasti di oggi segnati come pasto libero (sono anche in `fatti`). */
+  liberi: string[];
 }
 
 /** I pasti di oggi, che l'aderenza esclude: per vederli in tempo reale. */
@@ -182,9 +201,11 @@ export function statoDiOggi(dieta: Dieta, spunte: Spunta[], oggi: string): Stato
 
   const fatti: string[] = [];
   const saltati: string[] = [];
+  const liberi: string[] = [];
   for (const s of spunte) {
     if (s.giorno !== oggi || !validi.has(s.pastoId)) continue;
-    (s.stato === 'fatto' ? fatti : saltati).push(s.pastoId);
+    (s.stato === 'saltato' ? saltati : fatti).push(s.pastoId);
+    if (s.stato === 'libero') liberi.push(s.pastoId);
   }
 
   return {
@@ -194,6 +215,7 @@ export function statoDiOggi(dieta: Dieta, spunte: Spunta[], oggi: string): Stato
     pastiSaltati: saltati.length,
     fatti,
     saltati,
+    liberi,
   };
 }
 
@@ -213,7 +235,7 @@ export function calcolaSerie(dieta: Dieta, spunte: Spunta[], oggi: string): Seri
   const saltati = new Map<string, Set<string>>();
 
   for (const s of spunte) {
-    const mappa = s.stato === 'fatto' ? perGiorno : saltati;
+    const mappa = s.stato === 'saltato' ? saltati : perGiorno;
     const insieme = mappa.get(s.giorno) ?? new Set<string>();
     insieme.add(s.pastoId);
     mappa.set(s.giorno, insieme);

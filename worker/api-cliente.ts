@@ -13,9 +13,17 @@ import {
 import { equivalenza, proposte, valoriPorzione } from '../src/core/equivalenza.ts';
 import { nelPiano, slotDi } from '../src/core/piano.ts';
 import { normalizza } from '../src/core/composizione.ts';
-import { calcolaAderenza, calcolaSerie, giorniPrima, indiceGiorno } from '../src/core/aderenza.ts';
+import {
+  FINESTRA_ADERENZA,
+  calcolaAderenza,
+  calcolaSerie,
+  giorniPrima,
+  indiceGiorno,
+} from '../src/core/aderenza.ts';
 import { pastiAlternativi } from '../src/core/cambiopasto.ts';
 import { listaSpesa } from '../src/core/spesa.ts';
+import { allergeneDi, vociAllergie } from '../src/core/allergeni.ts';
+import { diario as diarioDi } from '../src/core/diario.ts';
 import { recupero } from '../src/core/recupero.ts';
 import * as assistente from '../src/core/assistente.ts';
 
@@ -35,16 +43,17 @@ async function contesto(env: Env, utente: Utente) {
   const collegamento = await db.collegamentoDelCliente(env, utente.id);
 
   if (!collegamento || collegamento.stato !== 'attivo') {
-    return { collegamento, dieta: null, libreria: undefined, variazioni: [] };
+    return { collegamento, dieta: null, libreria: undefined, variazioni: [], cartella: db.SCHEDA_VUOTA };
   }
 
-  const [riga, libreria, variazioni] = await Promise.all([
+  const [riga, libreria, variazioni, cartella] = await Promise.all([
     db.dietaDelCliente(env, utente.id),
     db.libreriaDelloStudio(env, collegamento.studioId),
     db.variazioniDelCliente(env, utente.id, 60),
+    db.schedaClinica(env, collegamento.studioId, utente.id),
   ]);
 
-  return { collegamento, dieta: riga, libreria, variazioni };
+  return { collegamento, dieta: riga, libreria, variazioni, cartella };
 }
 
 /** Il contesto con la dieta, o l'errore giusto per lo stato in cui si trova. */
@@ -327,9 +336,10 @@ export async function alternative(env: Env, utente: Utente, params: URLSearchPar
 
   // Candidati: gli alimenti già usati nella stessa dieta.
   const candidati = alimentiDellaDieta(ctx.originale);
+  const allergie = vociAllergie(ctx.cartella.allergie);
   const trovate = proposte(prescritto, candidati, ctx.libreria, 6, slot.base).filter(
-    // Escluse quelle già nel piano.
-    (p) => !nelPiano(prescritto, p.nome),
+    // Escluse quelle già nel piano e quelle che toccano un'allergia segnata dallo studio.
+    (p) => !nelPiano(prescritto, p.nome) && !allergeneDi(p.nome, allergie),
   );
 
   return {
@@ -356,7 +366,12 @@ export async function alternative(env: Env, utente: Utente, params: URLSearchPar
         prescritta: o.prescritta,
         delta: o.delta,
         esito: o.esito,
-        avvisi: o.avvisi,
+        avvisi: allergeneDi(o.nome, allergie)
+          ? [
+              `Attenzione: tra le tue allergie o intolleranze c'è «${allergeneDi(o.nome, allergie)}».`,
+              ...o.avvisi,
+            ]
+          : o.avvisi,
       })),
     },
     /** Dove è scritta la regola in vigore. */
@@ -417,6 +432,13 @@ export async function applica(env: Env, utente: Utente, body: any) {
 
   const alimento = alimentoA(ctx.dieta, pos);
   const prescritto = cercaAlimento(ctx.originale, pos) ?? alimento;
+
+  // Sostituire un alimento con se stesso non cambia niente: niente variazione e niente notifica.
+  // Resta valido tornare all'originale dopo una sostituzione, o rifare la stessa scelta.
+  if (normalizza(nuovo) === normalizza(alimento.nome) && normalizza(nuovo) === normalizza(prescritto.nome)) {
+    throw new ErroreHttp(400, `${alimento.nome} è già quello previsto nel tuo piano: scegli un alimento diverso.`);
+  }
+
   const dentro = nelPiano(prescritto, nuovo);
 
   // La base la decide il professionista, mai il corpo della richiesta.
@@ -549,7 +571,7 @@ export async function chat(env: Env, utente: Utente, body: any) {
       tipo: 'allo-studio' as const,
       automazione: false,
       risposta:
-        `L'ho mandato a ${ctx.nomeStudio}: le risposte le scrive lui di persona. ` +
+        `L'ho mandato a ${ctx.nomeStudio}, che risponde di persona. ` +
         `Le trovi qui appena risponde.`,
       fonte: 'studio' as const,
       schede: [],
@@ -888,15 +910,23 @@ export async function dashboard(env: Env, utente: Utente) {
   const data = oggiData();
   const indice = indiceGiorno(data);
 
-  const [spunte, passi, storico] = await Promise.all([
+  const [spunte, passi, storico, acqua, misure] = await Promise.all([
     db.pastiDelGiorno(env, utente.id, data),
     db.passiRecenti(env, utente.id, 14),
     // 90 giorni di storico per la serie.
     db.spunteRecenti(env, utente.id, giorniPrima(data, 90)),
+    db.acquaRecente(env, utente.id, 14),
+    db.misure(env, utente.id, 30),
   ]);
 
   const giorno = decoraGiorno(ctx.dieta, indice, ctx.libreria, ctx.applicate, ctx.originale);
-  const aderenza = calcolaAderenza(ctx.dieta, storico, data, 7, sostituzioniAttive(ctx.variazioni));
+  const aderenza = calcolaAderenza(
+    ctx.dieta,
+    storico,
+    data,
+    FINESTRA_ADERENZA,
+    sostituzioniAttive(ctx.variazioni),
+  );
   const serie = calcolaSerie(ctx.dieta, storico, data);
 
   const obiettivoPassi = ctx.dieta.obiettivi.passi ?? null;
@@ -908,11 +938,14 @@ export async function dashboard(env: Env, utente: Utente) {
     stato: spunte[p.id] ?? null,
   }));
 
-  const fatti = pasti.filter((p) => p.stato === 'fatto');
+  // Il pasto libero conta come fatto, con le kcal del pasto previsto.
+  const fatti = pasti.filter((p) => p.stato === 'fatto' || p.stato === 'libero');
   const saltati = pasti.filter((p) => p.stato === 'saltato');
 
   const consumate = fatti.reduce((s, p) => s + p.kcal, 0);
   const previste = pasti.reduce((s, p) => s + p.kcal, 0);
+  const { media } = totaleSettimana(ctx.dieta, ctx.libreria);
+  const pesate = misure.filter((m) => m.peso !== null);
 
   return {
     professionista: { nome: ctx.nomeStudio, linkId: ctx.collegamento!.id },
@@ -932,6 +965,9 @@ export async function dashboard(env: Env, utente: Utente) {
       pasti,
       kcalPreviste: Math.round(previste),
       kcalConsumate: Math.round(consumate),
+      proteine: giorno?.proteine ?? 0,
+      carboidrati: giorno?.carboidrati ?? 0,
+      grassi: giorno?.grassi ?? 0,
       parziale: giorno?.parziale ?? false,
       pastiFatti: fatti.length,
       pastiSaltati: saltati.length,
@@ -943,10 +979,98 @@ export async function dashboard(env: Env, utente: Utente) {
       /** Gli ultimi giorni, dal più vecchio: serve al grafico a barre. */
       storico: passi.slice().reverse(),
     },
+    acqua: {
+      /** Millilitri bevuti oggi. */
+      oggi: acqua.find((a) => a.giorno === data)?.ml ?? 0,
+      /** Litri al giorno, dagli obiettivi della dieta. */
+      obiettivo: ctx.dieta.obiettivi.acqua ?? null,
+    },
+    peso: {
+      ultimo: pesate.at(-1) ?? null,
+      /** Dal più vecchio, per il grafico. */
+      storico: pesate.map((m) => ({ giorno: m.giorno, peso: m.peso })),
+      oggi: misure.find((m) => m.giorno === data)?.peso ?? null,
+    },
+    pastiLiberi: {
+      ammessi: ctx.dieta.obiettivi.pastiLiberi ?? 0,
+      usati: await pastiLiberiUsati(env, utente.id, data),
+    },
+    /** I totali medi dei giorni scritti: è ciò che il cliente mangia davvero. */
+    media: {
+      kcal: Math.round(media.kcal),
+      proteine: Math.round(media.proteine),
+      carboidrati: Math.round(media.carboidrati),
+      grassi: Math.round(media.grassi),
+    },
+    prossimaVisita: ctx.cartella.prossimaVisita,
     aderenza,
     serie,
     variazioni: ctx.variazioni.slice(0, 8).map(conNome),
     ai: ai.stato(env),
+  };
+}
+
+/** Pasti liberi segnati negli ultimi 7 giorni, escluso eventualmente un pasto. */
+async function pastiLiberiUsati(env: Env, clienteId: string, giorno: string, escluso?: string) {
+  const spunte = await db.spunteRecenti(env, clienteId, giorniPrima(giorno, 6));
+  return spunte.filter(
+    (s) => s.stato === 'libero' && s.giorno <= giorno && !(s.giorno === giorno && s.pastoId === escluso),
+  ).length;
+}
+
+/* ------------------------------------------------------------------ */
+/* Acqua, peso, diario                                                 */
+/* ------------------------------------------------------------------ */
+
+/** L'acqua di oggi: un totale in millilitri, oppure un bicchiere in più o in meno. */
+export async function acqua(env: Env, utente: Utente, body: any) {
+  await esigiDieta(env, utente);
+  const data = oggiData();
+  const attuale = (await db.acquaRecente(env, utente.id, 1)).find((a) => a.giorno === data)?.ml ?? 0;
+
+  const aggiungi = Number(body?.aggiungi);
+  const totale = Number.isFinite(aggiungi) && body?.aggiungi !== undefined ? attuale + aggiungi : Number(body?.ml);
+  if (!Number.isFinite(totale) || totale < 0 || totale > 10_000) {
+    throw new ErroreHttp(400, 'La quantità d’acqua non è valida.');
+  }
+
+  await db.salvaAcqua(env, utente.id, data, totale);
+  return { ok: true, oggi: Math.round(totale) };
+}
+
+/** Il peso del giorno, scritto dal cliente. */
+export async function peso(env: Env, utente: Utente, body: any) {
+  await esigiDieta(env, utente);
+  const kg = Number(String(body?.peso ?? '').replace(',', '.'));
+  if (!Number.isFinite(kg) || kg < 25 || kg > 350) {
+    throw new ErroreHttp(400, 'Scrivi il peso in chili, per esempio 72,4.');
+  }
+
+  await db.salvaMisura(env, utente.id, {
+    giorno: oggiData(),
+    peso: Math.round(kg * 10) / 10,
+    vita: null,
+    fianchi: null,
+    grasso: null,
+    autore: 'cliente',
+  });
+  return { ok: true };
+}
+
+/** Le ultime due settimane, giorno per giorno. */
+export async function diario(env: Env, utente: Utente) {
+  const ctx = await esigiDieta(env, utente);
+  const data = oggiData();
+  const [spunte, passi, acquaBevuta, misure] = await Promise.all([
+    db.spunteRecenti(env, utente.id, giorniPrima(data, 14)),
+    db.passiRecenti(env, utente.id, 14),
+    db.acquaRecente(env, utente.id, 14),
+    db.misure(env, utente.id, 30),
+  ]);
+
+  return {
+    giorni: diarioDi(ctx.dieta, spunte, data, { passi, acqua: acquaBevuta, misure }, 14),
+    obiettivi: ctx.dieta.obiettivi,
   };
 }
 
@@ -983,16 +1107,34 @@ export async function spunta(env: Env, utente: Utente, body: any) {
   if (!pastoId) throw new ErroreHttp(400, 'Manca il pasto.');
 
   const grezzo = body?.stato;
-  const stato = grezzo === 'fatto' || grezzo === 'saltato' ? grezzo : null;
+  const stato = grezzo === 'fatto' || grezzo === 'saltato' || grezzo === 'libero' ? grezzo : null;
 
   const giorno = /^\d{4}-\d{2}-\d{2}$/.test(String(body?.giorno ?? ''))
     ? String(body.giorno)
     : oggiData();
   if (giorno > oggiData()) throw new ErroreHttp(400, 'Non puoi segnare un giorno futuro.');
+  if (giorno < giorniPrima(oggiData(), 7)) {
+    throw new ErroreHttp(400, 'Si possono segnare solo i pasti dell’ultima settimana.');
+  }
 
   // Il pasto deve esistere in quel giorno, o falserebbe l'aderenza.
   const esiste = giornoDi(ctx.dieta, indiceGiorno(giorno))?.pasti.some((p) => p.id === pastoId);
   if (!esiste) throw new ErroreHttp(404, 'Quel pasto non è previsto in questo giorno.');
+
+  // Il pasto libero vale come fatto: solo quanti ne concede il professionista.
+  if (stato === 'libero') {
+    const usati = await pastiLiberiUsati(env, utente.id, giorno, pastoId);
+    const ammessi = ctx.dieta.obiettivi.pastiLiberi ?? 0;
+    if (ammessi === 0) {
+      throw new ErroreHttp(409, `${ctx.nomeStudio} non ha previsto pasti liberi nella tua dieta.`);
+    }
+    if (usati >= ammessi) {
+      throw new ErroreHttp(
+        409,
+        `Hai già usato ${ammessi === 1 ? 'il pasto libero' : `i ${ammessi} pasti liberi`} di questa settimana.`,
+      );
+    }
+  }
 
   await db.segnaPasto(env, utente.id, giorno, pastoId, stato);
   return { ok: true, stato };

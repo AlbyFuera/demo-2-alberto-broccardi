@@ -3,36 +3,72 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
     <title>Studio — Pianificatore</title>
     <meta name="robots" content="noindex, nofollow" />
-    <link rel="stylesheet" href="/ui.css" />
+    <link rel="stylesheet" href="/app.css" />
     <link
       rel="icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231f6b46'/><text x='16' y='23' font-family='-apple-system,Helvetica,Arial,sans-serif' font-size='20' font-weight='700' fill='%23ffffff' text-anchor='middle'>P</text></svg>"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23157a5b'/><text x='16' y='22.5' font-family='-apple-system,Helvetica,Arial,sans-serif' font-size='18' font-weight='600' fill='%23ffffff' text-anchor='middle'>P</text></svg>"
     />
   </head>
-  <body>
-    <header class="barra">
-      <span class="segno" aria-hidden="true">P</span>
-      <div class="chi">
-        <strong id="chi-nome">Studio</strong>
-        <span id="chi-sotto">caricamento…</span>
-      </div>
-      <span class="pallino" id="pallino" hidden>0</span>
-    </header>
+  <body class="app studio">
+    <div class="guscio">
+      <nav class="schede" id="schede" aria-label="Sezioni">
+        <div class="schede-marchio"><span class="segno" aria-hidden="true">P</span><span>Pianificatore</span></div>
+        <div class="schede-gruppo">Studio</div>
+        <button type="button" data-tab="cruscotto" aria-current="page">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/></svg></span>
+          <span>Home</span>
+        </button>
+        <button type="button" data-tab="clienti">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16.5 14.2c2.8.2 4.5 2.2 4.5 4.8"/></svg></span>
+          <span>Clienti</span>
+          <span class="pallino" id="pallino-clienti" hidden>0</span>
+        </button>
+        <button type="button" data-tab="messaggi">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-7l-4 3v-3H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg></span>
+          <span>Messaggi</span>
+          <span class="pallino" id="pallino-messaggi" hidden>0</span>
+        </button>
+        <button type="button" data-tab="agenda" class="solo-largo">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>
+          <span>Agenda</span>
+        </button>
+        <div class="schede-gruppo">Lavoro</div>
+        <button type="button" data-tab="sostituzioni" class="solo-largo">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></svg></span>
+          <span>Sostituzioni</span>
+          <span class="pallino" id="pallino-sostituzioni" hidden>0</span>
+        </button>
+        <button type="button" data-tab="diete" class="solo-largo">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h6"/></svg></span>
+          <span>Diete</span>
+        </button>
+        <button type="button" data-tab="libreria" class="solo-largo">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20c-5 0-8-3-8-8 5 0 8 2 8 5 0-4 2-8 8-9 0 7-3 12-8 12z"/><path d="M12 20v-6"/></svg></span>
+          <span>Alimenti</span>
+        </button>
+        <div class="schede-spazio"></div>
+        <button type="button" data-tab="conto" class="solo-largo">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg></span>
+          <span>Profilo</span>
+        </button>
+        <button type="button" data-tab="altro" class="solo-mobile">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="pieno" cx="6" cy="12" r="1.7"/><circle class="pieno" cx="12" cy="12" r="1.7"/><circle class="pieno" cx="18" cy="12" r="1.7"/></svg></span>
+          <span>Altro</span>
+          <span class="pallino" id="pallino-altro" hidden>0</span>
+        </button>
+      </nav>
 
-    <main class="contenitore">
-      <div class="schede" id="schede" role="tablist">
-        <button role="tab" data-tab="cruscotto" aria-selected="true">Dashboard</button>
-        <button role="tab" data-tab="clienti" aria-selected="false">Clienti</button>
-        <button role="tab" data-tab="libreria" aria-selected="false">Alimenti</button>
-        <button role="tab" data-tab="conto" aria-selected="false">Il mio studio</button>
+      <div class="principale">
+        <header class="testa" id="testa"></header>
+        <main class="pagina" id="contenuto">
+          <div class="caricamento"><span></span><span></span><span></span></div>
+        </main>
       </div>
-
-      <div id="contenuto">
-        <div class="vuoto"><p class="grande">·</p><p>Caricamento…</p></div>
-      </div>
-    </main>
+    </div>
 
     <script type="module" src="/studio.js"></script>
   </body>

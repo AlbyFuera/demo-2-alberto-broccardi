@@ -327,6 +327,9 @@ async function api(
     if (azione === 'chat') return json(await cliente.chat(env, mio, body));
     if (azione === 'messaggi') return json(await cliente.messaggi(env, mio));
     if (azione === 'impostazioni') return json(await cliente.impostazioni(env, mio, body));
+    if (azione === 'acqua') return json(await cliente.acqua(env, mio, body));
+    if (azione === 'peso') return json(await cliente.peso(env, mio, body));
+    if (azione === 'diario') return json(await cliente.diario(env, mio));
   }
 
   /* ---------- studio ---------- */
@@ -360,6 +363,13 @@ async function api(
     if (azione === 'scrivi') return json(await studio.scrivi(env, mio, body));
     if (azione === 'conversazione') return json(await studio.conversazione(env, mio, params));
     if (azione === 'impostazioni') return json(await studio.impostazioni(env, mio, body));
+    if (azione === 'cartella') return json(await studio.salvaCartella(env, mio, body));
+    if (azione === 'misura') return json(await studio.misura(env, mio, body));
+    if (azione === 'elimina-misura') return json(await studio.eliminaMisura(env, mio, body));
+    if (azione === 'nota') return json(await studio.nota(env, mio, body));
+    if (azione === 'elimina-nota') return json(await studio.eliminaNota(env, mio, body));
+    if (azione === 'modelli') return json(await studio.modelli(env, mio));
+    if (azione === 'conversazioni') return json(await studio.conversazioni(env, mio));
   }
 
   throw new ErroreHttp(404, `Endpoint sconosciuto: ${percorso}`);
@@ -402,7 +412,17 @@ async function pagine(request: Request, env: Env, percorso: string): Promise<Res
 
 /** Solo i file che l'applicazione usa. */
 const STATICI = new Set([
-  '/ui.css',
+  '/app.css',
+  '/grafica.js',
+  '/demo-foto.js',
+  '/foto/cliente-1.jpg',
+  '/foto/cliente-2.jpg',
+  '/foto/cliente-3.jpg',
+  '/foto/cliente-4.jpg',
+  '/foto/cliente-5.jpg',
+  '/foto/cliente-6.jpg',
+  '/foto/cliente-7.jpg',
+  '/foto/nutrizionista.jpg',
   '/comune.js',
   '/accedi.js',
   '/registrazione.js',

@@ -3,54 +3,53 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
     <title>La mia dieta</title>
     <meta name="robots" content="noindex, nofollow" />
-    <link rel="stylesheet" href="/ui.css" />
+    <link rel="stylesheet" href="/app.css" />
     <link
       rel="icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231f6b46'/><text x='16' y='23' font-family='-apple-system,Helvetica,Arial,sans-serif' font-size='20' font-weight='700' fill='%23ffffff' text-anchor='middle'>P</text></svg>"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23157a5b'/><text x='16' y='22.5' font-family='-apple-system,Helvetica,Arial,sans-serif' font-size='18' font-weight='600' fill='%23ffffff' text-anchor='middle'>P</text></svg>"
     />
   </head>
-  <body>
-    <!-- Stato SOLO / IN ATTESA: non ha ancora un nutrizionista -->
-    <div id="ingresso" hidden>
-      <header class="barra">
-        <span class="segno" aria-hidden="true">P</span>
-        <div class="chi">
-          <strong id="ingresso-nome">La mia dieta</strong>
-          <span id="ingresso-email"></span>
-        </div>
-        <button class="btn neutra mini" id="ingresso-esci" type="button">Esci</button>
-      </header>
-      <main class="contenitore">
-        <div class="scheda primo-passo" id="primo-passo"></div>
-      </main>
-    </div>
+  <body class="app">
+    <!-- Non ha ancora un nutrizionista, o la richiesta è in attesa -->
+    <main class="centrata" id="ingresso" hidden>
+      <div class="scheda accesso" id="primo-passo"></div>
+    </main>
 
-    <!-- Stato SEGUITO -->
-    <div id="app" hidden>
-      <header class="barra">
-        <span class="segno" aria-hidden="true">P</span>
-        <div class="chi">
-          <strong id="chi-nome">La mia dieta</strong>
-          <span id="chi-sotto"></span>
-        </div>
-        <button class="btn neutra mini" id="app-esci" type="button">Esci</button>
-      </header>
+    <div class="guscio" id="app" hidden>
+      <nav class="schede" id="schede" aria-label="Sezioni">
+        <div class="schede-marchio"><span class="segno" aria-hidden="true">P</span><span>Pianificatore</span></div>
+        <button type="button" data-tab="oggi" aria-current="page">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/></svg></span>
+          <span>Oggi</span>
+        </button>
+        <button type="button" data-tab="piano">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>
+          <span>Piano</span>
+        </button>
+        <button type="button" data-tab="progressi">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="m5 15 4-4 3 3 6-7"/></svg></span>
+          <span>Progressi</span>
+        </button>
+        <button type="button" data-tab="assistente">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-7l-4 3v-3H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg></span>
+          <span>Messaggi</span>
+        </button>
+        <button type="button" data-tab="conto">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg></span>
+          <span>Profilo</span>
+        </button>
+      </nav>
 
-      <main class="contenitore">
-        <div class="schede" id="schede" role="tablist">
-          <button role="tab" data-tab="oggi" aria-selected="true">Oggi</button>
-          <button role="tab" data-tab="settimana" aria-selected="false">Settimana</button>
-          <button role="tab" data-tab="assistente" aria-selected="false">Assistente</button>
-          <button role="tab" data-tab="dieta" aria-selected="false">La mia dieta</button>
-          <button role="tab" data-tab="conto" aria-selected="false">Il mio conto</button>
-        </div>
-
-        <div id="contenuto">
-          <div class="vuoto"><p class="grande">·</p><p>Caricamento…</p></div>
-        </div>
-      </main>
+      <div class="principale">
+        <header class="testa" id="testa"></header>
+        <main class="pagina" id="contenuto">
+          <div class="caricamento"><span></span><span></span><span></span></div>
+        </main>
+      </div>
     </div>
 
     <script type="module" src="/cliente.js"></script>

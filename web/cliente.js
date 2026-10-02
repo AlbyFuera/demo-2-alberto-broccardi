@@ -9,22 +9,67 @@ import {
   invia,
   leggi,
   quando,
-  vuoto,
 } from '/comune.js';
+import {
+  anello,
+  applicaMisure,
+  avatar,
+  avviso,
+  barra,
+  barre,
+  caricamento,
+  collegaSegmenti,
+  dataBreve,
+  dataLunga,
+  dataOra,
+  foglio,
+  ico,
+  linea,
+  notifica,
+  rigaDiario,
+  numero,
+  segmenti,
+  stampaDieta,
+} from '/grafica.js';
 
 const stato = {
   io: null,
   situazione: null,
   dati: null,
   scheda: null,
+  diario: null,
   tab: 'oggi',
+  /** Sotto-sezione del piano: settimana, indicazioni, spesa. */
+  vista: 'settimana',
   occupato: false,
   filo: [],
   automazione: true,
 };
 
 const contenuto = () => $('contenuto');
-const arrotonda = (n) => Math.round(Number(n) || 0);
+const primoNome = (n) => String(n ?? '').trim().split(/\s+/)[0] ?? '';
+/** Un bicchiere d'acqua. */
+const BICCHIERE = 250;
+
+function testata({ titolo, sopra = '', sotto = '', destra = '' }) {
+  $('testa').innerHTML =
+    `<div class="testa-titoli">` +
+    (sopra ? `<p class="testa-sopra">${esc(sopra)}</p>` : '') +
+    `<h1>${esc(titolo)}</h1>` +
+    (sotto ? `<p class="testa-sotto">${esc(sotto)}</p>` : '') +
+    `</div><div class="testa-azioni">${destra}</div>`;
+}
+
+async function prova(azione, messaggioOk) {
+  try {
+    const r = await azione();
+    if (messaggioOk) notifica(messaggioOk);
+    return r;
+  } catch (e) {
+    notifica(e.message, 'grave');
+    return null;
+  }
+}
 
 // Primo passo: trovare il proprio nutrizionista
 
@@ -33,16 +78,18 @@ function disegnaIngresso() {
   $('ingresso').hidden = false;
   $('app').hidden = true;
 
-  $('ingresso-nome').textContent = stato.io.nome || 'Il tuo account';
-  $('ingresso-email').textContent = stato.io.email;
+  const marchio =
+    `<div class="marchio"><span class="segno" aria-hidden="true">P</span>` +
+    `<div><div class="nome">Pianificatore</div><div class="sotto">${esc(stato.io.email)}</div></div>` +
+    `<button class="btn testo piccolo spinge" id="ingresso-esci" type="button">Esci</button></div>`;
 
   if (p?.stato === 'in-attesa') {
     $('primo-passo').innerHTML =
-      `<p class="grande" aria-hidden="true">→</p>` +
+      marchio +
       `<h1>Richiesta inviata</h1>` +
-      `<p class="muto">Hai chiesto a <strong>${esc(p.nome)}</strong> (${esc(p.email)}) ` +
-      `di seguirti, ${esc(quando(p.richiestoIl))}. Appena accetta, qui trovi la tua dieta.</p>` +
-      `<div class="fila sopra"><button class="btn neutra" id="ritira">Annulla la richiesta</button>` +
+      `<p class="muto">Hai chiesto a <strong>${esc(p.nome)}</strong> (${esc(p.email)}) di seguirti, ` +
+      `${esc(quando(p.richiestoIl))}. Appena accetta, qui trovi la tua dieta.</p>` +
+      `<div class="fila sopra"><button class="btn secondario" id="ritira">Annulla la richiesta</button>` +
       `<button class="btn" id="ricarica">Controlla adesso</button></div>`;
 
     $('ritira').addEventListener('click', async () => {
@@ -50,213 +97,216 @@ function disegnaIngresso() {
       inizia();
     });
     $('ricarica').addEventListener('click', () => inizia());
-    return;
+  } else {
+    $('primo-passo').innerHTML =
+      marchio +
+      `<h1>${esc(primoNome(stato.io.nome) ? `Benvenuto, ${primoNome(stato.io.nome)}` : 'Benvenuto')}</h1>` +
+      `<p class="muto sotto">Aggiungi il tuo nutrizionista con l'email con cui si è iscritto. ` +
+      `Riceve una richiesta e, appena la accetta, qui vedi la dieta che ti scrive.</p>` +
+      `<form id="form-studio" novalidate>` +
+      `<label class="campo"><span>Email del nutrizionista</span>` +
+      `<input id="email-studio" type="email" autocapitalize="none" spellcheck="false" required></label>` +
+      `<div id="trovato"></div>` +
+      `<button class="btn larga" id="cerca" type="submit">Cerca</button>` +
+      `</form><div id="esito-studio" class="sopra"></div>`;
+
+    $('form-studio').addEventListener('submit', (e) => {
+      e.preventDefault();
+      cercaStudio();
+    });
+    $('email-studio').focus();
   }
-
-  $('primo-passo').innerHTML =
-    `<p class="grande" aria-hidden="true">+</p>` +
-    `<h1>Aggiungi il tuo nutrizionista</h1>` +
-    `<p class="muto">Scrivi l'email con cui si è iscritto. Gli arriva una richiesta e, ` +
-    `appena la accetta, vedi qui la dieta che ti scrive.</p>` +
-    `<form id="form-studio" novalidate>` +
-    `<label><span>Email del nutrizionista</span>` +
-    `<input id="email-studio" type="email" autocapitalize="none" spellcheck="false" required></label>` +
-    `<div id="trovato"></div>` +
-    `<button class="btn larga" id="cerca" type="submit">Cerca</button>` +
-    `</form>` +
-    `<div id="esito-studio" class="esito"></div>`;
-
-  $('form-studio').addEventListener('submit', (e) => {
-    e.preventDefault();
-    cercaStudio();
-  });
-  $('email-studio').focus();
+  $('ingresso-esci').addEventListener('click', esci);
 }
 
 async function cercaStudio() {
   const email = $('email-studio').value.trim();
   if (!email) return;
-
   $('cerca').disabled = true;
   $('esito-studio').innerHTML = '';
 
   try {
     const esito = await leggi('/api/cliente/cerca-studio', new URLSearchParams({ email }));
-
     if (!esito.trovato) {
       $('trovato').innerHTML = '';
-      $('esito-studio').innerHTML =
-        `<div class="avviso attenzione"><span class="segno" aria-hidden="true">!</span><span>` +
-        `Nessun nutrizionista iscritto con questa email. Controlla che sia quella giusta — ` +
-        `deve essersi registrato anche lui.</span></div>`;
+      $('esito-studio').innerHTML = avviso(
+        'attenzione',
+        'Nessun nutrizionista iscritto con questa email. Controlla che sia quella giusta: deve essersi già registrato.',
+      );
       $('cerca').disabled = false;
-      $('email-studio').focus();
       $('email-studio').select();
       return;
     }
 
     const s = esito.studio;
     $('trovato').innerHTML =
-      `<div class="avviso ok sotto"><span class="segno" aria-hidden="true">✓</span><span>` +
-      `Trovato: <strong>${esc(s.nome)}</strong></span></div>` +
-      `<label><span>Due parole per lui <span class="aiuto">facoltativo</span></span>` +
+      avviso('ok', `Trovato: <strong>${esc(s.nome)}</strong>`, true) +
+      `<label class="campo sopra"><span>Un messaggio <span class="aiuto">facoltativo</span></span>` +
       `<input id="messaggio" type="text" placeholder="Sono Mario, ci siamo visti giovedì."></label>`;
 
-    $('cerca').textContent = 'Manda la richiesta';
-    $('cerca').disabled = false;
-
-    const nuovo = $('cerca').cloneNode(true);
-    $('cerca').replaceWith(nuovo);
-    nuovo.addEventListener('click', async (e) => {
+    const bottone = $('cerca').cloneNode(true);
+    bottone.textContent = 'Manda la richiesta';
+    bottone.disabled = false;
+    $('cerca').replaceWith(bottone);
+    bottone.addEventListener('click', async (e) => {
       e.preventDefault();
-      nuovo.disabled = true;
+      bottone.disabled = true;
       try {
-        await invia('/api/cliente/richiedi', {
-          email: s.email,
-          messaggio: $('messaggio')?.value.trim() || null,
-        });
+        await invia('/api/cliente/richiedi', { email: s.email, messaggio: $('messaggio')?.value.trim() || null });
         inizia();
       } catch (err) {
-        $('esito-studio').innerHTML =
-          `<div class="avviso grave"><span class="segno" aria-hidden="true">!</span>` +
-          `<span>${esc(err.message)}</span></div>`;
-        nuovo.disabled = false;
+        $('esito-studio').innerHTML = avviso('grave', err.message);
+        bottone.disabled = false;
       }
     });
   } catch (e) {
-    $('esito-studio').innerHTML =
-      `<div class="avviso grave"><span class="segno" aria-hidden="true">!</span>` +
-      `<span>${esc(e.message)}</span></div>`;
+    $('esito-studio').innerHTML = avviso('grave', e.message);
     $('cerca').disabled = false;
   }
 }
 
-// Oggi, la schermata principale
-
-/** Un riquadro con una cifra grande e, se serve, una barra sotto. */
-function riquadro(etichetta, cifra, sotto, avanzamento) {
-  const barra = avanzamento
-    ? `<div class="barra-avanzamento ${avanzamento.tono ?? ''}">` +
-      `<i style-width="${avanzamento.percentuale}"></i></div>`
-    : '';
-  return (
-    `<div class="riquadro"><div class="etichetta">${esc(etichetta)}</div>` +
-    `<div class="cifra">${esc(cifra)}</div>` +
-    (sotto ? `<div class="sotto-cifra">${esc(sotto)}</div>` : '') +
-    barra +
-    `</div>`
-  );
-}
+// Oggi
 
 function disegnaOggi() {
   const d = stato.dati;
   const o = d.oggi;
 
-  const obiettivoKcal = d.dieta.obiettivi?.kcal ?? o.kcalPreviste;
-  const quotaKcal = obiettivoKcal ? Math.min(100, (o.kcalConsumate / obiettivoKcal) * 100) : 0;
+  testata({
+    sopra: dataLunga() + (o.allenamento ? ' · allenamento' : ''),
+    titolo: primoNome(stato.io.nome) ? `Ciao, ${primoNome(stato.io.nome)}` : 'Ciao',
+    destra: `<button class="avatar-bottone" id="vai-profilo" aria-label="Il tuo profilo">${avatar(stato.io.nome || stato.io.email, '', stato.io.email)}</button>`,
+  });
 
-  const passiFatti = d.passi.oggi;
-  const quotaPassi = d.passi.obiettivo && passiFatti
-    ? Math.min(100, (passiFatti / d.passi.obiettivo) * 100)
-    : 0;
+  // Le kcal di riferimento sono quelle dei pasti di oggi, non l'obiettivo dichiarato.
+  const previste = o.kcalPreviste;
+  const quotaKcal = previste ? Math.min(100, (o.kcalConsumate / previste) * 100) : 0;
+
+  const riepilogo =
+    `<section class="card riepilogo">` +
+    anello(quotaKcal, numero(o.kcalConsumate), 'kcal') +
+    `<div class="riepilogo-testo"><h2>Mangiato oggi</h2>` +
+    `<p class="grande-num">${numero(o.kcalConsumate)} <span>di ${numero(previste)} kcal${o.parziale ? ' circa' : ''}</span></p>` +
+    `<div class="macro-righe">` +
+    [
+      ['Proteine', o.proteine],
+      ['Carboidrati', o.carboidrati],
+      ['Grassi', o.grassi],
+    ]
+      .map(([n, v]) => `<div><span>${n}</span><strong>${numero(v)} g</strong></div>`)
+      .join('') +
+    `</div></div></section>`;
 
   const a = d.aderenza;
 
-  const riquadri =
-    riquadro(
-      'Mangiato oggi',
-      `${o.kcalConsumate}`,
-      `su ${obiettivoKcal} kcal previste${o.parziale ? ' (conto parziale)' : ''}`,
-      { percentuale: quotaKcal },
-    ) +
-    riquadro(
-      'Pasti fatti',
-      `${o.pastiFatti}/${o.pastiTotali}`,
-      o.pastiSaltati ? `${o.pastiSaltati} saltati` : 'segna quelli che fai',
-      { percentuale: o.pastiTotali ? (o.pastiFatti / o.pastiTotali) * 100 : 0 },
-    ) +
-    riquadro(
-      'Passi',
-      passiFatti === null ? '—' : `${passiFatti}`,
-      d.passi.obiettivo ? `obiettivo ${d.passi.obiettivo}` : 'nessun obiettivo fissato',
-      d.passi.obiettivo ? { percentuale: quotaPassi } : null,
-    ) +
-    riquadro(
-      'Giorni di fila',
-      d.serie.giorni === 0 ? '—' : `${d.serie.giorni}`,
-      d.serie.descrizione,
-      null,
-    ) +
-    riquadro(
-      'Stai seguendo la dieta',
-      a.percentuale === null ? '—' : `${a.percentuale}%`,
-      a.percentuale === null
-        ? 'segna i pasti per saperlo'
-        : a.pastiConSostituzioniAmmesse
-          ? `${a.pastiConSostituzioniAmmesse} pasti cambiati restando nelle sostituzioni previste`
-          : a.pastiFuoriPiano
-            ? `${a.pastiFuoriPiano} pasti fuori dalle sostituzioni previste`
-            : `ultimi ${a.giorniConDati} giorni`,
-      a.percentuale === null
-        ? null
-        : {
-            percentuale: a.percentuale,
-            tono: a.livello === 'buona' ? '' : a.livello === 'parziale' ? 'attenzione' : 'grave',
-          },
-    );
+  const tessere =
+    `<div class="tessere">` +
+    tessera({
+      icona: 'goccia',
+      titolo: 'Acqua',
+      classe: 'acqua',
+      valore: `${numero(d.acqua.oggi / 1000, 2)}<small> L</small>`,
+      sotto: d.acqua.obiettivo ? `di ${numero(d.acqua.obiettivo, 1)} L` : `${Math.round(d.acqua.oggi / BICCHIERE)} bicchieri`,
+      piede:
+        `<div class="fila-stretta"><button class="btn-icona piccolo" id="acqua-meno" aria-label="Un bicchiere in meno"${d.acqua.oggi ? '' : ' disabled'}>${ico('meno')}</button>` +
+        (d.acqua.obiettivo ? barra(Math.min(100, (d.acqua.oggi / (d.acqua.obiettivo * 1000)) * 100), 'blu') : '<span class="spinge"></span>') +
+        `<button class="btn-icona piccolo pieno" id="acqua-piu" aria-label="Un bicchiere in più">${ico('piu')}</button></div>`,
+    }) +
+    tessera({
+      icona: 'scarpa',
+      titolo: 'Passi',
+      classe: 'passi',
+      valore: d.passi.oggi === null ? '—' : numero(d.passi.oggi),
+      sotto: d.passi.obiettivo ? `obiettivo ${numero(d.passi.obiettivo)}` : 'oggi',
+      piede: `<button class="btn secondario piccolo larga" id="segna-passi">${d.passi.oggi === null ? 'Segna i passi' : 'Aggiorna'}</button>`,
+    }) +
+    `</div>`;
+
+  // Aderenza e serie stanno nei Progressi: qui solo un rimando.
+  const progressi =
+    `<button class="card riga-card riga-link" id="vai-progressi" type="button">${ico('grafico')}` +
+    `<div class="corpo"><strong>Stai seguendo la dieta${a.percentuale === null ? '' : ` al ${a.percentuale}%`}</strong>` +
+    `<span class="muto piccolo">${d.serie.giorni ? `${d.serie.giorni} giorni di fila · ` : ''}peso, passi e diario nei Progressi</span></div>` +
+    `${ico('avanti')}</button>`;
+
+  const visita = d.prossimaVisita
+    ? `<div class="avviso neutro">${ico('calendario')}<div>Prossima visita con ${esc(d.professionista.nome)}: <strong>${esc(dataOra(d.prossimaVisita))}</strong></div></div>`
+    : '';
 
   const pasti = o.pasti.length
     ? o.pasti.map(pastoDiOggi).join('')
-    : vuoto('—', `${o.nome} il tuo nutrizionista non ha scritto nulla`);
+    : `<div class="card vuoto"><p>Per ${esc(o.nome.toLowerCase())} il tuo nutrizionista non ha scritto pasti.</p></div>`;
 
   contenuto().innerHTML =
-    `<div class="sezione-testa"><h2>${esc(o.nome)}</h2>` +
-    (o.allenamento ? `<span class="tag ok">allenamento</span>` : '') +
-    `<button class="btn mini neutra spinge" id="segna-passi">Segna i passi</button></div>` +
-    `<div class="riquadri">${riquadri}</div>` +
-    (o.nota ? `<div class="avviso neutro sotto"><span class="segno" aria-hidden="true">i</span><span>${esc(o.nota)}</span></div>` : '') +
-    `<div class="pila">${pasti}</div>`;
+    `<div class="oggi-griglia">` +
+    `<div class="oggi-riepilogo">${riepilogo}${visita}${o.nota ? avviso('neutro', o.nota) : ''}</div>` +
+    `<div class="oggi-pasti"><h2 class="sezione-titolo">Pasti di oggi</h2>${pasti}</div>` +
+    `<div class="oggi-extra"><h2 class="sezione-titolo">Acqua e passi</h2>${tessere}${progressi}</div>` +
+    `</div>`;
 
-  // Larghezze impostate qui: la CSP ignora gli attributi style.
-  for (const i of contenuto().querySelectorAll('.barra-avanzamento i')) {
-    i.style.width = `${Math.max(0, Math.min(100, Number(i.getAttribute('style-width')) || 0))}%`;
-  }
+  applicaMisure(contenuto());
 
+  $('vai-profilo').addEventListener('click', () => vaiA('conto'));
   $('segna-passi').addEventListener('click', apriPassi);
+  $('vai-progressi').addEventListener('click', () => vaiA('progressi'));
+  $('acqua-piu').addEventListener('click', () => cambiaAcqua(BICCHIERE));
+  $('acqua-meno').addEventListener('click', () => cambiaAcqua(-BICCHIERE));
   collegaPasti();
+}
+
+function tessera({ icona, titolo, valore, sotto = '', piede = '', classe = '' }) {
+  return (
+    `<section class="card tessera ${classe}">` +
+    `<div class="tessera-testa">${ico(icona)}<span>${esc(titolo)}</span></div>` +
+    `<div class="tessera-valore">${valore}</div>` +
+    `<div class="tessera-sotto">${esc(sotto)}</div>` +
+    `<div class="tessera-piede">${piede}</div></section>`
+  );
 }
 
 function pastoDiOggi(p) {
   const fatto = p.stato === 'fatto';
+  const libero = p.stato === 'libero';
   const saltato = p.stato === 'saltato';
+  const pl = stato.dati.pastiLiberi;
+  const puoLibero = pl.ammessi > 0 && pl.usati < pl.ammessi;
 
   const alimenti = p.alimenti
     .map(
       (a) =>
-        `<button class="alimento-scelta${a.piano ? ' con-piano' : ''}" ` +
-        `data-slot="${esc(p.id)}.${a.indice}" ` +
+        `<button class="alimento${a.piano ? ' con-piano' : ''}${a.cambiatoDa ? ' cambiato' : ''}" data-slot="${esc(p.id)}.${a.indice}" ` +
         `title="${a.piano ? `Scegli la tua ${esc(a.piano.gruppo)}` : 'Cambia questo alimento'}">` +
-        `<span>${esc(a.nome)}</span><span class="peso">${esc(a.quantita)}</span>` +
-        `<span class="segno" aria-hidden="true">⇄</span></button>`,
+        `<span class="nome">${esc(a.nome)}</span><span class="peso">${esc(a.quantita)}</span>` +
+        (a.piano ? `<span class="scelte" aria-label="${a.piano.alternative} alternative">${ico('scambia')}</span>` : '') +
+        `</button>`,
     )
     .join('');
 
+  const etichetta = fatto ? 'Fatto' : libero ? 'Pasto libero' : saltato ? 'Saltato' : '';
+
   return (
-    `<div class="pasto-oggi ${fatto ? 'fatto' : saltato ? 'saltato' : ''}">` +
-    `<button class="spunta" data-spunta="${esc(p.id)}" aria-pressed="${fatto}" ` +
-    `title="${fatto ? 'Fatto' : 'Segna come fatto'}">✓</button>` +
-    `<div><div class="nome-pasto-oggi">${esc(p.nome)}` +
-    (p.orario ? ` <span class="muto piccolo">${esc(p.orario)}</span>` : '') +
-    `</div><div class="dettaglio">${alimenti || 'niente scritto'}</div>` +
-    (p.nota ? `<div class="dettaglio">${esc(p.nota)}</div>` : '') +
-    `</div>` +
-    `<div class="kcal-pasto">${p.parziale ? '≈' : ''}${p.kcal} kcal</div>` +
-    `<div class="azioni-pasto">` +
-    `<button class="btn mini neutra" data-cambia="${esc(p.id)}">Cambia questo pasto</button>` +
-    (saltato
-      ? `<button class="btn mini neutra" data-annulla-spunta="${esc(p.id)}">Non l'ho saltato</button>`
-      : `<button class="btn mini neutra" data-salta="${esc(p.id)}">L'ho saltato</button>`) +
-    `</div></div>`
+    `<article class="card pasto${fatto || libero ? ' fatto' : ''}${saltato ? ' saltato' : ''}">` +
+    `<header class="pasto-testa">` +
+    `<button class="spunta" data-spunta="${esc(p.id)}" aria-pressed="${fatto || libero}" ` +
+    `aria-label="${fatto || libero ? 'Togli il segno' : `Segna ${esc(p.nome)} come fatto`}">${ico('spunta')}</button>` +
+    `<div class="pasto-nome"><strong>${esc(p.nome)}</strong>` +
+    `<span>${[p.orario, etichetta].filter(Boolean).map(esc).join(' · ')}</span></div>` +
+    `<span class="pasto-kcal">${p.parziale ? '≈ ' : ''}${numero(p.kcal)} kcal</span></header>` +
+    (libero
+      ? `<p class="muto piccolo">Pasto libero: conta come fatto. Gustatelo.</p>`
+      : `<div class="alimenti">${alimenti || '<span class="muto piccolo">Niente scritto</span>'}</div>`) +
+    (p.nota ? `<p class="pasto-nota">${esc(p.nota)}</p>` : '') +
+    (fatto || libero
+      ? ''
+      : `<footer class="pasto-azioni">` +
+        `<button class="btn testo piccolo" data-cambia="${esc(p.id)}">${ico('scambia')} Cambia pasto</button>` +
+        (saltato
+          ? `<button class="btn testo piccolo" data-annulla-spunta="${esc(p.id)}">Non l'ho saltato</button>`
+          : `<button class="btn testo piccolo grigio" data-salta="${esc(p.id)}">L'ho saltato</button>`) +
+        (puoLibero && !saltato
+          ? `<button class="btn testo piccolo" data-libero="${esc(p.id)}">${ico('stella')} Pasto libero</button>`
+          : '') +
+        `</footer>`) +
+    `</article>`
   );
 }
 
@@ -275,6 +325,9 @@ function collegaPasti() {
   for (const el of contenuto().querySelectorAll('[data-salta]')) {
     el.addEventListener('click', () => spunta(el.dataset.salta, 'saltato'));
   }
+  for (const el of contenuto().querySelectorAll('[data-libero]')) {
+    el.addEventListener('click', () => spunta(el.dataset.libero, 'libero'));
+  }
   for (const el of contenuto().querySelectorAll('[data-annulla-spunta]')) {
     el.addEventListener('click', () => spunta(el.dataset.annullaSpunta, null));
   }
@@ -284,63 +337,73 @@ function collegaPasti() {
 }
 
 async function spunta(pastoId, nuovoStato) {
-  try {
-    await invia('/api/cliente/spunta', { pasto: pastoId, stato: nuovoStato });
-    await ricarica();
-  } catch (e) {
-    avvisa(e.message, 'grave');
+  const ok = await prova(() => invia('/api/cliente/spunta', { pasto: pastoId, stato: nuovoStato }));
+  if (ok) await ricarica();
+}
+
+async function cambiaAcqua(ml) {
+  const r = await prova(() => invia('/api/cliente/acqua', { aggiungi: ml }));
+  if (r) {
+    stato.dati.acqua.oggi = r.oggi;
+    disegna();
   }
 }
 
-// Passi
+// Passi e peso
 
 function apriPassi() {
   const d = stato.dati;
-  const massimo = Math.max(d.passi.obiettivo ?? 0, ...d.passi.storico.map((s) => s.passi), 1);
+  const { corpo, chiudi } = foglio({ titolo: 'Passi di oggi' });
+  const storico = d.passi.storico.map((s) => ({ etichetta: dataBreve(s.giorno), valore: s.passi }));
 
-  const barre = d.passi.storico
-    .map(
-      (s) =>
-        `<i class="${d.passi.obiettivo && s.passi >= d.passi.obiettivo ? 'raggiunto' : ''}" ` +
-        `style-height="${(s.passi / massimo) * 100}" title="${esc(s.giorno)}: ${s.passi}"></i>`,
-    )
-    .join('');
-
-  const zona = document.createElement('div');
-  zona.className = 'scheda accesso stretto sotto';
-  zona.id = 'modulo-passi';
-  zona.innerHTML =
-    `<h2 class="sotto-poco">Quanti passi hai fatto oggi?</h2>` +
-    `<p class="piccolo muto sotto">Leggilo dal telefono — una pagina web non può ` +
-    `chiederlo ad Apple Salute da sola.</p>` +
-    `<label><span>Passi</span><input id="quanti-passi" type="number" min="0" max="200000" ` +
+  corpo.innerHTML =
+    `<p class="muto piccolo sotto">Leggili dall'app Salute o dal contapassi: una pagina web non può chiederli al telefono da sola.</p>` +
+    `<label class="campo"><span>Passi</span><input id="quanti-passi" type="number" min="0" max="200000" ` +
     `inputmode="numeric" value="${d.passi.oggi ?? ''}" placeholder="8000"></label>` +
-    (d.passi.storico.length ? `<div class="barre">${barre}</div>` : '') +
-    `<div class="fila sopra"><button class="btn" id="salva-passi">Salva</button>` +
-    `<button class="btn neutra" id="chiudi-passi">Chiudi</button></div>`;
-
-  contenuto().prepend(zona);
-  for (const i of zona.querySelectorAll('.barre i')) {
-    i.style.height = `${Math.max(4, Number(i.getAttribute('style-height')) || 0)}%`;
-  }
+    (storico.length ? `<div class="sopra">${barre(storico, d.passi.obiettivo)}</div>` : '') +
+    `<div class="fila sopra"><button class="btn larga" id="salva-passi">Salva</button></div>`;
+  applicaMisure(corpo);
   $('quanti-passi').focus();
 
-  $('chiudi-passi').addEventListener('click', () => zona.remove());
   $('salva-passi').addEventListener('click', async () => {
-    // Il campo vuoto non vale 0: l'8000 in grigio è solo un esempio.
     const scritto = $('quanti-passi').value.trim();
     const n = Number(scritto);
     if (!scritto || !Number.isInteger(n) || n < 0 || n > 200000) {
-      avvisa('Scrivi quanti passi hai fatto oggi (un numero, es. 6500).');
-      $('quanti-passi').focus();
+      notifica('Scrivi quanti passi hai fatto oggi, per esempio 6500.', 'attenzione');
       return;
     }
     $('salva-passi').disabled = true;
-    try {
-      await invia('/api/cliente/passi', { passi: n });
+    if (await prova(() => invia('/api/cliente/passi', { passi: n }), 'Passi salvati')) {
+      chiudi();
       await ricarica();
-    } catch (e) {
-      avvisa(e.message, 'grave');
+    } else {
+      $('salva-passi').disabled = false;
+    }
+  });
+}
+
+function apriPeso() {
+  const p = stato.dati.peso;
+  const { corpo, chiudi } = foglio({ titolo: 'Peso di oggi' });
+
+  corpo.innerHTML =
+    `<p class="muto piccolo sotto">Meglio sempre alla stessa ora, al mattino, prima di colazione. Lo vede anche il tuo nutrizionista.</p>` +
+    `<label class="campo"><span>Peso in kg</span><input id="quanto-peso" type="text" inputmode="decimal" ` +
+    `value="${p.oggi != null ? numero(p.oggi, 1) : ''}" placeholder="${p.ultimo ? numero(p.ultimo.peso, 1) : '70,0'}"></label>` +
+    (p.storico.length > 1
+      ? `<div class="sopra">${linea(p.storico.map((s) => ({ etichetta: dataBreve(s.giorno), valore: s.peso })), { unita: 'kg' })}</div>`
+      : '') +
+    `<div class="fila sopra"><button class="btn larga" id="salva-peso">Salva</button></div>`;
+  applicaMisure(corpo);
+  $('quanto-peso').focus();
+
+  $('salva-peso').addEventListener('click', async () => {
+    $('salva-peso').disabled = true;
+    if (await prova(() => invia('/api/cliente/peso', { peso: $('quanto-peso').value.trim() }), 'Peso salvato')) {
+      chiudi();
+      await ricarica();
+    } else {
+      $('salva-peso').disabled = false;
     }
   });
 }
@@ -348,7 +411,7 @@ function apriPassi() {
 // Scegliere dentro il piano a sostituzione
 
 const NOME_BASE = {
-  auto: 'come l’ha scritta lui',
+  auto: 'sul nutriente principale',
   kcal: 'stesse calorie',
   proteine: 'stesse proteine',
   carboidrati: 'stessi carboidrati',
@@ -357,25 +420,16 @@ const NOME_BASE = {
 
 async function apriScelta(pastoId, indice) {
   const giorno = stato.dati.oggi.indice;
-  const zona = document.createElement('div');
-  zona.className = 'scheda accesso stretto sotto';
-  zona.id = 'scelta-alimento';
-  zona.innerHTML = `<p class="muto">Guardo cosa puoi metterci…</p>`;
-
-  const esistente = $('scelta-alimento');
-  if (esistente) esistente.remove();
-  contenuto().prepend(zona);
-  zona.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-
-  const parametri = new URLSearchParams({
-    giorno: String(giorno),
-    pasto: pastoId,
-    indice: String(indice),
-  });
+  const { corpo, chiudi, foglio: f } = foglio({ titolo: 'Cambia alimento' });
+  corpo.innerHTML = caricamento();
 
   try {
-    const v = await leggi('/api/cliente/alternative', parametri);
+    const v = await leggi(
+      '/api/cliente/alternative',
+      new URLSearchParams({ giorno: String(giorno), pasto: pastoId, indice: String(indice) }),
+    );
     const p = v.piano;
+    f.querySelector('.foglio-testa h2').textContent = p.libero ? `Al posto di ${p.prescritto.nome}` : `La tua ${p.gruppo}`;
 
     const generico = (a) => a.startsWith('Il conto usa valori');
     const indicativi = p.opzioni.some((o) => o.avvisi.some(generico));
@@ -384,17 +438,13 @@ async function apriScelta(pastoId, indice) {
       .map((o) => {
         const suo = o.avvisi.find((a) => !generico(a));
         return (
-          `<button class="opzione prevista si${o.scelta ? ' scelta' : ''}" ` +
-          `data-scegli="${esc(o.nome)}"${o.scelta || o.quantita === null ? ' disabled' : ''}>` +
-          `<span class="marca" aria-hidden="true">${o.scelta ? '✓' : '·'}</span>` +
-          `<span><strong>${esc(o.nome)}</strong>` +
-          (o.prescritta ? ` <span class="muto piccolo">quello che c’è nella tua dieta</span>` : '') +
-          (o.fissata && !o.prescritta
-            ? ` <span class="muto piccolo">porzione scritta dal tuo nutrizionista</span>`
-            : '') +
-          (suo ? `<span class="motivo">${esc(suo)}</span>` : '') +
-          `</span>` +
-          `<span class="peso">${esc(o.etichetta)}</span></button>`
+          `<button class="opzione${o.scelta ? ' scelta' : ''}" data-scegli="${esc(o.nome)}"${o.scelta || o.quantita === null ? ' disabled' : ''}>` +
+          `<span class="marca">${o.scelta ? ico('spunta') : ''}</span>` +
+          `<span class="opzione-testo"><strong>${esc(o.nome)}</strong>` +
+          (o.prescritta ? `<small>quello della tua dieta</small>` : '') +
+          (o.fissata && !o.prescritta ? `<small>porzione scritta dal tuo nutrizionista</small>` : '') +
+          (suo ? `<small class="motivo">${esc(suo)}</small>` : '') +
+          `</span><span class="peso">${esc(o.etichetta)}</span></button>`
         );
       })
       .join('');
@@ -402,74 +452,47 @@ async function apriScelta(pastoId, indice) {
     const altre = v.proposte
       .map(
         (x) =>
-          `<button class="opzione fuori" data-scegli="${esc(x.nome)}" data-fuori="1">` +
-          `<span class="marca" aria-hidden="true">·</span>` +
-          `<span>${esc(x.nome)}</span>` +
-          `<span class="fine"><span class="peso">${esc(x.etichetta)}</span>${delta(x.delta.kcal)}</span>` +
-          `</button>`,
+          `<button class="opzione" data-scegli="${esc(x.nome)}">` +
+          `<span class="marca"></span><span class="opzione-testo"><strong>${esc(x.nome)}</strong></span>` +
+          `<span class="peso">${esc(x.etichetta)} ${delta(x.delta.kcal)}</span></button>`,
       )
       .join('');
 
-    zona.innerHTML =
-      `<h2 class="sotto-poco">${esc(p.libero ? `Al posto di ${p.prescritto.nome}` : `La tua ${p.gruppo}`)}</h2>` +
+    corpo.innerHTML =
       (p.libero
-        ? `<p class="piccolo muto sotto">Per questo alimento il tuo nutrizionista non ha scritto ` +
-          `sostituzioni. Puoi comunque cambiarlo, ma vale come una deviazione dalla dieta.</p>`
-        : `<p class="piccolo muto sotto">Queste le ha scelte il tuo nutrizionista per te: ` +
-          `<strong>scegliere fra queste non fa scendere la tua aderenza</strong>. ` +
-          `Le porzioni sono equivalenti — sostituzione ${esc(p.nomeBase)}, ` +
-          `${esc(NOME_BASE[p.base] ?? '')}.</p>`) +
-      (v.regola === 'alimento'
-        ? `<p class="piccolo muto sotto">Per questo alimento il tuo nutrizionista ha chiesto ` +
-          `una regola diversa dal resto della dieta.</p>`
-        : '') +
-      previste +
-      (indicativi
-        ? `<p class="piccolo muto sopra">Le porzioni si basano su valori di composizione ` +
-          `indicativi, non confermati dal tuo nutrizionista.</p>`
-        : '') +
+        ? `<p class="muto piccolo sotto">Per questo alimento il tuo nutrizionista non ha scritto sostituzioni. ` +
+          `Puoi cambiarlo lo stesso: conta come una deviazione dalla dieta.</p>`
+        : `<p class="muto piccolo sotto">Le ha scelte il tuo nutrizionista: scegliere fra queste <strong>non abbassa la tua aderenza</strong>. ` +
+          `Porzioni equivalenti, ${esc(NOME_BASE[p.base] ?? p.nomeBase)}.</p>`) +
+      (v.regola === 'alimento' ? `<p class="muto piccolo sotto">Per questo alimento vale una regola diversa dal resto della dieta.</p>` : '') +
+      (previste ? `<div class="opzioni">${previste}</div>` : '') +
+      (indicativi ? `<p class="muto piccolo sopra">Porzioni calcolate su valori di composizione indicativi.</p>` : '') +
       (altre
-        ? `<h3 class="sotto-poco sopra">Altre, che il tuo nutrizionista non ha previsto qui</h3>` +
-          `<p class="piccolo muto sotto">Sono alimenti che stanno nella tua dieta in altri giorni. ` +
-          `Puoi sceglierli, ma il pasto conterà a metà nella tua aderenza.</p>` +
-          altre
+        ? `<h3 class="sezione-titolo sopra">Altre possibilità</h3>` +
+          `<p class="muto piccolo sotto">Alimenti della tua dieta di altri giorni. Il pasto conterà a metà nella tua aderenza.</p>` +
+          `<div class="opzioni">${altre}</div>`
         : '') +
-      // Le proposte vengono solo da alimenti già presenti altrove nella dieta.
       (v.nessuna
-        ? `<div class="avviso attenzione sopra"><span class="segno" aria-hidden="true">!</span><span>` +
-          `Nella tua dieta non c'è un altro alimento abbastanza simile a ` +
-          `${esc(p.prescritto.nome)} da proporti al suo posto. Se vuoi cambiarlo, chiedi ` +
-          `all'assistente con cosa: se non lo sa, gira la domanda al tuo nutrizionista.</span></div>`
-        : '') +
-      `<button class="btn neutra sopra" data-chiudi="1">Lascia com'è</button>`;
+        ? `<div class="sopra">${avviso('attenzione', `Nella tua dieta non c'è un alimento abbastanza simile a ${p.prescritto.nome}. Chiedi nei messaggi con cosa vorresti cambiarlo.`)}</div>`
+        : '');
 
-    zona.querySelector('[data-chiudi]').addEventListener('click', () => zona.remove());
-
-    for (const el of zona.querySelectorAll('[data-scegli]')) {
+    for (const el of corpo.querySelectorAll('[data-scegli]')) {
       el.addEventListener('click', async () => {
         el.disabled = true;
-        try {
-          // Niente base nel corpo: la decide il server dalla dieta.
-          await invia('/api/cliente/applica', {
-            giorno,
-            pasto: pastoId,
-            indice,
-            alimento: el.dataset.scegli,
-          });
-          zona.remove();
+        const ok = await prova(
+          () => invia('/api/cliente/applica', { giorno, pasto: pastoId, indice, alimento: el.dataset.scegli }),
+          'Fatto: il tuo nutrizionista lo vede',
+        );
+        if (ok) {
+          chiudi();
           await ricarica();
-        } catch (e) {
-          avvisa(e.message, 'grave');
+        } else {
           el.disabled = false;
         }
       });
     }
   } catch (e) {
-    zona.innerHTML =
-      `<div class="avviso grave"><span class="segno" aria-hidden="true">!</span>` +
-      `<span>${esc(e.message)}</span></div>` +
-      `<button class="btn neutra sopra" data-chiudi="1">Chiudi</button>`;
-    zona.querySelector('[data-chiudi]').addEventListener('click', () => zona.remove());
+    corpo.innerHTML = avviso('grave', e.message);
   }
 }
 
@@ -477,148 +500,213 @@ async function apriScelta(pastoId, indice) {
 
 async function apriCambioPasto(pastoId) {
   const giorno = stato.dati.oggi.indice;
-  const zona = document.createElement('div');
-  zona.className = 'scheda accesso stretto sotto';
-  zona.innerHTML = `<p class="muto">Cerco un pasto che vada bene…</p>`;
-  contenuto().prepend(zona);
+  const { corpo, chiudi, foglio: f } = foglio({ titolo: 'Cambia pasto' });
+  corpo.innerHTML = caricamento();
 
   try {
-    const v = await leggi(
-      '/api/cliente/cambio-pasto',
-      new URLSearchParams({ giorno: String(giorno), pasto: pastoId }),
-    );
+    const v = await leggi('/api/cliente/cambio-pasto', new URLSearchParams({ giorno: String(giorno), pasto: pastoId }));
+    f.querySelector('.foglio-testa h2').textContent = `Al posto di questo ${v.attuale.nome.toLowerCase()}`;
 
-    if (v.nessuno) {
-      zona.innerHTML =
-        `<h2 class="sotto-poco">Al posto di ${esc(v.attuale.nome.toLowerCase())}</h2>` +
-        `<div class="avviso attenzione"><span class="segno" aria-hidden="true">!</span><span>` +
-        `Negli altri giorni della tua dieta non c'è un ${esc(v.attuale.nome.toLowerCase())} ` +
-        `abbastanza simile a questo. Puoi però cambiare un singolo alimento: chiedilo ` +
-        `all'assistente.</span></div>` +
-        `<button class="btn neutra sopra" data-chiudi="1">Chiudi</button>`;
-    } else {
-      zona.innerHTML =
-        `<h2 class="sotto-poco">Al posto di ${esc(v.attuale.nome.toLowerCase())}</h2>` +
-        `<p class="piccolo muto sotto">Sono pasti che il tuo nutrizionista ha già scritto per te ` +
-        `in altri giorni, con le stesse calorie a meno di poco.</p>` +
+    corpo.innerHTML = v.nessuno
+      ? avviso('attenzione', `Negli altri giorni non c'è un ${v.attuale.nome.toLowerCase()} abbastanza simile. Puoi cambiare un singolo alimento toccandolo.`)
+      : `<p class="muto piccolo sotto">Pasti che il tuo nutrizionista ha scritto per te in altri giorni, con calorie simili. Non abbassano l'aderenza.</p>` +
+        `<div class="opzioni">` +
         v.alternativi
           .map(
             (x) =>
-              `<button class="opzione si" data-scegli="${esc(x.pastoId)}">` +
-              `<span class="marca">✓</span><span>` +
-              `<strong>${esc(x.giornoNome)}</strong>: ` +
-              esc(x.alimenti.map((a) => `${a.nome} ${a.quantita}`).join(', ')) +
-              `</span>${delta(x.deltaKcal, x.parziale)}</button>`,
+              `<button class="opzione" data-scegli="${esc(x.pastoId)}"><span class="marca"></span>` +
+              `<span class="opzione-testo"><strong>${esc(x.giornoNome)}</strong>` +
+              `<small>${esc(x.alimenti.map((a) => `${a.nome} ${a.quantita}`).join(', '))}</small></span>` +
+              `<span class="peso">${delta(x.deltaKcal, x.parziale)}</span></button>`,
           )
           .join('') +
-        `<button class="btn neutra sopra" data-chiudi="1">Lascia com'è</button>`;
-    }
+        `</div>`;
 
-    zona.querySelector('[data-chiudi]').addEventListener('click', () => zona.remove());
-    for (const el of zona.querySelectorAll('[data-scegli]')) {
+    for (const el of corpo.querySelectorAll('[data-scegli]')) {
       el.addEventListener('click', async () => {
         el.disabled = true;
-        try {
-          await invia('/api/cliente/applica-cambio', {
-            giorno,
-            pasto: pastoId,
-            verso: el.dataset.scegli,
-          });
+        if (await prova(() => invia('/api/cliente/applica-cambio', { giorno, pasto: pastoId, verso: el.dataset.scegli }), 'Pasto cambiato')) {
+          chiudi();
           await ricarica();
-        } catch (e) {
-          avvisa(e.message, 'grave');
+        } else {
+          el.disabled = false;
         }
       });
     }
   } catch (e) {
-    zona.innerHTML =
-      `<div class="avviso grave"><span class="segno" aria-hidden="true">!</span>` +
-      `<span>${esc(e.message)}</span></div>` +
-      `<button class="btn neutra sopra" data-chiudi="1">Chiudi</button>`;
-    zona.querySelector('[data-chiudi]').addEventListener('click', () => zona.remove());
+    corpo.innerHTML = avviso('grave', e.message);
   }
 }
 
-// La settimana
+// Il piano: la settimana, le indicazioni, la spesa
 
-async function disegnaSettimana() {
-  contenuto().innerHTML = `<div class="vuoto"><p class="grande">·</p><p>Caricamento…</p></div>`;
+async function disegnaPiano() {
+  testata({ titolo: 'Il mio piano' });
+  contenuto().innerHTML = caricamento();
   if (!stato.scheda) stato.scheda = await leggi('/api/cliente/scheda');
   const s = stato.scheda;
 
-  const giorni = s.giorni
-    .map((g) => {
-      const oggi = g.indice === stato.dati.oggi.indice;
-      const pasti = g.pasti.length
-        ? g.pasti
-            .map(
-              (p) =>
-                `<div class="pasto"><div class="pasto-nome">${esc(p.nome)}` +
-                (p.orario ? ` · ${esc(p.orario)}` : '') +
-                ` · ${p.parziale ? '≈' : ''}${p.kcal} kcal</div>` +
-                `<div class="alimenti">` +
-                p.alimenti
-                  .map(
-                    (a) =>
-                      `<span class="alimento${a.cambiatoDa ? ' cambiato' : ''}"` +
-                      (a.cambiatoDa
-                        ? ` title="al posto di ${esc(a.cambiatoDa.nome)} ${esc(a.cambiatoDa.quantita)}"`
-                        : '') +
-                      `><span>${esc(a.nome)}</span>` +
-                      `<span class="peso">${esc(a.quantita)}</span></span>`,
-                  )
-                  .join('') +
-                `</div></div>`,
-            )
-            .join('')
-        : `<div class="pasto-nota">niente scritto</div>`;
-
-      return (
-        `<article class="giorno${oggi ? ' oggi' : ''}">` +
-        `<header class="giorno-testa"><span class="nome">${esc(GIORNI[g.indice])}` +
-        `${oggi ? ' · oggi' : ''}</span>` +
-        (g.allenamento ? `<span class="tag ok">allenamento</span>` : '') +
-        `<span class="tag">${g.parziale ? '≈' : ''}${g.kcal} kcal</span></header>${pasti}</article>`
-      );
-    })
-    .join('');
+  testata({
+    titolo: 'Il mio piano',
+    sotto: `${s.dieta.titolo} · di ${s.professionista.nome}`,
+    destra: `<button class="btn-icona" id="stampa-dieta" aria-label="Stampa la dieta">${ico('stampa')}</button>`,
+  });
 
   contenuto().innerHTML =
-    `<div class="riga sotto"><div class="corpo">` +
-    `<div class="titolo">${s.settimana.mediaKcal} kcal al giorno</div>` +
-    `<div class="piccolo muto">media sui ${s.settimana.giorniScritti} giorni scritti · ` +
-    `P ${s.settimana.mediaProteine} · C ${s.settimana.mediaCarboidrati} · G ${s.settimana.mediaGrassi} g` +
-    (s.settimana.parziale ? ' · conto parziale' : '') +
-    `</div></div></div>` +
-    `<div class="pila">${giorni}</div>` +
-    `<div class="sezione"><div class="sezione-testa"><h2>La spesa della settimana</h2></div>` +
-    `<div class="pila">` +
-    s.spesa
-      .map(
-        (l) =>
-          `<div class="riga"><div class="corpo"><div>${esc(l.nome)}</div>` +
-          `<div class="piccolo muto">in ${l.ricorrenze} past${l.ricorrenze === 1 ? 'o' : 'i'}</div></div>` +
-          `<span class="peso">${
-            l.quantita === null
-              ? 'q.b.'
-              : `${Math.round(l.quantita * 10) / 10}${l.unita === 'pz' ? ' pz' : l.unita}`
-          }</span></div>`,
-      )
-      .join('') +
-    `</div></div>`;
+    segmenti('viste-settimana', [['settimana', 'Settimana'], ['indicazioni', 'Indicazioni'], ['spesa', 'Spesa']], stato.vista) +
+    `<div id="vista-settimana" class="sopra"></div>`;
+
+  collegaSegmenti('viste-settimana', (v) => {
+    stato.vista = v;
+    disegnaVistaSettimana();
+  });
+  $('stampa-dieta').addEventListener('click', () =>
+    stampaDieta({
+      titolo: s.dieta.titolo,
+      autore: s.professionista.nome,
+      cliente: stato.io.nome,
+      indicazioni: s.dieta.indicazioni,
+      obiettivi: s.dieta.obiettivi,
+      giorni: s.giorni,
+    }),
+  );
+  disegnaVistaSettimana();
 }
 
-// Assistente
+async function disegnaVistaSettimana() {
+  const zona = $('vista-settimana');
+  if (stato.vista === 'indicazioni') return disegnaIndicazioni(zona);
+  if (stato.vista === 'spesa') return disegnaSpesa(zona);
+
+  const s = stato.scheda;
+  zona.innerHTML =
+    `<p class="muto piccolo sotto">${numero(s.settimana.mediaKcal)} kcal al giorno in media${s.settimana.parziale ? ' (conto parziale)' : ''}.</p>` +
+    `<section class="card macro-tre">` +
+    [
+      ['Proteine', s.settimana.mediaProteine],
+      ['Carboidrati', s.settimana.mediaCarboidrati],
+      ['Grassi', s.settimana.mediaGrassi],
+    ]
+      .map(([n, v]) => `<div><strong>${numero(v)} g</strong><span>${n}</span></div>`)
+      .join('') +
+    `</section>` +
+    `<div class="lista-giorni sopra">` +
+    s.giorni
+      .map((g) => {
+        const oggi = g.indice === stato.dati.oggi.indice;
+        return (
+          `<details class="card giorno${oggi ? ' oggi' : ''}"${oggi ? ' open' : ''}>` +
+          `<summary><span class="giorno-nome">${esc(GIORNI[g.indice])}</span>` +
+          (oggi ? `<span class="chip accento">oggi</span>` : '') +
+          (g.allenamento ? `<span class="chip">allenamento</span>` : '') +
+          `<span class="spinge muto">${g.parziale ? '≈ ' : ''}${numero(g.kcal)} kcal</span>${ico('avanti')}</summary>` +
+          `<div class="giorno-corpo">` +
+          (g.pasti.length
+            ? g.pasti
+                .map(
+                  (p) =>
+                    `<div class="giorno-pasto"><div class="giorno-pasto-testa"><strong>${esc(p.nome)}</strong>` +
+                    `<span class="muto">${[p.orario, `${numero(p.kcal)} kcal`].filter(Boolean).map(esc).join(' · ')}</span></div>` +
+                    `<ul>` +
+                    p.alimenti
+                      .map(
+                        (a) =>
+                          `<li${a.cambiatoDa ? ` class="cambiato" title="al posto di ${esc(a.cambiatoDa.nome)} ${esc(a.cambiatoDa.quantita)}"` : ''}>` +
+                          `<span>${esc(a.nome)}</span><span class="muto">${esc(a.quantita)}</span></li>`,
+                      )
+                      .join('') +
+                    `</ul>${p.nota ? `<p class="pasto-nota">${esc(p.nota)}</p>` : ''}</div>`,
+                )
+                .join('')
+            : `<p class="muto">Niente scritto.</p>`) +
+          `</div></details>`
+        );
+      })
+      .join('') +
+    `</div>`;
+}
+
+function disegnaSpesa(zona) {
+  const s = stato.scheda;
+  const chiave = `spesa:${s.dieta.id}`;
+  let presi = [];
+  try {
+    presi = JSON.parse(localStorage.getItem(chiave) ?? '[]');
+  } catch {
+    presi = [];
+  }
+
+  const quantita = (l) =>
+    l.quantita === null ? 'q.b.' : `${numero(Math.round(l.quantita))}${l.unita === 'pz' ? ' pz' : ` ${l.unita}`}`;
+  const ORDINE = ['frutta e verdura', 'carne e pesce', 'latte e uova', 'pane e cereali', 'dispensa'];
+
+  const disegnaLista = () => {
+    zona.innerHTML =
+      `<div class="fila sotto"><p class="muto piccolo">Quantità per tutta la settimana. Spunta quello che hai già preso.</p>` +
+      (presi.length ? `<button class="btn testo piccolo spinge" id="spesa-azzera">Ricomincia</button>` : '') +
+      `</div>` +
+      ORDINE.map((reparto) => {
+        const righe = s.spesa.filter((l) => (l.reparto ?? 'dispensa') === reparto);
+        if (!righe.length) return '';
+        return (
+          `<h3 class="sezione-titolo">${esc(reparto.charAt(0).toUpperCase() + reparto.slice(1))}</h3>` +
+          `<section class="card lista sotto">` +
+          righe
+            .map((l) => {
+              const id = `${l.nome}|${l.unita}`;
+              const preso = presi.includes(id);
+              return (
+                `<label class="riga spesa-riga${preso ? ' preso' : ''}"><input type="checkbox" data-spesa="${esc(id)}"${preso ? ' checked' : ''}>` +
+                `<span class="corpo">${esc(l.nome)}<small class="muto">in ${l.ricorrenze} past${l.ricorrenze === 1 ? 'o' : 'i'}</small></span>` +
+                `<span class="muto">${esc(quantita(l))}</span></label>`
+              );
+            })
+            .join('') +
+          `</section>`
+        );
+      }).join('');
+
+    for (const el of zona.querySelectorAll('[data-spesa]')) {
+      el.addEventListener('change', () => {
+        presi = el.checked ? [...presi, el.dataset.spesa] : presi.filter((x) => x !== el.dataset.spesa);
+        try {
+          localStorage.setItem(chiave, JSON.stringify(presi));
+        } catch {
+          /* senza memoria locale la spunta vale solo finché la pagina è aperta */
+        }
+        el.closest('.spesa-riga').classList.toggle('preso', el.checked);
+      });
+    }
+    $('spesa-azzera')?.addEventListener('click', () => {
+      presi = [];
+      try {
+        localStorage.removeItem(chiave);
+      } catch {
+        /* niente */
+      }
+      disegnaLista();
+    });
+  };
+  disegnaLista();
+}
+
+// Messaggi e assistente
 
 async function disegnaAssistente() {
+  const prof = stato.situazione.professionista;
+  testata({
+    titolo: 'Messaggi',
+    sotto: stato.automazione === false ? `Ti risponde ${prof.nome} di persona` : `L'assistente risponde con i dati della tua dieta`,
+    destra: avatar(prof.nome, '', prof.email),
+  });
+
   contenuto().innerHTML =
-    `<div class="chat-incassata">` +
+    `<div class="chat">` +
     `<div class="filo" id="filo"></div>` +
     `<div class="suggerimenti" id="suggerimenti"></div>` +
     `<form class="scrivi" id="scrivi">` +
-    `<input id="testo" type="text" placeholder="Scrivi…" autocomplete="off" ` +
-    `aria-label="Scrivi un messaggio">` +
-    `<button class="btn invia" id="invia" type="submit" aria-label="Invia">↑</button>` +
+    `<input id="testo" type="text" placeholder="Scrivi un messaggio" autocomplete="off" aria-label="Scrivi un messaggio">` +
+    `<button class="btn-icona pieno" id="invia" type="submit" aria-label="Invia">${ico('invia')}</button>` +
     `</form></div>`;
 
   $('scrivi').addEventListener('submit', (e) => {
@@ -631,37 +719,32 @@ async function disegnaAssistente() {
     stato.automazione = filo.automazione;
     stato.filo = filo.messaggi.map((m) => ({
       chi: m.autore === 'cliente' ? 'io' : 'lui',
-      html: `<div class="bolla">${esc(m.testo)}</div>` + fonte(m.autore, filo.professionista),
+      html: `<div class="bolla">${esc(m.testo)}</div>` + fonte(m.autore, filo.professionista, m.at),
     }));
   } catch {
-    // Senza il filo la chat funziona lo stesso: si perde lo storico, non la
-    // possibilità di scrivere.
+    // Senza il filo si può scrivere lo stesso: si perde lo storico.
   }
 
   for (const m of stato.filo) messaggio(m.chi, m.html, false);
 
   const nome = stato.dati.professionista.nome;
+  $('testa').querySelector('.testa-sotto').textContent =
+    stato.automazione === false ? `Ti risponde ${nome} di persona` : `L'assistente risponde con i dati della tua dieta`;
 
   if (stato.automazione === false) {
-    $('testo').placeholder = `Scrivi a ${nome}…`;
-    $('suggerimenti').innerHTML =
-      `<div class="avviso neutro"><span class="segno" aria-hidden="true">i</span><span>` +
-      `Qui scrivi direttamente a <strong>${esc(nome)}</strong>: le risposte automatiche ` +
-      `sono spente, la risposta arriva di persona.</span></div>`;
+    $('testo').placeholder = `Scrivi a ${nome}`;
   } else {
-    $('testo').placeholder = 'Chiedimi quello che vuoi…';
     const frasi = [
       'Cosa mangio adesso?',
-      'Ho saltato il pranzo, come recupero?',
-      'Posso bere un bicchiere di vino stasera?',
-      'Quante proteine dovrei mangiare?',
+      'Ho saltato il pranzo, come sto messo?',
+      'Posso bere un bicchiere di vino?',
       'Sono al ristorante, cosa prendo?',
       'Perché devo bere tanta acqua?',
     ];
     $('suggerimenti').innerHTML = frasi
-      .map((t) => `<button class="suggerimento" type="button">${esc(t)}</button>`)
+      .map((t) => `<button class="chip-bottone" type="button">${esc(t)}</button>`)
       .join('');
-    for (const b of $('suggerimenti').querySelectorAll('.suggerimento')) {
+    for (const b of $('suggerimenti').querySelectorAll('button')) {
       b.addEventListener('click', () => chiedi(b.textContent));
     }
   }
@@ -672,10 +755,9 @@ async function disegnaAssistente() {
       `<div class="bolla">` +
         (stato.automazione === false
           ? `Ciao. Scrivi pure qui: legge e risponde ${esc(nome)}, di persona.`
-          : `Ciao. Chiedimi quello che vuoi sulla tua dieta o sull'alimentazione in generale: ` +
-            `ti rispondo come farebbe ${esc(nome)}.`) +
-        `</div>` +
-        fonte(stato.automazione === false ? 'studio' : 'motore', nome),
+          : `Ciao. Chiedimi quello che vuoi sulla tua dieta: rispondo con i dati che ha scritto ${esc(nome)}.`) +
+        `</div>`,
+      false,
     );
   }
 }
@@ -690,64 +772,41 @@ function messaggio(chi, html, ricorda = true) {
   return el;
 }
 
-const fonte = (f, nomeStudio) => {
-  if (f === 'studio') {
-    return (
-      `<div class="fonte"><span class="bollino">${esc(nomeStudio ?? 'il tuo nutrizionista')}</span>` +
-      `<span>scritto di persona</span></div>`
-    );
-  }
-  const ai = f === 'ai' || f === 'assistente';
-  return (
-    `<div class="fonte"><span class="bollino${ai ? ' ai' : ''}">` +
-    `${ai ? 'assistente' : 'motore'}</span>` +
-    `<span>i numeri della tua dieta vengono dal tuo nutrizionista</span></div>`
-  );
+const fonte = (f, nomeStudio, at) => {
+  const chi =
+    f === 'studio' ? esc(nomeStudio ?? 'il tuo nutrizionista') : f === 'cliente' ? '' : f === 'motore' ? 'calcolo' : 'assistente';
+  const tempo = at ? esc(quando(at)) : '';
+  if (!chi && !tempo) return '';
+  return `<div class="fonte">${[chi && `<span class="${f === 'studio' ? 'di-persona' : ''}">${chi}</span>`, tempo].filter(Boolean).join(' · ')}</div>`;
 };
 
 async function chiedi(testo) {
   if (stato.occupato || !testo.trim()) return;
   stato.occupato = true;
   $('invia').disabled = true;
-  $('testo').disabled = true;
 
   messaggio('io', `<div class="bolla">${esc(testo)}</div>`);
   $('testo').value = '';
-  const punti = messaggio(
-    'lui',
-    `<div class="bolla"><span class="attesa"><i></i><i></i><i></i></span></div>`,
-    false,
-  );
+  const punti = messaggio('lui', `<div class="bolla"><span class="attesa"><i></i><i></i><i></i></span></div>`, false);
 
   try {
     const dati = await invia('/api/cliente/chat', { domanda: testo });
     punti.remove();
-
     if (dati.automazione === false) stato.automazione = false;
 
-    const pezzi = [
-      `<div class="bolla">${esc(dati.risposta)}</div>`,
-      fonte(dati.fonte, stato.dati.professionista.nome),
-    ];
+    const pezzi = [`<div class="bolla">${esc(dati.risposta)}</div>`];
     for (const s of dati.schede ?? []) {
       pezzi.push(
-        `<div class="opzioni"><h3>${esc(s.titolo)}</h3>` +
-          (s.righe ?? [])
-            .map(
-              (r) =>
-                `<button class="opzione" disabled><span class="marca">·</span>` +
-                `<span>${esc(r.nome)}</span><span class="peso">${esc(r.quantita)}</span></button>`,
-            )
-            .join('') +
-          (s.testo ?? []).map((t) => `<div class="motivo">${esc(t)}</div>`).join('') +
+        `<div class="bolla scheda-bolla"><strong>${esc(s.titolo)}</strong>` +
+          (s.righe ?? []).map((r) => `<div class="riga-bolla"><span>${esc(r.nome)}</span><span>${esc(r.quantita)}</span></div>`).join('') +
+          (s.testo ?? []).map((t) => `<p>${esc(t)}</p>`).join('') +
           `</div>`,
       );
     }
     if (dati.citazioni?.length) {
-      pezzi.push(
-        `<div class="citazioni">${dati.citazioni.map((c) => `<div>· ${esc(c)}</div>`).join('')}</div>`,
-      );
+      pezzi.push(`<div class="citazioni">${dati.citazioni.map((c) => `<div>${esc(c)}</div>`).join('')}</div>`);
     }
+    pezzi.push(fonte(dati.fonte, stato.dati.professionista.nome));
     messaggio('lui', pezzi.join(''));
   } catch (e) {
     punti.remove();
@@ -755,120 +814,184 @@ async function chiedi(testo) {
   } finally {
     stato.occupato = false;
     $('invia').disabled = false;
-    $('testo').disabled = false;
     $('testo').focus();
   }
 }
 
-// La mia dieta
+// Indicazioni: la giornata in media, le abitudini, il PDF
 
-function disegnaDieta() {
+function disegnaIndicazioni(zona) {
   const d = stato.dati;
   const o = d.dieta.obiettivi ?? {};
 
-  const obiettivi = [
-    o.kcal ? `${o.kcal} kcal al giorno` : '',
-    o.proteine ? `${o.proteine} g di proteine` : '',
-    o.carboidrati ? `${o.carboidrati} g di carboidrati` : '',
-    o.grassi ? `${o.grassi} g di grassi` : '',
-    o.acqua ? `${o.acqua} litri d'acqua al giorno` : '',
-    o.passi ? `${o.passi} passi al giorno` : '',
+  const giornata = [
+    ['Calorie', `${numero(d.media.kcal)} kcal`],
+    ['Proteine', `${numero(d.media.proteine)} g`],
+    ['Carboidrati', `${numero(d.media.carboidrati)} g`],
+    ['Grassi', `${numero(d.media.grassi)} g`],
+  ];
+  const abitudini = [
+    o.acqua ? ['goccia', `${numero(o.acqua, 1)} litri d'acqua al giorno`] : null,
+    o.passi ? ['scarpa', `${numero(o.passi)} passi al giorno`] : null,
+    o.pastiLiberi ? ['stella', `${o.pastiLiberi} past${o.pastiLiberi === 1 ? 'o libero' : 'i liberi'} a settimana`] : null,
   ].filter(Boolean);
 
-  contenuto().innerHTML =
-    `<div class="riga sotto"><div class="corpo">` +
-    `<div class="titolo">${esc(d.dieta.titolo)}</div>` +
-    `<div class="piccolo muto">scritta da ${esc(d.professionista.nome)}</div></div>` +
-    (d.dieta.haPdf
-      ? `<a class="btn mini neutra" href="/api/cliente/pdf" target="_blank" rel="noopener">Apri il PDF</a>`
+  zona.innerHTML =
+    `<div class="colonne">` +
+    `<div class="pila">` +
+    `<section class="card"><h2 class="card-titolo">La tua giornata in media</h2>` +
+    `<div class="valori-griglia">${giornata.map(([n, v]) => `<div><span>${n}</span><strong>${v}</strong></div>`).join('')}</div>` +
+    (abitudini.length
+      ? `<div class="divisore"></div><ul class="lista-icone">${abitudini.map(([i, t]) => `<li>${ico(i)}<span>${esc(t)}</span></li>`).join('')}</ul>`
       : '') +
-    `</div>` +
-    (d.dieta.haPdf
-      ? `<div class="avviso neutro sotto"><span class="segno" aria-hidden="true">i</span><span>` +
-        `Il PDF è quello originale del tuo nutrizionista. Se qui vedi qualcosa di diverso da ` +
-        `quello che c'è scritto lì, fa fede il PDF: diglielo.</span></div>`
+    `</section>` +
+    (d.prossimaVisita
+      ? `<section class="card riga-card">${ico('calendario')}<div><span class="muto piccolo">Prossima visita</span><strong>${esc(dataOra(d.prossimaVisita))}</strong></div></section>`
       : '') +
-    (obiettivi.length
-      ? `<div class="sezione"><h3 class="sotto-poco">I tuoi obiettivi</h3><div class="pila">` +
-        obiettivi.map((t) => `<div class="riga"><div class="corpo">${esc(t)}</div></div>`).join('') +
-        `</div></div>`
-      : '') +
+    `</div><div class="pila">` +
     (d.dieta.indicazioni.length
-      ? `<div class="sezione"><h3 class="sotto-poco">Indicazioni</h3><div class="pila">` +
-        d.dieta.indicazioni
-          .map((t) => `<div class="riga"><div class="corpo">${esc(t)}</div></div>`)
-          .join('') +
-        `</div></div>`
+      ? `<section class="card"><h2 class="card-titolo">Indicazioni del tuo nutrizionista</h2><ul class="elenco">` +
+        d.dieta.indicazioni.map((t) => `<li>${esc(t)}</li>`).join('') +
+        `</ul></section>`
       : '') +
-    `<div class="sezione"><h3 class="sotto-poco">I tuoi cambi</h3><div class="pila">` +
-    (d.variazioni.length
-      ? d.variazioni
-          .map(
-            (v) =>
-              `<div class="variazione${v.stato === 'annullata' ? '' : ' nuova'}">` +
-              `<div><div class="cambio"><span class="via">${esc(v.daNome)} ${esc(v.daQuantita)}</span>` +
-              `<span class="freccia" aria-hidden="true">→</span>` +
-              `<span class="nuovo">${esc(v.aNome)} ${esc(v.aQuantita)}</span></div>` +
-              `<div class="dove">${esc(GIORNI[v.giorno])} · ${esc(v.pastoNome)} · ${esc(quando(v.at))}</div></div>` +
-              `<div>${delta(v.kcalDelta)}</div>` +
-              (v.stato === 'annullata'
-                ? `<div class="numeri"><span>! ${esc(d.professionista.nome)} l'ha annullata` +
-                  `${v.nota ? `: «${esc(v.nota)}»` : '.'}</span></div>`
-                : '') +
-              `</div>`,
-          )
-          .join('')
-      : vuoto('—', 'Non hai ancora cambiato nulla')) +
+    (d.dieta.haPdf
+      ? `<section class="card lista"><a class="riga riga-link" href="/api/cliente/pdf" target="_blank" rel="noopener">${ico('pdf')}` +
+        `<span class="corpo">Apri il PDF originale</span>${ico('avanti')}</a></section>` +
+        `<p class="muto piccolo">Se qui vedi qualcosa di diverso dal PDF, fa fede il PDF: dillo al tuo nutrizionista.</p>`
+      : '') +
     `</div></div>`;
 }
 
-// Il mio conto
+// Progressi: costanza, peso, passi, acqua, diario, cambi
+
+async function disegnaProgressi() {
+  const d = stato.dati;
+  testata({ titolo: 'Progressi' });
+  contenuto().innerHTML = caricamento();
+  if (!stato.diario) {
+    try {
+      stato.diario = await leggi('/api/cliente/diario');
+    } catch (e) {
+      contenuto().innerHTML = avviso('grave', e.message);
+      return;
+    }
+  }
+  const giorni = stato.diario.giorni;
+  const a = d.aderenza;
+  const tono = a.percentuale === null ? '' : a.livello === 'buona' ? '' : a.livello === 'parziale' ? 'tono-attenzione' : 'tono-grave';
+  const p = d.peso;
+  const variazione = p.storico.length > 1 ? p.storico.at(-1).peso - p.storico[0].peso : null;
+
+  // Il diario arriva dal più recente: i grafici vanno dal più vecchio.
+  const cronologia = giorni.slice().reverse();
+  const serie = (chiave) => cronologia.map((g) => ({ etichetta: dataBreve(g.data), valore: g[chiave] }));
+  const media = (chiave) => {
+    const v = giorni.slice(0, 7).map((g) => g[chiave]).filter((x) => x != null);
+    return v.length ? v.reduce((t, x) => t + x, 0) / v.length : null;
+  };
+
+  contenuto().innerHTML =
+    `<div class="colonne">` +
+    `<div class="pila">` +
+    `<section class="card costanza-card ${tono}">` +
+    anello(a.percentuale, a.percentuale === null ? '—' : `${a.percentuale}%`, '', 'medio') +
+    `<div class="corpo"><h2 class="card-titolo">Stai seguendo la dieta</h2>` +
+    `<p class="muto piccolo">${esc(a.percentuale === null ? 'Segna i pasti per saperlo.' : a.descrizione)}</p>` +
+    `<div class="fila sopra"><span class="chip accento">${d.serie.giorni} giorni di fila</span>` +
+    (d.serie.record > d.serie.giorni ? `<span class="chip">record ${d.serie.record}</span>` : '') +
+    (d.pastiLiberi.ammessi
+      ? `<span class="chip">${d.pastiLiberi.ammessi - d.pastiLiberi.usati} di ${d.pastiLiberi.ammessi} pasti liberi</span>`
+      : '') +
+    `</div></div></section>` +
+    `<section class="card peso"><div class="card-testa"><h2 class="card-titolo">Peso</h2>` +
+    `<button class="btn secondario piccolo" id="segna-peso">${p.oggi == null ? 'Segna' : 'Correggi'}</button></div>` +
+    `<p class="grande-num">${p.ultimo ? `${numero(p.ultimo.peso, 1)} <span>kg</span>` : '—'}</p>` +
+    `<p class="muto piccolo sotto">${variazione != null ? `${variazione > 0 ? '+' : ''}${numero(variazione, 1)} kg dal ${dataBreve(p.storico[0].giorno)}` : 'Pesati una volta a settimana, al mattino.'}</p>` +
+    (p.storico.length > 1 ? linea(p.storico.map((x) => ({ etichetta: dataBreve(x.giorno), valore: x.peso })), { unita: 'kg' }) : '') +
+    `</section>` +
+    `<div class="tessere">` +
+    `<section class="card tessera passi"><div class="tessera-testa">${ico('scarpa')}<span>Passi</span></div>` +
+    `<div class="tessera-valore">${numero(media('passi'))}</div><div class="tessera-sotto">media 7 giorni</div>` +
+    `<div class="tessera-piede">${barre(serie('passi'), d.passi.obiettivo)}</div></section>` +
+    `<section class="card tessera acqua"><div class="tessera-testa">${ico('goccia')}<span>Acqua</span></div>` +
+    `<div class="tessera-valore">${media('acqua') == null ? '—' : `${numero(media('acqua') / 1000, 1)}<small> L</small>`}</div><div class="tessera-sotto">media 7 giorni</div>` +
+    `<div class="tessera-piede blu">${barre(serie('acqua'), d.acqua.obiettivo ? d.acqua.obiettivo * 1000 : null)}</div></section>` +
+    `</div>` +
+    `</div>` +
+    `<div class="pila">` +
+    `<section class="card lista"><div class="lista-testa"><h2 class="card-titolo">Diario</h2>` +
+    `<span class="muto piccolo">ultime due settimane</span></div>${giorni.map((g) => rigaDiario(g)).join('')}</section>` +
+    `<section class="card"><h2 class="card-titolo">I tuoi cambi</h2>` +
+    (d.variazioni.length
+      ? `<div class="lista-semplice">` +
+        d.variazioni
+          .map(
+            (v) =>
+              `<div class="cambio${v.stato === 'annullata' ? ' annullato' : ''}"><div class="corpo">` +
+              `<div><span class="muto">${esc(v.daNome)} ${esc(v.daQuantita)}</span> → <strong>${esc(v.aNome)} ${esc(v.aQuantita)}</strong></div>` +
+              `<small class="muto">${esc(GIORNI[v.giorno])} · ${esc(v.pastoNome)} · ${esc(quando(v.at))}</small>` +
+              (v.stato === 'annullata'
+                ? `<small class="tono-grave">Annullato da ${esc(d.professionista.nome)}${v.nota ? `: «${esc(v.nota)}»` : ''}</small>`
+                : '') +
+              `</div>${delta(v.kcalDelta)}</div>`,
+          )
+          .join('') +
+        `</div>`
+      : `<p class="muto">Non hai ancora cambiato nulla. Tocca un alimento nei pasti di oggi per vedere le alternative.</p>`) +
+    `</section></div></div>`;
+
+  applicaMisure(contenuto());
+  $('segna-peso').addEventListener('click', apriPeso);
+}
+
+// Profilo
 
 function disegnaConto() {
   const d = stato.dati;
+  const prof = stato.situazione.professionista;
+
+  testata({ titolo: 'Profilo' });
 
   contenuto().innerHTML =
-    `<div class="scheda accesso stretto">` +
-    `<label><span>Come vuoi che ti chiami l'assistente</span>` +
+    `<div class="stretta pila">` +
+    `<section class="card profilo-testa">${avatar(stato.io.nome || stato.io.email, 'grande', stato.io.email)}` +
+    `<div><strong>${esc(stato.io.nome || stato.io.email)}</strong><span class="muto">${esc(stato.io.email)}</span></div></section>` +
+    `<h2 class="sezione-titolo">I tuoi dati</h2>` +
+    `<section class="card">` +
+    `<label class="campo"><span>Come vuoi che ti chiami l'assistente</span>` +
     `<input id="mio-nome" type="text" value="${esc(stato.io.nome ?? '')}"></label>` +
-    `<label><span>Il tuo obiettivo <span class="aiuto">lo legge il tuo nutrizionista</span></span>` +
-    `<input id="mio-obiettivo" type="text" value="${esc(stato.io.obiettivo ?? '')}"></label>` +
-    `<div class="fila"><button class="btn" id="salva-profilo">Salva</button>` +
-    `<span id="esito-profilo" class="piccolo muto"></span></div></div>` +
-    `<div class="sezione">` +
-    (d.ai.attivo
-      ? `<div class="avviso ok"><span class="segno" aria-hidden="true">✓</span><span>` +
-        `L'assistente risponde in linguaggio naturale. I numeri della tua dieta restano ` +
-        `quelli scritti dal tuo nutrizionista.</span></div>`
-      : `<div class="avviso neutro"><span class="segno" aria-hidden="true">i</span>` +
-        `<span>${esc(d.ai.motivo ?? '')}</span></div>`) +
-    `</div>` +
-    `<div class="sezione"><h3 class="sotto-poco">Il tuo nutrizionista</h3>` +
-    `<div class="riga"><div class="corpo"><div class="titolo">${esc(d.professionista.nome)}</div>` +
-    `<div class="piccolo muto">ti segue lui</div></div>` +
-    `<button class="btn mini pericolo" id="scollega">Scollegati</button></div></div>` +
-    `<div class="fila sopra">` +
-    `<button class="btn neutra mini" id="cambia-pw">Cambia password</button>` +
-    `<button class="btn neutra mini spinge" id="esci">Esci</button></div>`;
+    `<label class="campo"><span>Il tuo obiettivo <span class="aiuto">lo legge il tuo nutrizionista</span></span>` +
+    `<input id="mio-obiettivo" type="text" value="${esc(stato.io.obiettivo ?? '')}" placeholder="Per esempio: perdere 5 kg entro l'estate"></label>` +
+    `<div class="fila"><button class="btn" id="salva-profilo">Salva</button></div></section>` +
+    `<h2 class="sezione-titolo">Il tuo nutrizionista</h2>` +
+    `<section class="card lista">` +
+    `<div class="riga">${avatar(prof.nome, 'piccolo', prof.email)}<span class="corpo"><strong>${esc(d.professionista.nome)}</strong>` +
+    `<small class="muto">${esc(prof.email)}</small></span>` +
+    `<button class="btn testo piccolo rosso" id="scollega" type="button">Scollegati</button></div></section>` +
+    (d.ai.attivo ? '' : avviso('neutro', d.ai.motivo ?? '')) +
+    `<h2 class="sezione-titolo">Account</h2>` +
+    `<section class="card lista">` +
+    `<button class="riga riga-link" id="cambia-pw" type="button">${ico('lucchetto')}<span class="corpo">Cambia password</span>${ico('avanti')}</button>` +
+    `<button class="riga riga-link" id="esci" type="button">${ico('esci')}<span class="corpo">Esci</span>${ico('avanti')}</button>` +
+    `</section></div>`;
 
   $('salva-profilo').addEventListener('click', async () => {
-    try {
-      await invia('/api/cliente/impostazioni', {
-        nome: $('mio-nome').value.trim(),
-        obiettivo: $('mio-obiettivo').value.trim(),
-      });
+    const ok = await prova(
+      () => invia('/api/cliente/impostazioni', { nome: $('mio-nome').value.trim(), obiettivo: $('mio-obiettivo').value.trim() }),
+      'Salvato',
+    );
+    if (ok) {
       stato.io.nome = $('mio-nome').value.trim();
-      $('esito-profilo').textContent = 'Salvato.';
-      $('chi-nome').textContent = stato.io.nome || stato.io.email;
-    } catch (e) {
-      $('esito-profilo').textContent = e.message;
+      stato.io.obiettivo = $('mio-obiettivo').value.trim();
+      disegnaConto();
     }
   });
 
   $('scollega').addEventListener('click', async () => {
-    if (!$('scollega').dataset.confermato) {
-      $('scollega').dataset.confermato = '1';
-      $('scollega').textContent = 'Sicuro? Perdi la dieta';
+    const b = $('scollega');
+    if (!b.dataset.confermato) {
+      b.dataset.confermato = '1';
+      b.textContent = 'Sicuro? Non vedrai più la dieta';
       return;
     }
     await invia('/api/cliente/scollega', { link: d.professionista.linkId });
@@ -881,40 +1004,35 @@ function disegnaConto() {
 
 // Impalcatura
 
-function avvisa(messaggio, tipo = 'attenzione') {
-  contenuto().insertAdjacentHTML(
-    'afterbegin',
-    `<div class="avviso ${tipo} sotto"><span class="segno" aria-hidden="true">!</span>` +
-      `<span>${esc(messaggio)}</span></div>`,
-  );
-}
-
 function disegna() {
+  document.body.classList.toggle('in-chat', stato.tab === 'assistente');
   for (const b of $('schede').querySelectorAll('button')) {
-    b.setAttribute('aria-selected', String(b.dataset.tab === stato.tab));
+    if (b.dataset.tab === stato.tab) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
   }
 
   if (stato.tab === 'oggi') disegnaOggi();
-  else if (stato.tab === 'settimana') disegnaSettimana();
+  else if (stato.tab === 'piano') disegnaPiano();
+  else if (stato.tab === 'progressi') disegnaProgressi();
   else if (stato.tab === 'assistente') disegnaAssistente();
-  else if (stato.tab === 'dieta') disegnaDieta();
   else disegnaConto();
 }
 
-for (const b of $('schede').querySelectorAll('button')) {
-  b.addEventListener('click', () => {
-    stato.tab = b.dataset.tab;
-    disegna();
-  });
+function vaiA(tab) {
+  stato.tab = tab;
+  disegna();
+  window.scrollTo(0, 0);
 }
 
-$('ingresso-esci').addEventListener('click', esci);
-$('app-esci').addEventListener('click', esci);
+for (const b of $('schede').querySelectorAll('button')) {
+  b.addEventListener('click', () => vaiA(b.dataset.tab));
+}
 
 async function ricarica() {
   stato.dati = await leggi('/api/cliente/dashboard');
-  // La settimana si rilegge alla prossima apertura: le spunte l'hanno cambiata.
+  // Settimana e diario si rileggono alla prossima apertura: le spunte li hanno cambiati.
   stato.scheda = null;
+  stato.diario = null;
   disegna();
 }
 
@@ -933,18 +1051,16 @@ async function inizia() {
 
   $('ingresso').hidden = true;
   $('app').hidden = false;
-  $('chi-nome').textContent = stato.io.nome || stato.io.email;
 
   try {
     stato.dati = await leggi('/api/cliente/dashboard');
   } catch (e) {
-    $('chi-sotto').textContent = `seguito da ${p.nome}`;
+    testata({ titolo: 'La mia dieta', sotto: `Ti segue ${p.nome}` });
     $('schede').hidden = true;
-    contenuto().innerHTML = vuoto('—', e.message);
+    contenuto().innerHTML = `<div class="card vuoto">${ico('documento')}<p>${esc(e.message)}</p></div>`;
     return;
   }
 
-  $('chi-sotto').textContent = `${stato.dati.dieta.titolo} · ${stato.dati.professionista.nome}`;
   disegna();
 }
 

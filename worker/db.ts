@@ -1029,7 +1029,7 @@ export async function passiRecenti(
 
 // Pasti spuntati
 
-export type StatoPasto = 'fatto' | 'saltato';
+export type StatoPasto = 'fatto' | 'saltato' | 'libero';
 
 export async function segnaPasto(
   env: Env,
@@ -1126,4 +1126,261 @@ export async function contenutoPdf(
   )
     .bind(dietaId)
     .first<{ nome: string; base64: string }>();
+}
+
+// Scheda clinica
+
+export interface SchedaClinica {
+  nascita: string | null;
+  sesso: 'F' | 'M' | null;
+  altezza: number | null;
+  allergie: string;
+  patologie: string;
+  farmaci: string;
+  preferenze: string;
+  prossimaVisita: string | null;
+  aggiornataIl: string | null;
+}
+
+export const SCHEDA_VUOTA: SchedaClinica = {
+  nascita: null,
+  sesso: null,
+  altezza: null,
+  allergie: '',
+  patologie: '',
+  farmaci: '',
+  preferenze: '',
+  prossimaVisita: null,
+  aggiornataIl: null,
+};
+
+/** La scheda che questo studio tiene sul cliente; vuota se non l'ha mai scritta. */
+export async function schedaClinica(
+  env: Env,
+  studioId: string,
+  clienteId: string,
+): Promise<SchedaClinica> {
+  const riga = await env.DB.prepare(
+    `SELECT birth_date AS nascita, sex AS sesso, height_cm AS altezza, allergies AS allergie,
+            conditions AS patologie, medications AS farmaci, preferences AS preferenze,
+            next_visit AS prossimaVisita, updated_at AS aggiornataIl
+       FROM client_profiles WHERE client_id = ? AND nutritionist_id = ?`,
+  )
+    .bind(clienteId, studioId)
+    .first<SchedaClinica>();
+  return riga ?? { ...SCHEDA_VUOTA };
+}
+
+/** Le schede di tutti i clienti dello studio, per il cruscotto. */
+export async function schedeDelloStudio(
+  env: Env,
+  studioId: string,
+): Promise<Map<string, SchedaClinica>> {
+  const { results } = await env.DB.prepare(
+    `SELECT client_id AS clienteId, birth_date AS nascita, sex AS sesso, height_cm AS altezza,
+            allergies AS allergie, conditions AS patologie, medications AS farmaci,
+            preferences AS preferenze, next_visit AS prossimaVisita, updated_at AS aggiornataIl
+       FROM client_profiles WHERE nutritionist_id = ?`,
+  )
+    .bind(studioId)
+    .all<SchedaClinica & { clienteId: string }>();
+  return new Map(results.map(({ clienteId, ...s }) => [clienteId, s]));
+}
+
+export async function salvaSchedaClinica(
+  env: Env,
+  studioId: string,
+  clienteId: string,
+  s: Omit<SchedaClinica, 'aggiornataIl'>,
+): Promise<void> {
+  await env.DB.prepare(
+    `INSERT INTO client_profiles
+       (client_id, nutritionist_id, birth_date, sex, height_cm, allergies, conditions,
+        medications, preferences, next_visit, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(client_id, nutritionist_id) DO UPDATE SET
+       birth_date = excluded.birth_date, sex = excluded.sex, height_cm = excluded.height_cm,
+       allergies = excluded.allergies, conditions = excluded.conditions,
+       medications = excluded.medications, preferences = excluded.preferences,
+       next_visit = excluded.next_visit, updated_at = excluded.updated_at`,
+  )
+    .bind(
+      clienteId,
+      studioId,
+      s.nascita,
+      s.sesso,
+      s.altezza,
+      s.allergie,
+      s.patologie,
+      s.farmaci,
+      s.preferenze,
+      s.prossimaVisita,
+      oraISO(),
+    )
+    .run();
+}
+
+// Peso e misure
+
+export interface Misura {
+  giorno: string;
+  peso: number | null;
+  vita: number | null;
+  fianchi: number | null;
+  grasso: number | null;
+  autore: 'cliente' | 'studio';
+}
+
+/** Scrive le misure di un giorno; i campi assenti restano quelli già scritti. */
+export async function salvaMisura(
+  env: Env,
+  clienteId: string,
+  m: Misura,
+): Promise<void> {
+  await env.DB.prepare(
+    `INSERT INTO measurements (client_id, day, weight, waist, hips, body_fat, author, at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(client_id, day) DO UPDATE SET
+       weight = COALESCE(excluded.weight, weight),
+       waist = COALESCE(excluded.waist, waist),
+       hips = COALESCE(excluded.hips, hips),
+       body_fat = COALESCE(excluded.body_fat, body_fat),
+       author = excluded.author, at = excluded.at`,
+  )
+    .bind(clienteId, m.giorno, m.peso, m.vita, m.fianchi, m.grasso, m.autore, oraISO())
+    .run();
+}
+
+/** Le misure dalla più vecchia, per i grafici. */
+export async function misure(env: Env, clienteId: string, quante = 60): Promise<Misura[]> {
+  const { results } = await env.DB.prepare(
+    `SELECT day AS giorno, weight AS peso, waist AS vita, hips AS fianchi,
+            body_fat AS grasso, author AS autore
+       FROM measurements WHERE client_id = ? ORDER BY day DESC LIMIT ?`,
+  )
+    .bind(clienteId, quante)
+    .all<Misura>();
+  return results.reverse();
+}
+
+export async function eliminaMisura(env: Env, clienteId: string, giorno: string): Promise<void> {
+  await env.DB.prepare(`DELETE FROM measurements WHERE client_id = ? AND day = ?`)
+    .bind(clienteId, giorno)
+    .run();
+}
+
+// Note private dello studio
+
+export interface Nota {
+  id: string;
+  at: string;
+  testo: string;
+}
+
+export async function scriviNota(
+  env: Env,
+  studioId: string,
+  clienteId: string,
+  testo: string,
+): Promise<Nota> {
+  const nota = { id: nuovoId('not'), at: oraISO(), testo };
+  await env.DB.prepare(
+    `INSERT INTO notes (id, client_id, nutritionist_id, at, body) VALUES (?, ?, ?, ?, ?)`,
+  )
+    .bind(nota.id, clienteId, studioId, nota.at, testo)
+    .run();
+  return nota;
+}
+
+export async function noteDelCliente(
+  env: Env,
+  studioId: string,
+  clienteId: string,
+): Promise<Nota[]> {
+  const { results } = await env.DB.prepare(
+    `SELECT id, at, body AS testo FROM notes
+      WHERE client_id = ? AND nutritionist_id = ? ORDER BY at DESC LIMIT 100`,
+  )
+    .bind(clienteId, studioId)
+    .all<Nota>();
+  return results;
+}
+
+export async function eliminaNota(env: Env, studioId: string, id: string): Promise<boolean> {
+  const r = await env.DB.prepare(`DELETE FROM notes WHERE id = ? AND nutritionist_id = ?`)
+    .bind(id, studioId)
+    .run();
+  return (r.meta.changes ?? 0) > 0;
+}
+
+// Acqua
+
+export async function salvaAcqua(
+  env: Env,
+  clienteId: string,
+  giorno: string,
+  ml: number,
+): Promise<void> {
+  await env.DB.prepare(
+    `INSERT INTO water (client_id, day, ml, at) VALUES (?, ?, ?, ?)
+     ON CONFLICT(client_id, day) DO UPDATE SET ml = excluded.ml, at = excluded.at`,
+  )
+    .bind(clienteId, giorno, Math.max(0, Math.round(ml)), oraISO())
+    .run();
+}
+
+/** L'acqua degli ultimi giorni, dal più recente. */
+export async function acquaRecente(
+  env: Env,
+  clienteId: string,
+  quanti = 14,
+): Promise<{ giorno: string; ml: number }[]> {
+  const { results } = await env.DB.prepare(
+    `SELECT day AS giorno, ml FROM water WHERE client_id = ? ORDER BY day DESC LIMIT ?`,
+  )
+    .bind(clienteId, quanti)
+    .all<{ giorno: string; ml: number }>();
+  return results;
+}
+
+/** Tutte le diete dello studio, per partire da una esistente. */
+export async function dieteDelloStudio(
+  env: Env,
+  studioId: string,
+): Promise<{ id: string; clienteId: string; titolo: string; stato: string; clienteNome: string; clienteEmail: string; aggiornataIl: string }[]> {
+  const { results } = await env.DB.prepare(
+    `SELECT d.id, d.client_id AS clienteId, d.title AS titolo, d.status AS stato, u.name AS clienteNome,
+            u.email AS clienteEmail, d.updated_at AS aggiornataIl
+       FROM diets d JOIN users u ON u.id = d.client_id
+      WHERE d.nutritionist_id = ? ORDER BY d.updated_at DESC LIMIT 100`,
+  )
+    .bind(studioId)
+    .all<{ id: string; clienteId: string; titolo: string; stato: string; clienteNome: string; clienteEmail: string; aggiornataIl: string }>();
+  return results;
+}
+
+/** L'obiettivo che il cliente ha scritto nel suo profilo. */
+export async function obiettivoDelCliente(env: Env, clienteId: string): Promise<string | null> {
+  const r = await env.DB.prepare(`SELECT goal FROM users WHERE id = ?`)
+    .bind(clienteId)
+    .first<{ goal: string | null }>();
+  return r?.goal ?? null;
+}
+
+/** L'ultimo messaggio di ogni conversazione dello studio, dalla più recente. */
+export async function ultimiMessaggi(
+  env: Env,
+  studioId: string,
+): Promise<{ clienteId: string; at: string; autore: Autore; testo: string }[]> {
+  const { results } = await env.DB.prepare(
+    `SELECT m.client_id AS clienteId, m.at, m.author AS autore, m.body AS testo
+       FROM messages m
+      WHERE m.nutritionist_id = ?
+        AND m.at = (SELECT MAX(at) FROM messages
+                     WHERE client_id = m.client_id AND nutritionist_id = m.nutritionist_id)
+      ORDER BY m.at DESC`,
+  )
+    .bind(studioId)
+    .all<{ clienteId: string; at: string; autore: Autore; testo: string }>();
+  return results;
 }

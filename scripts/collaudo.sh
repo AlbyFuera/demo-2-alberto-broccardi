@@ -236,6 +236,78 @@ json '{"passi":6500}'
 post c.txt /api/cliente/passi corpo.json
 prova "passi veri: salvati" '"passi":6500'
 
+titolo "9d · Acqua, peso, pasto libero, diario"
+json '{"aggiungi":250}'
+post c.txt /api/cliente/acqua corpo.json
+prova "un bicchiere d'acqua" '"oggi":250'
+post c.txt /api/cliente/acqua corpo.json
+prova "due bicchieri" '"oggi":500'
+json '{"ml":-5}'
+post c.txt /api/cliente/acqua corpo.json
+prova "acqua negativa: rifiutata" 'non è valida'
+json '{"peso":"72,4"}'
+post c.txt /api/cliente/peso corpo.json
+prova "peso con la virgola: salvato" '"ok":true'
+json '{"peso":"7"}'
+post c.txt /api/cliente/peso corpo.json
+prova "peso impossibile: rifiutato" 'in chili'
+get c.txt /api/cliente/dashboard
+prova "la dashboard mostra l'acqua" '"acqua":{"oggi":500'
+prova "e il peso" '"peso":72.4'
+prova "e la media della dieta" '"media":{"kcal"'
+prova "pasti liberi: nessuno concesso" '"pastiLiberi":{"ammessi":0'
+json "{\"giorno\":\"$OGGI\",\"pasto\":\"$COLAZ\",\"stato\":\"libero\"}"
+post c.txt /api/cliente/spunta corpo.json
+prova "pasto libero non concesso: rifiutato" 'non ha previsto pasti liberi'
+get c.txt /api/cliente/diario
+prova "il diario ha quattordici giorni" '"esito"'
+prova "con l'acqua di oggi" '"acqua":500'
+
+titolo "9e · Scheda clinica, misure, note, modelli"
+json "{\"cliente\":\"$CLI\",\"nascita\":\"1990-04-12\",\"sesso\":\"M\",\"altezza\":178,\"allergie\":\"glutine\",\"prossimaVisita\":\"2030-01-10T17:30\"}"
+post n.txt /api/studio/cartella corpo.json
+prova "scheda clinica salvata" '"allergie":"glutine"'
+json "{\"cliente\":\"$CLI\",\"altezza\":20}"
+post n.txt /api/studio/cartella corpo.json
+prova "altezza impossibile: rifiutata" 'centimetri'
+get n.txt "/api/studio/dieta?dieta=$DIETA"
+prova "l'editor segnala gli alimenti con glutine" '"allergene":"glutine"'
+get c.txt /api/cliente/dashboard
+prova "il cliente vede la prossima visita" '"prossimaVisita":"2030-01-10T17:30"'
+assente "ma non le sue allergie" 'glutine'
+json "{\"cliente\":\"$CLI\",\"peso\":\"71,8\",\"vita\":84}"
+post n.txt /api/studio/misura corpo.json
+prova "misura dello studio salvata" '"vita":84'
+json "{\"cliente\":\"$CLI\"}"
+post n.txt /api/studio/misura corpo.json
+prova "misura vuota: rifiutata" 'almeno una misura'
+json "{\"cliente\":\"$CLI\",\"testo\":\"Prima visita: motivato.\"}"
+post n.txt /api/studio/nota corpo.json
+prova "nota salvata" 'Prima visita'
+NOTA=$(printf '%s' "$R" | python3 -c "import json,sys; print(json.load(sys.stdin)['note'][0]['id'])")
+get c.txt /api/cliente/dashboard
+assente "il cliente non vede le note" 'Prima visita'
+get n.txt "/api/studio/cliente?cliente=$CLI"
+prova "la scheda cliente ha misure e note" '"note":\[{'
+prova "e il diario" '"diario":\[{'
+prova "e l'aderenza a 30 giorni" '"aderenza30"'
+get n.txt /api/studio/cruscotto
+prova "il cruscotto dice chi seguire" '"daSeguire"'
+prova "con le statistiche" '"statistiche":{"clienti"'
+get c2.txt "/api/studio/cliente?cliente=$CLI"
+prova "un altro studio non vede la scheda" 'Non segui questo cliente'
+json "{\"id\":\"$NOTA\"}"
+post c2.txt /api/studio/elimina-nota corpo.json
+prova "né cancella le note altrui" 'non trovata'
+post n.txt /api/studio/elimina-nota corpo.json
+prova "la nota si elimina" '"ok":true'
+get n.txt /api/studio/modelli
+prova "le diete dello studio fanno da modello" "$DIETA"
+# Le allergie si tolgono, per non cambiare le proposte dei controlli successivi.
+json "{\"cliente\":\"$CLI\",\"allergie\":\"\"}"
+post n.txt /api/studio/cartella corpo.json
+prova "allergie tolte" '"allergie":""'
+
 titolo "10 · Sostituzione per equivalenza"
 get c.txt "/api/cliente/alternative?giorno=0&pasto=$PASTO&indice=1"
 prova "proposte per il pollo" '"proposte"'

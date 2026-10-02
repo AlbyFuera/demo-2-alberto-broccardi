@@ -64,6 +64,8 @@ export interface Obiettivi {
   acqua?: number;
   /** Passi al giorno. */
   passi?: number;
+  /** Pasti liberi concessi a settimana; contano come fatti nell'aderenza. */
+  pastiLiberi?: number;
 }
 
 export interface Dieta {

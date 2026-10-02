@@ -144,3 +144,30 @@ describe('serie di giorni consecutivi', () => {
     assert.equal(calcolaSerie(dieta, spunte, OGGI).giorni, 0);
   });
 });
+
+describe('pasto libero', () => {
+  it('vale come un pasto fatto e si conta a parte', () => {
+    const dieta = dietaSettimanale();
+    const ieri = giorniPrima(OGGI, 1);
+    const i = indiceGiorno(ieri);
+    const spunte: Spunta[] = [
+      { giorno: ieri, pastoId: `pas_pranzo_${i}`, stato: 'fatto' },
+      { giorno: ieri, pastoId: `pas_cena_${i}`, stato: 'libero' },
+    ];
+    const a = calcolaAderenza(dieta, spunte, OGGI);
+    assert.equal(a.percentuale, 100);
+    assert.equal(a.pastiFatti, 2);
+    assert.equal(a.pastiLiberi, 1);
+  });
+
+  it('non interrompe la serie', () => {
+    const dieta = dietaSettimanale();
+    const ieri = giorniPrima(OGGI, 1);
+    const i = indiceGiorno(ieri);
+    const spunte: Spunta[] = [
+      { giorno: ieri, pastoId: `pas_pranzo_${i}`, stato: 'libero' },
+      { giorno: ieri, pastoId: `pas_cena_${i}`, stato: 'fatto' },
+    ];
+    assert.equal(calcolaSerie(dieta, spunte, OGGI).giorni, 1);
+  });
+});

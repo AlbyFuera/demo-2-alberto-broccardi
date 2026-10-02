@@ -20,8 +20,10 @@ import {
   totaleSettimana,
 } from '../src/core/dieta.ts';
 import { composizioneDi, normalizza } from '../src/core/composizione.ts';
-import { calcolaAderenza, giorniPrima, statoDiOggi } from '../src/core/aderenza.ts';
+import { FINESTRA_ADERENZA, calcolaAderenza, giorniPrima, statoDiOggi } from '../src/core/aderenza.ts';
 import type { Aderenza, StatoOggi } from '../src/core/aderenza.ts';
+import { attenzioniDellaDieta } from '../src/core/allergeni.ts';
+import { diario, giorniSenzaSpunte } from '../src/core/diario.ts';
 
 import * as db from './db.ts';
 import { conNome } from './nomi.ts';
@@ -34,10 +36,11 @@ import { nomeDi, type Env, type Utente } from './types.ts';
 // Il cruscotto
 
 export async function cruscotto(env: Env, utente: Utente) {
-  const [collegamenti, variazioni, domande] = await Promise.all([
+  const [collegamenti, variazioni, domande, schede] = await Promise.all([
     db.collegamentiDelloStudio(env, utente.id),
     db.variazioniDelloStudio(env, utente.id, { limite: 40 }),
     db.domandeDelloStudio(env, utente.id),
+    db.schedeDelloStudio(env, utente.id),
   ]);
 
   const richieste = collegamenti.filter((c) => c.stato === 'in-attesa');
@@ -52,6 +55,34 @@ export async function cruscotto(env: Env, utente: Utente) {
   );
   const daLeggere = await db.messaggiDaLeggere(env, utente.id);
 
+  const clienti = attivi.map((c) => {
+    const dieta = diete.get(c.clienteId);
+    const suoi = aderenze.get(c.clienteId);
+    return {
+      linkId: c.id,
+      id: c.clienteId,
+      nome: nomeDi({ nome: c.clienteNome, email: c.clienteEmail }),
+      email: c.clienteEmail,
+      seguitoDa: c.richiestoIl,
+      dieta: dieta
+        ? { id: dieta.id, titolo: dieta.titolo, stato: dieta.stato, vuota: dietaVuotaDavvero(dieta.dieta) }
+        : null,
+      aderenza: suoi?.aderenza ?? null,
+      oggi: suoi?.oggi ?? null,
+      /** Giorni dall'ultima spunta negli ultimi 30; null se nessuna. */
+      senzaSpunte: suoi?.senzaSpunte ?? null,
+      prossimaVisita: schede.get(c.clienteId)?.prossimaVisita ?? null,
+      variazioniNuove: variazioni.filter((v) => v.clienteId === c.clienteId && v.stato === 'nuova').length,
+      domandeAperte: domande.filter((d) => d.clienteId === c.clienteId && d.stato === 'aperta').length,
+      /** L'assistente risponde al posto del professionista, oppure no. */
+      automazione: c.automazione,
+      /** Messaggi che il cliente ha scritto e nessuno ha ancora letto. */
+      messaggiDaLeggere: daLeggere.get(c.clienteId) ?? 0,
+    };
+  });
+
+  const conAderenza = clienti.filter((c) => c.aderenza?.percentuale != null);
+
   return {
     io: { nome: utente.nome, email: utente.email },
     richieste: richieste.map((c) => ({
@@ -62,27 +93,15 @@ export async function cruscotto(env: Env, utente: Utente) {
       messaggio: c.messaggio,
       richiestoIl: c.richiestoIl,
     })),
-    clienti: attivi.map((c) => {
-      const dieta = diete.get(c.clienteId);
-      return {
-        linkId: c.id,
-        id: c.clienteId,
-        nome: nomeDi({ nome: c.clienteNome, email: c.clienteEmail }),
-        email: c.clienteEmail,
-        seguitoDa: c.richiestoIl,
-        dieta: dieta
-          ? { id: dieta.id, titolo: dieta.titolo, stato: dieta.stato, vuota: dietaVuotaDavvero(dieta.dieta) }
-          : null,
-        aderenza: aderenze.get(c.clienteId)?.aderenza ?? null,
-        oggi: aderenze.get(c.clienteId)?.oggi ?? null,
-        variazioniNuove: variazioni.filter((v) => v.clienteId === c.clienteId && v.stato === 'nuova').length,
-        domandeAperte: domande.filter((d) => d.clienteId === c.clienteId && d.stato === 'aperta').length,
-        /** L'assistente risponde per lui a questo cliente, oppure no. */
-        automazione: c.automazione,
-        /** Messaggi che il cliente ha scritto e nessuno ha ancora letto. */
-        messaggiDaLeggere: daLeggere.get(c.clienteId) ?? 0,
-      };
-    }),
+    clienti,
+    daSeguire: daSeguire(clienti),
+    statistiche: {
+      clienti: clienti.length,
+      aderenzaMedia: conAderenza.length
+        ? Math.round(conAderenza.reduce((t, c) => t + c.aderenza!.percentuale!, 0) / conAderenza.length)
+        : null,
+      visiteSettimana: clienti.filter((c) => entroGiorni(c.prossimaVisita, 7)).length,
+    },
     variazioni: variazioni.map(conNome),
     domande: domande.map(conNome),
     conteggi: {
@@ -119,27 +138,107 @@ async function aderenzePerClienti(
   clienti: string[],
   diete: Map<string, db.DietaRiga>,
   variazioni: db.VariazioneRiga[],
-): Promise<Map<string, { aderenza: Aderenza; oggi: StatoOggi }>> {
-  const per = new Map<string, { aderenza: Aderenza; oggi: StatoOggi }>();
+): Promise<Map<string, { aderenza: Aderenza; oggi: StatoOggi; senzaSpunte: number | null }>> {
+  const per = new Map<string, { aderenza: Aderenza; oggi: StatoOggi; senzaSpunte: number | null }>();
   const oggi = new Date().toISOString().slice(0, 10);
 
   for (const clienteId of clienti) {
     const dieta = diete.get(clienteId);
     if (!dieta) continue;
 
-    const spunte = await db.spunteRecenti(env, clienteId, giorniPrima(oggi, 8));
+    const spunte = await db.spunteRecenti(env, clienteId, giorniPrima(oggi, 30));
     per.set(clienteId, {
+      senzaSpunte: giorniSenzaSpunte(spunte, oggi),
       aderenza: calcolaAderenza(
         dieta.dieta,
         spunte,
         oggi,
-        7,
+        FINESTRA_ADERENZA,
         sostituzioniAttive(variazioni.filter((v) => v.clienteId === clienteId)),
       ),
       oggi: statoDiOggi(dieta.dieta, spunte, oggi),
     });
   }
   return per;
+}
+
+/** Vero se la data ISO cade fra adesso e i prossimi `giorni`. */
+function entroGiorni(iso: string | null, giorni: number): boolean {
+  if (!iso) return false;
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return false;
+  const adesso = Date.now();
+  // Da inizio giornata: una visita di stamattina è ancora "in settimana".
+  return t >= adesso - 12 * 3_600_000 && t <= adesso + giorni * 86_400_000;
+}
+
+interface Segnale {
+  tipo: 'messaggi' | 'domande' | 'variazioni' | 'aderenza' | 'silenzio' | 'dieta' | 'visita';
+  testo: string;
+  /** 0 = più urgente. */
+  peso: number;
+}
+
+/** I clienti a cui guardare per primi, con il motivo. */
+function daSeguire(
+  clienti: {
+    id: string;
+    nome: string;
+    email: string;
+    dieta: { stato: string } | null;
+    aderenza: Aderenza | null;
+    senzaSpunte: number | null;
+    prossimaVisita: string | null;
+    variazioniNuove: number;
+    domandeAperte: number;
+    messaggiDaLeggere: number;
+  }[],
+) {
+  const lista = clienti
+    .map((c) => {
+      const segnali: Segnale[] = [];
+      const plurale = (n: number, uno: string, tanti: string) => `${n} ${n === 1 ? uno : tanti}`;
+
+      if (c.messaggiDaLeggere > 0) {
+        segnali.push({ tipo: 'messaggi', peso: 0, testo: plurale(c.messaggiDaLeggere, 'messaggio da leggere', 'messaggi da leggere') });
+      }
+      if (c.domandeAperte > 0) {
+        segnali.push({ tipo: 'domande', peso: 0, testo: plurale(c.domandeAperte, 'domanda girata a te', 'domande girate a te') });
+      }
+      if (!c.dieta || c.dieta.stato !== 'pubblicata') {
+        segnali.push({ tipo: 'dieta', peso: 1, testo: c.dieta ? 'Dieta in bozza, non pubblicata' : 'Nessuna dieta' });
+      } else {
+        if (c.senzaSpunte === null || c.senzaSpunte >= 3) {
+          segnali.push({
+            tipo: 'silenzio',
+            peso: 1,
+            testo: c.senzaSpunte === null ? 'Non ha mai segnato un pasto' : `Non segna i pasti da ${c.senzaSpunte} giorni`,
+          });
+        }
+        const a = c.aderenza;
+        if (a?.percentuale != null && a.livello !== 'buona') {
+          segnali.push({ tipo: 'aderenza', peso: a.livello === 'scarsa' ? 1 : 2, testo: `Aderenza al ${a.percentuale}%` });
+        }
+      }
+      if (c.variazioniNuove > 0) {
+        segnali.push({ tipo: 'variazioni', peso: 3, testo: plurale(c.variazioniNuove, 'sostituzione nuova', 'sostituzioni nuove') });
+      }
+      if (entroGiorni(c.prossimaVisita, 7)) {
+        const quando = new Date(c.prossimaVisita!).toLocaleDateString('it-IT', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          timeZone: 'Europe/Rome',
+        });
+        segnali.push({ tipo: 'visita', peso: 2, testo: `Visita ${quando}` });
+      }
+
+      segnali.sort((x, y) => x.peso - y.peso);
+      return { id: c.id, nome: c.nome, email: c.email, segnali };
+    })
+    .filter((c) => c.segnali.length > 0);
+
+  return lista.sort((x, y) => x.segnali[0].peso - y.segnali[0].peso || y.segnali.length - x.segnali.length);
 }
 
 /** Solo i numeri, per il pallino delle notifiche. */
@@ -195,14 +294,19 @@ export async function cliente(env: Env, utente: Utente, params: URLSearchParams)
   const clienteId = String(params.get('cliente') ?? '');
   await esigiCliente(env, utente.id, clienteId);
 
-  const [collegamenti, diete, variazioni, domande, libreria, filo] = await Promise.all([
-    db.collegamentiDelloStudio(env, utente.id),
-    db.dieteDelCliente(env, utente.id, clienteId),
-    db.variazioniDelCliente(env, clienteId, 60),
-    db.domandeDelloStudio(env, utente.id),
-    db.libreriaDelloStudio(env, utente.id),
-    db.filoMessaggi(env, clienteId, utente.id),
-  ]);
+  const [collegamenti, diete, variazioni, domande, libreria, filo, cartella, misure, note, acqua] =
+    await Promise.all([
+      db.collegamentiDelloStudio(env, utente.id),
+      db.dieteDelCliente(env, utente.id, clienteId),
+      db.variazioniDelCliente(env, clienteId, 60),
+      db.domandeDelloStudio(env, utente.id),
+      db.libreriaDelloStudio(env, utente.id),
+      db.filoMessaggi(env, clienteId, utente.id),
+      db.schedaClinica(env, utente.id, clienteId),
+      db.misure(env, clienteId, 60),
+      db.noteDelCliente(env, utente.id, clienteId),
+      db.acquaRecente(env, clienteId, 14),
+    ]);
 
   const collegamento = collegamenti.find((c) => c.clienteId === clienteId);
   const attuale = diete.find((d) => d.stato === 'pubblicata') ?? diete.find((d) => d.stato === 'bozza');
@@ -211,7 +315,11 @@ export async function cliente(env: Env, utente: Utente, params: URLSearchParams)
   await db.segnaMessaggiLetti(env, clienteId, utente.id, 'studio');
 
   const oggi = new Date().toISOString().slice(0, 10);
-  const spunte = attuale ? await db.spunteRecenti(env, clienteId, giorniPrima(oggi, 15)) : [];
+  const spunte = attuale ? await db.spunteRecenti(env, clienteId, giorniPrima(oggi, 31)) : [];
+  const passi = await db.passiRecenti(env, clienteId, 30);
+  const utenteObiettivo = await db.obiettivoDelCliente(env, clienteId);
+  const aderenzaSu = (giorni: number) =>
+    attuale ? calcolaAderenza(attuale.dieta, spunte, oggi, giorni, sostituzioniAttive(variazioni)) : null;
 
   return {
     cliente: {
@@ -223,7 +331,7 @@ export async function cliente(env: Env, utente: Utente, params: URLSearchParams)
       email: collegamento?.clienteEmail ?? '',
       linkId: collegamento?.id ?? null,
       seguitoDa: collegamento?.richiestoIl ?? null,
-      /** L'assistente risponde al posto suo, oppure scrive lui. */
+      /** Risponde l'assistente, oppure il professionista di persona. */
       automazione: collegamento?.automazione ?? true,
     },
     conversazione: filo,
@@ -236,12 +344,20 @@ export async function cliente(env: Env, utente: Utente, params: URLSearchParams)
       vuota: dietaVuotaDavvero(d.dieta),
     })),
     dietaAttuale: attuale ? riepilogoDieta(attuale, libreria, variazioni) : null,
-    aderenza: attuale
-      ? calcolaAderenza(attuale.dieta, spunte, oggi, 14, sostituzioniAttive(variazioni))
-      : null,
+    /** Stessa finestra del cliente e dell'elenco; i 30 giorni solo per confronto. */
+    aderenza: aderenzaSu(FINESTRA_ADERENZA),
+    aderenza30: aderenzaSu(30),
     /** L'aderenza esclude oggi: questo lo mostra in tempo reale. */
     oggi: attuale ? statoDiOggi(attuale.dieta, spunte, oggi) : null,
-    passi: await db.passiRecenti(env, clienteId, 14),
+    passi,
+    acqua,
+    cartella,
+    /** Alimenti della dieta attuale che toccano le allergie segnate. */
+    attenzioni: attuale ? attenzioniDellaDieta(attuale.dieta, cartella.allergie) : [],
+    misure,
+    note,
+    diario: attuale ? diario(attuale.dieta, spunte, oggi, { passi, acqua, misure }, 14) : [],
+    obiettivo: utenteObiettivo,
     variazioni: variazioni.map(conNome),
     domande: domande.filter((d) => d.clienteId === clienteId).map(conNome),
   };
@@ -278,6 +394,8 @@ function riepilogoDieta(riga: db.DietaRiga, libreria: any, variazioni: db.Variaz
         pasti: g.pasti.map((p) => ({
           id: p.id,
           nome: p.nome,
+          orario: p.orario ?? null,
+          nota: p.nota ?? null,
           kcal: Math.round(totalePasto(p, libreria).kcal),
           alimenti: p.alimenti.map((a, i) => ({
             nome: a.nome,
@@ -307,10 +425,12 @@ export async function nuovaDieta(env: Env, utente: Utente, body: any) {
   const daId = String(body?.da ?? '');
   if (daId) {
     const precedente = await db.dietaDelloStudio(env, utente.id, daId);
-    if (precedente && precedente.clienteId === clienteId) {
+    // Qualsiasi dieta dello studio fa da modello, anche di un altro cliente.
+    if (precedente) {
       Object.assign(dieta, {
         indicazioni: precedente.dieta.indicazioni,
         obiettivi: precedente.dieta.obiettivi,
+        ...(precedente.dieta.base ? { base: precedente.dieta.base } : {}),
         giorni: rigeneraId(precedente.dieta.giorni),
       });
     }
@@ -367,6 +487,11 @@ export async function apriDieta(env: Env, utente: Utente, params: URLSearchParam
     },
     // Alimenti che il motore non conosce.
     daCompletare: alimentiDaCompletare(riga.dieta, libreria),
+    scarti: scartiDagliObiettivi(riga.dieta, libreria),
+    attenzioni: attenzioniDellaDieta(
+      riga.dieta,
+      (await db.schedaClinica(env, utente.id, riga.clienteId)).allergie,
+    ),
   };
 }
 
@@ -386,6 +511,7 @@ export async function salvaDieta(env: Env, utente: Utente, body: any) {
     ok: true,
     dieta,
     daCompletare: alimentiDaCompletare(dieta, libreria),
+    scarti: scartiDagliObiettivi(dieta, libreria),
     conti: (await apriDieta(env, utente, new URLSearchParams({ dieta: id }))).conti,
   };
 }
@@ -494,6 +620,10 @@ function leggiDieta(grezza: any, precedente: Dieta): Dieta {
       grassi: numero(grezza?.obiettivi?.grassi),
       acqua: numero(grezza?.obiettivi?.acqua),
       passi: numero(grezza?.obiettivi?.passi),
+      pastiLiberi: (() => {
+        const n = numero(grezza?.obiettivi?.pastiLiberi);
+        return n === undefined ? undefined : Math.min(7, Math.round(n));
+      })(),
     },
     giorni,
   };
@@ -515,16 +645,49 @@ export async function pubblica(env: Env, utente: Utente, body: any) {
 
   const libreria = await db.libreriaDelloStudio(env, utente.id);
   const mancanti = alimentiDaCompletare(riga.dieta, libreria);
+  const scarti = scartiDagliObiettivi(riga.dieta, libreria);
+
+  // Né gli alimenti senza valori né gli scarti bloccano la pubblicazione.
+  const avvisi = [
+    ...(mancanti.length > 0
+      ? [
+          `${mancanti.length} alimenti non hanno valori nutrizionali: ` +
+            `finché non li completi, i totali del cliente restano parziali.`,
+        ]
+      : []),
+    ...(scarti.length > 0
+      ? [
+          `La dieta scritta si discosta dagli obiettivi che hai indicato (${scarti.join(', ')}). ` +
+            `Il cliente vede i totali dei pasti, non gli obiettivi: correggi le quantità o gli obiettivi.`,
+        ]
+      : []),
+  ];
 
   return {
     ok: true,
-    // Un alimento non in tabella non blocca la pubblicazione.
-    avviso:
-      mancanti.length > 0
-        ? `Pubblicata. ${mancanti.length} alimenti non hanno valori nutrizionali: ` +
-          `finché non li completi, i totali del cliente restano parziali.`
-        : null,
+    avviso: avvisi.length ? `Pubblicata. ${avvisi.join(' ')}` : null,
   };
+}
+
+/** Oltre questa differenza la media della settimana non corrisponde all'obiettivo. */
+const TOLLERANZA_OBIETTIVI = 0.1;
+
+/** Le voci in cui la media dei giorni scritti è lontana dall'obiettivo dichiarato. */
+export function scartiDagliObiettivi(dieta: Dieta, libreria: any): string[] {
+  const { media, giorniScritti } = totaleSettimana(dieta, libreria);
+  if (giorniScritti === 0) return [];
+
+  const o = dieta.obiettivi;
+  const voci: [string, number | undefined, number, string][] = [
+    ['calorie', o.kcal, media.kcal, 'kcal'],
+    ['proteine', o.proteine, media.proteine, 'g'],
+    ['carboidrati', o.carboidrati, media.carboidrati, 'g'],
+    ['grassi', o.grassi, media.grassi, 'g'],
+  ];
+
+  return voci
+    .filter(([, obiettivo, reale]) => obiettivo && Math.abs(reale - obiettivo) / obiettivo > TOLLERANZA_OBIETTIVI)
+    .map(([nome, obiettivo, reale, unita]) => `${nome} ${Math.round(reale)} ${unita} invece di ${obiettivo}`);
 }
 
 export async function ritira(env: Env, utente: Utente, body: any) {
@@ -648,7 +811,7 @@ export async function automazione(env: Env, utente: Utente, body: any) {
     { clienteId, studioId: utente.id },
     'studio',
     attiva
-      ? 'Da adesso all’assistente puoi chiedere quello che vuoi: risponde lui, con i dati della tua dieta.'
+      ? 'Da adesso all’assistente puoi chiedere quello che vuoi: risponde con i dati della tua dieta.'
       : 'Da adesso ti rispondo io di persona: scrivimi pure qui, leggo tutto.',
   );
 
@@ -693,6 +856,147 @@ export async function rispondi(env: Env, utente: Utente, body: any) {
 
   await db.rispondiDomanda(env, utente.id, id, risposta);
   return { ok: true };
+}
+
+// Scheda clinica, misure e note
+
+const DATA_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+export async function salvaCartella(env: Env, utente: Utente, body: any) {
+  const clienteId = String(body?.cliente ?? '');
+  await esigiCliente(env, utente.id, clienteId);
+
+  const testo = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
+  const nascita = testo(body?.nascita, 10);
+  if (nascita && (!DATA_RE.test(nascita) || nascita > new Date().toISOString().slice(0, 10))) {
+    throw new ErroreHttp(400, 'La data di nascita non è valida.');
+  }
+  const altezza = body?.altezza === '' || body?.altezza == null ? null : Number(body.altezza);
+  if (altezza !== null && (!Number.isFinite(altezza) || altezza < 50 || altezza > 250)) {
+    throw new ErroreHttp(400, 'L’altezza va in centimetri, fra 50 e 250.');
+  }
+  const visita = testo(body?.prossimaVisita, 16);
+  if (visita && Number.isNaN(new Date(visita).getTime())) {
+    throw new ErroreHttp(400, 'La data della prossima visita non è valida.');
+  }
+
+  await db.salvaSchedaClinica(env, utente.id, clienteId, {
+    nascita: nascita || null,
+    sesso: body?.sesso === 'F' || body?.sesso === 'M' ? body.sesso : null,
+    altezza,
+    allergie: testo(body?.allergie, 500),
+    patologie: testo(body?.patologie, 1000),
+    farmaci: testo(body?.farmaci, 500),
+    preferenze: testo(body?.preferenze, 500),
+    prossimaVisita: visita || null,
+  });
+  return { ok: true, cartella: await db.schedaClinica(env, utente.id, clienteId) };
+}
+
+/** Misure prese in visita: peso, circonferenze, massa grassa. */
+export async function misura(env: Env, utente: Utente, body: any) {
+  const clienteId = String(body?.cliente ?? '');
+  await esigiCliente(env, utente.id, clienteId);
+
+  const giorno = String(body?.giorno ?? '') || new Date().toISOString().slice(0, 10);
+  if (!DATA_RE.test(giorno) || giorno > new Date().toISOString().slice(0, 10)) {
+    throw new ErroreHttp(400, 'La data della misura non è valida.');
+  }
+
+  const valore = (k: string, min: number, max: number, nome: string) => {
+    const grezzo = body?.[k];
+    if (grezzo === '' || grezzo == null) return null;
+    const n = Number(String(grezzo).replace(',', '.'));
+    if (!Number.isFinite(n) || n < min || n > max) throw new ErroreHttp(400, `${nome} non valido.`);
+    return Math.round(n * 10) / 10;
+  };
+
+  const m = {
+    giorno,
+    peso: valore('peso', 25, 350, 'Peso'),
+    vita: valore('vita', 30, 250, 'Giro vita'),
+    fianchi: valore('fianchi', 30, 250, 'Giro fianchi'),
+    grasso: valore('grasso', 2, 70, 'Massa grassa'),
+    autore: 'studio' as const,
+  };
+  if (m.peso === null && m.vita === null && m.fianchi === null && m.grasso === null) {
+    throw new ErroreHttp(400, 'Scrivi almeno una misura.');
+  }
+
+  await db.salvaMisura(env, clienteId, m);
+  return { ok: true, misure: await db.misure(env, clienteId, 60) };
+}
+
+export async function eliminaMisura(env: Env, utente: Utente, body: any) {
+  const clienteId = String(body?.cliente ?? '');
+  await esigiCliente(env, utente.id, clienteId);
+  const giorno = String(body?.giorno ?? '');
+  if (!DATA_RE.test(giorno)) throw new ErroreHttp(400, 'Manca il giorno.');
+
+  await db.eliminaMisura(env, clienteId, giorno);
+  return { ok: true, misure: await db.misure(env, clienteId, 60) };
+}
+
+export async function nota(env: Env, utente: Utente, body: any) {
+  const clienteId = String(body?.cliente ?? '');
+  await esigiCliente(env, utente.id, clienteId);
+
+  const testo = String(body?.testo ?? '').trim();
+  if (!testo) throw new ErroreHttp(400, 'La nota è vuota.');
+  if (testo.length > 4000) throw new ErroreHttp(400, 'Nota troppo lunga.');
+
+  await db.scriviNota(env, utente.id, clienteId, testo);
+  return { ok: true, note: await db.noteDelCliente(env, utente.id, clienteId) };
+}
+
+export async function eliminaNota(env: Env, utente: Utente, body: any) {
+  const id = String(body?.id ?? '');
+  if (!id) throw new ErroreHttp(400, 'Manca la nota.');
+  if (!(await db.eliminaNota(env, utente.id, id))) throw new ErroreHttp(404, 'Nota non trovata.');
+  return { ok: true };
+}
+
+/** Le diete dello studio da cui partire per scriverne una nuova. */
+export async function modelli(env: Env, utente: Utente) {
+  const diete = await db.dieteDelloStudio(env, utente.id);
+  return {
+    diete: diete.map((d) => ({
+      id: d.id,
+      clienteId: d.clienteId,
+      titolo: d.titolo,
+      stato: d.stato,
+      cliente: nomeDi({ nome: d.clienteNome, email: d.clienteEmail }),
+      aggiornataIl: d.aggiornataIl,
+    })),
+  };
+}
+
+/** Le conversazioni dello studio: l'ultimo messaggio di ogni cliente seguito. */
+export async function conversazioni(env: Env, utente: Utente) {
+  const [ultimi, collegamenti, daLeggere] = await Promise.all([
+    db.ultimiMessaggi(env, utente.id),
+    db.collegamentiDelloStudio(env, utente.id),
+    db.messaggiDaLeggere(env, utente.id),
+  ]);
+  const attivi = new Map(collegamenti.filter((c) => c.stato === 'attivo').map((c) => [c.clienteId, c]));
+
+  return {
+    conversazioni: ultimi
+      .filter((m) => attivi.has(m.clienteId))
+      .map((m) => {
+        const c = attivi.get(m.clienteId)!;
+        return {
+          clienteId: m.clienteId,
+          nome: nomeDi({ nome: c.clienteNome, email: c.clienteEmail }),
+          email: c.clienteEmail,
+          at: m.at,
+          autore: m.autore,
+          testo: m.testo.slice(0, 160),
+          daLeggere: daLeggere.get(m.clienteId) ?? 0,
+          automazione: c.automazione,
+        };
+      }),
+  };
 }
 
 // Impostazioni

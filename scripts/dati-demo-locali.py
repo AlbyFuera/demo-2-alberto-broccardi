@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Dati mock per la demo in locale: crea i quattro account se mancano, collega
 clienti e nutrizionisti, scrive e pubblica una dieta per coppia, riempie una
-settimana di pasti e passi.
+settimana di pasti e passi, la scheda clinica, le pesate, una nota e l'acqua.
 
 Entra con /api/demo/entra, quindi serve ACCOUNT_DEMO in .dev.vars e il server
 avviato con `npx wrangler dev --local --port 8787`. Va lanciato una volta sola.
@@ -91,7 +91,7 @@ DIETA_LUCA = {
         'Un pasto libero a settimana, il sabato sera.',
     ],
     'obiettivi': {'kcal': 1900, 'proteine': 140, 'carboidrati': 200, 'grassi': 60,
-                  'acqua': 2, 'passi': 10000},
+                  'acqua': 2, 'passi': 10000, 'pastiLiberi': 1},
     'schemi': [
         [
             ('Colazione', '07:30', [voce('avena in fiocchi', 50), voce('latte scremato o parz. scremato', 200, 'ml'),
@@ -158,6 +158,13 @@ COPPIE = [
         'passi': [10400, 11200, 9100, 12050, 10800, 9600, 4300],
         'sostituzione': ('Pranzo', 1, 'tonno al naturale'),
         'domanda': 'Posso mangiare una pizza sabato sera al posto della cena?',
+        'cartella': {'nascita': '1990-04-12', 'sesso': 'M', 'altezza': 178, 'allergie': 'frutta a guscio',
+                     'preferenze': 'Lavora in ufficio, palestra lunedì, mercoledì e venerdì.',
+                     'giorni_visita': 4},
+        # Una pesata a settimana, dalla più vecchia.
+        'pesi': [84.2, 83.6, 82.9, 82.4], 'vita': 92,
+        'nota': 'Prima visita: motivato, vuole arrivare a 76 kg. Cena spesso tardi per lavoro.',
+        'acqua': 1250,
     },
     {
         'studio': 'andrea.nutrizionista@gmail.com', 'nome_studio': 'Dott. Andrea',
@@ -169,6 +176,12 @@ COPPIE = [
         'passi': [7200, 5100, None, 8800, 6300, None, 2100],
         'sostituzione': None,
         'domanda': 'Posso prendere la creatina nei giorni di allenamento?',
+        'cartella': {'nascita': '1996-09-03', 'sesso': 'F', 'altezza': 166, 'allergie': 'lattosio',
+                     'preferenze': 'Corsa 4 volte a settimana, vegetariana nei giorni feriali.',
+                     'giorni_visita': 12},
+        'pesi': [58.4, 58.6, 58.1, 58.3], 'vita': 68,
+        'nota': 'Calo di energia nelle sessioni lunghe: rivedere i carboidrati pre-allenamento.',
+        'acqua': 750,
     },
 ]
 
@@ -210,7 +223,7 @@ def prepara(c):
     if esito.get('daCompletare'):
         print(f'  ! alimenti senza valori in libreria: {", ".join(esito["daCompletare"])}')
     studio.post('/api/studio/pubblica', {'id': dieta_id})
-    print(f'  dieta «{d["titolo"]}» pubblicata, {esito.get("mediaKcal")} kcal/giorno')
+    print(f'  dieta «{d["titolo"]}» pubblicata, {esito["conti"]["mediaKcal"]} kcal/giorno')
 
     # Una settimana all'indietro: pasti segnati e passi.
     pasti = {g['indice']: g['pasti'] for g in studio.get(f'/api/studio/dieta?dieta={dieta_id}')['dieta']['giorni']}
@@ -240,6 +253,19 @@ def prepara(c):
         cliente.post('/api/cliente/applica', {'giorno': oggi['indice'], 'pasto': pasto['id'],
                                               'indice': indice, 'alimento': alimento})
         print(f'  sostituzione: {alimento} a {nome.lower()}')
+
+    # Scheda clinica, pesate settimanali, una nota di visita, l'acqua di oggi.
+    cartella = dict(c['cartella'])
+    visita = OGGI + datetime.timedelta(days=cartella.pop('giorni_visita'))
+    studio.post('/api/studio/cartella', {'cliente': cli, **cartella,
+                                         'prossimaVisita': f'{visita.isoformat()}T17:30'})
+    for settimane, kg in enumerate(reversed(c['pesi'])):
+        giorno = OGGI - datetime.timedelta(days=7 * (settimane + 1))
+        studio.post('/api/studio/misura', {'cliente': cli, 'giorno': giorno.isoformat(),
+                                           'peso': kg, 'vita': c['vita']})
+    studio.post('/api/studio/nota', {'cliente': cli, 'testo': c['nota']})
+    cliente.post('/api/cliente/acqua', {'ml': c['acqua']})
+    print(f'  scheda clinica, {len(c["pesi"])} pesate, una nota, visita il {visita}')
 
     risposta = cliente.post('/api/cliente/chat', {'domanda': c['domanda']})
     print(f'  domanda all’assistente: «{c["domanda"]}»')

@@ -18,9 +18,10 @@ Gira su Cloudflare: Workers, D1 e Workers AI. Non servono chiavi API.
    PDF che ha già: lo strumento lo trascrive in una bozza da correggere. I
    valori nutrizionali si calcolano in automatico. La bozza non è visibile al
    cliente; lo diventa appena viene pubblicata.
-5. Il cliente ha una dashboard con i pasti di oggi, le calorie consumate, i
-   passi e i giorni consecutivi di dieta seguita. Spunta i pasti fatti e può
-   scambiare un pasto intero con quello di un altro giorno della sua dieta.
+5. Il cliente ha una dashboard con i pasti di oggi, le calorie consumate,
+   acqua, passi, peso e i giorni consecutivi di dieta seguita. Spunta i pasti
+   fatti, usa il pasto libero se il nutrizionista lo concede e può scambiare un
+   pasto intero con quello di un altro giorno della sua dieta.
 6. Toccando un alimento sceglie tra le sostituzioni previste dal nutrizionista,
    con la porzione già calcolata. Se resta nell'elenco l'aderenza non scende.
 7. Può fare domande all'assistente, per esempio "posso bere un bicchiere di
@@ -31,16 +32,31 @@ Gira su Cloudflare: Workers, D1 e Workers AI. Non servono chiavi API.
    la grammatura equivalente, segnata come prevista dal piano o come
    deviazione. Può annullarla: il piatto torna quello prescritto e il cliente
    vede la motivazione.
+9. Per ogni cliente tiene una scheda clinica (dati personali, allergie,
+   patologie, farmaci, preferenze, prossima visita), le misure nel tempo e
+   note private. La home gli dice quali clienti guardare per primi.
 
 ## Dashboard del cliente
 
 | | Contenuto |
 |---|---|
-| Mangiato oggi | calorie dei pasti spuntati rispetto all'obiettivo |
-| Pasti fatti | fatti su previsti, e quanti saltati |
+| Mangiato oggi | calorie dei pasti spuntati rispetto al totale dei pasti di oggi, con i macro del giorno |
+| Pasti | fatti su previsti, e quanti saltati |
+| Acqua | un bicchiere (250 ml) in più o in meno, rispetto ai litri indicati nella dieta |
 | Passi | passi segnati rispetto all'obiettivo del nutrizionista |
+| Peso | ultima pesata, variazione e andamento; lo vede anche lo studio |
+| Stai seguendo la dieta | aderenza degli ultimi 7 giorni, con colore |
 | Giorni di fila | giorni consecutivi con tutti i pasti fatti |
-| Stai seguendo la dieta | aderenza settimanale, con colore |
+| Pasti liberi | quanti ne restano questa settimana, se il nutrizionista ne concede |
+
+Il riferimento del "Mangiato oggi" è la somma dei pasti scritti per oggi, non
+l'obiettivo calorico dichiarato: se la dieta scritta fa 1600 kcal e l'obiettivo
+dice 1900, il cliente non deve vedersi fermo all'84% dopo aver mangiato tutto.
+La differenza la vede il professionista, nell'editor e alla pubblicazione.
+
+L'aderenza si misura sempre su 7 giorni (`FINESTRA_ADERENZA`): stesso numero
+nella dashboard del cliente, nell'elenco clienti e nella scheda. Nella scheda il
+professionista può confrontarla con gli ultimi 30 giorni.
 
 Regole di calcolo, in `core/aderenza.ts`:
 
@@ -48,7 +64,48 @@ Regole di calcolo, in `core/aderenza.ts`:
   mattino sarebbe sempre zero;
 - un giorno senza spunte conta come dato mancante, non come zero;
 - un pasto fatto scegliendo tra le alternative ammesse vale quanto quello
-  prescritto.
+  prescritto;
+- il pasto libero vale come fatto, ma solo quanti ne concede la dieta
+  (`obiettivi.pastiLiberi`, a settimana): oltre, il server lo rifiuta.
+
+## Settimana del cliente
+
+Tre viste: il piano dei sette giorni, il diario delle ultime due settimane
+(`core/diario.ts`: pasti fatti e saltati, passi, acqua, peso) e la lista della
+spesa raggruppata per reparto, da spuntare mentre si compra. Le spunte della
+spesa restano solo nel browser del cliente. La dieta si può stampare o salvare
+in PDF dal browser.
+
+## Scheda clinica, misure e note
+
+Ogni cliente ha nella scheda dello studio sei sezioni: panoramica, dieta,
+misure, scheda, note, messaggi.
+
+| | |
+|---|---|
+| scheda | nascita, sesso, altezza, allergie e intolleranze, patologie, farmaci, preferenze, prossima visita. Età e BMI si calcolano |
+| misure | peso, vita, fianchi, massa grassa; una riga al giorno, la scrive lo studio o il cliente (solo il peso) |
+| note | appunti privati di visita |
+
+Il cliente vede solo la prossima visita. Il resto è dello studio.
+
+Le allergie si scrivono a testo libero ("lattosio, frutta a guscio").
+`core/allergeni.ts` espande le voci note negli alimenti che le contengono e
+cerca le altre così come sono scritte. Servono a due cose: l'editor segna in
+rosso gli alimenti da controllare, e le sostituzioni calcolate proposte al
+cliente escludono quelli a rischio. Le alternative scritte dal professionista
+restano, con un avviso.
+
+## Home dello studio
+
+In alto: clienti seguiti, aderenza media, quanti chiedono attenzione, visite
+dei prossimi 7 giorni. Sotto, l'elenco "da seguire", ordinato per urgenza:
+messaggi da leggere, domande girate dall'assistente, dieta mancante o in bozza,
+nessuna spunta da 3 giorni o più, aderenza bassa, sostituzioni nuove, visita in
+arrivo. Accanto, richieste di collegamento e sostituzioni recenti.
+
+Una nuova dieta può partire vuota, da un PDF o da qualsiasi dieta già scritta
+dallo studio, anche di un altro cliente.
 
 ## Cambio di un pasto intero
 
@@ -219,6 +276,28 @@ al professionista sia al cliente.
 Vanno tenuti distinti, altrimenti ogni dieta con verdure a volontà risulterebbe
 incompleta.
 
+## Grafica
+
+Un solo foglio di stile, `web/app.css`, per tutte le pagine. Font di sistema
+(SF Pro su Apple, Segoe UI su Windows), una scala tipografica corta, colori
+definiti come variabili con la variante scura che segue il sistema. Sul
+telefono la navigazione è una barra in basso; da 900 px diventa una barra
+laterale. I fogli che salgono dal basso sul telefono diventano finestre al
+centro su schermi larghi. Le icone sono SVG lineari in `web/grafica.js`, che
+contiene anche anelli, grafici e la pagina di stampa.
+
+### Navigazione
+
+| | Barra laterale (da 900 px) | Barra in basso (telefono) |
+|---|---|---|
+| studio | Studio: Home, Clienti, Messaggi, Agenda · Lavoro: Sostituzioni, Diete, Alimenti · Profilo | Home, Clienti, Messaggi, Altro (le altre voci) |
+| cliente | Oggi, Piano, Progressi, Messaggi, Profilo | le stesse cinque |
+
+Il cliente trova in Oggi i pasti, l'acqua e i passi; in Piano la settimana, le
+indicazioni e la spesa; in Progressi aderenza, peso, passi, acqua, diario e i
+suoi cambi. Un cliente aperto da Messaggi, Agenda, Sostituzioni o Diete torna
+lì con il pulsante indietro.
+
 ## Schermata del cliente su telefono
 
 La schermata del cliente è pensata prima di tutto per il telefono. È verificata
@@ -280,9 +359,9 @@ Per avere due account aperti insieme, il secondo in una finestra in incognito.
 ### Verifiche
 
 ```bash
-npm test                 # 145 test sul motore
+npm test                 # 156 test sul motore
 npm run tipi             # controllo dei tipi
-scripts/collaudo.sh      # 136 controlli end-to-end, in locale
+scripts/collaudo.sh      # 167 controlli end-to-end, in locale
 B=https://…workers.dev scripts/collaudo.sh    # gli stessi, contro l'istanza vera
 PW_N=… PW_C=… scripts/strumenti-demo.sh # crea due account con una settimana di dati
 ```
@@ -320,19 +399,23 @@ worker/                  Cloudflare Worker
   index.ts               routing e ruoli, controllo prima degli asset
   auth.ts                password (PBKDF2), sessioni, cookie
   db.ts                  tutto il SQL, sempre filtrato sul proprietario
-  api-cliente.ts         stato, dieta, piano a sostituzione, chat, messaggi
+  api-cliente.ts         stato, dieta, piano a sostituzione, chat, messaggi,
+                         acqua, peso, diario
   api-studio.ts          cruscotto, collegamenti, editor, libreria alimenti,
-                         interruttore dell'assistente e conversazione
+                         interruttore dell'assistente e conversazione,
+                         scheda clinica, misure, note, modelli
   ai.ts                  Workers AI: comprensione e formulazione
   sovrapposizione.ts     applica le sostituzioni del cliente sopra la dieta
   nomi.ts                nome da mostrare quando manca
 web/                     le quattro schermate, senza dipendenze esterne
-  accedi · registrazione · studio · cliente · ui.css · comune.js
-                         simboli tipografici, niente emoji
+  accedi · registrazione · studio · cliente · comune.js
+  app.css                l'unico foglio di stile, chiaro e scuro
+  grafica.js             icone SVG, avatar, anelli, grafici, fogli, stampa
 migrations/               schema D1
   0001_init.sql            utenti, collegamenti, diete, variazioni, domande
   0004_piano_e_messaggi.sql  flag "nel piano" sulle variazioni, interruttore
                              dell'assistente, filo dei messaggi
+  0005_cartella.sql          scheda clinica, misure, note dello studio, acqua
 
 src/                     motore, indipendente da utenti e database
   types.ts               schema della dieta
@@ -342,8 +425,10 @@ src/                     motore, indipendente da utenti e database
   core/piano.ts          sostituzioni ammesse dal professionista
   core/recupero.ts       pasto saltato: calcolo di quanto manca
   core/assistente.ts     interpretazione della domanda e risposte del motore
-  core/spesa.ts          aggregato settimanale
-test/                    140 test
+  core/spesa.ts          aggregato settimanale, per reparto
+  core/allergeni.ts      allergie scritte a testo libero → alimenti a rischio
+  core/diario.ts         gli ultimi giorni, giorno per giorno
+test/                    156 test
 scripts/                 collaudo end-to-end e account demo
 archivio/                sistema precedente, non collegato
 ```
@@ -367,8 +452,7 @@ notifiche disallineate.
 
 ### Fatto
 
-140 test sul motore e 127 controlli end-to-end, eseguiti anche contro l'istanza
-pubblicata.
+156 test sul motore e 167 controlli end-to-end in locale.
 
 Percorso base coperto: iscrizione dei due ruoli, richiesta del cliente allo
 studio, accettazione, scrittura e pubblicazione di una settimana, visualizzazione
@@ -384,13 +468,17 @@ scritta a mano non ricalcolata; assistente spento per un cliente con risposta
 del professionista; assistente riacceso che torna a rispondere.
 
 Contro l'istanza pubblicata, dopo la migrazione `0004`: 123 controlli su 123.
+La migrazione `0005` va applicata (`npm run db:remoto`) prima di pubblicare
+questa versione.
 
 ### Da fare prima di aprire il servizio
 
 - Recupero password: oggi chi la dimentica non può rientrare. Serve l'invio di
   email. È la mancanza più seria.
-- Diario alimentare: il cliente può dichiarare un pasto saltato e avere i conti
-  sul momento, ma non resta registrato.
+- Diario alimentare libero: il diario mostra pasti fatti e saltati, acqua, passi
+  e peso, ma il cliente non può ancora scrivere cosa ha mangiato fuori piano.
+- Promemoria e notifiche sul telefono: servono un service worker e le chiavi
+  per le notifiche push.
 - Tabella interna non validata da un nutrizionista: i valori sono stime
   dichiarate. Lo studio può sovrascriverli dalla sua libreria.
 

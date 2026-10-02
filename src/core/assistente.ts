@@ -442,7 +442,7 @@ export function risolvi(ctx: Contesto, d: Domanda): Risposta {
     ...base,
     risposta:
       `Questa non la so, e non voglio inventarla: l'ho girata a ${ctx.nomeProfessionista}. ` +
-      `Ti risponde lui, e la risposta la trovi qui.`,
+      `La risposta la trovi qui appena arriva.`,
     daGirare: { motivo: 'L’assistente non ha trovato la risposta nella dieta.' },
   };
 }
