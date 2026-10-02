@@ -295,8 +295,7 @@ def con_titolo(dieta, titolo, obiettivi=None):
     return {**dieta, 'titolo': titolo, 'obiettivi': {**dieta['obiettivi'], **(obiettivi or {})}}
 
 
-# Altri clienti di Anna, ognuno in una situazione diversa. Le email sono quelle
-# che hanno una foto di esempio in web/demo-foto.js. Password: cliente123.
+# Altri clienti di Anna, ognuno in una situazione diversa. Password: cliente123.
 ALTRI_DI_ANNA = [
     {'email': 'giulia.damico@gmail.com', 'nome': 'Giulia D\'Amico', 'obiettivo': 'Tornare al peso di prima della gravidanza',
      'dieta': con_titolo(DIETA_LUCA, 'Piano graduale — ottobre', {'kcal': 1600}), 'pubblica': True,

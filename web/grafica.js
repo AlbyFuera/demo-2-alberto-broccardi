@@ -3,7 +3,6 @@
 // Niente style="" nell'HTML: la CSP lo blocca. Le misure passano da data-w/data-h.
 
 import { $, GIORNI, esc } from '/comune.js';
-import { FOTO_DEMO } from '/demo-foto.js';
 
 const svg = (corpo) =>
   `<svg viewBox="0 0 24 24" aria-hidden="true">${corpo}</svg>`;
@@ -66,11 +65,9 @@ export const tinta = (nome) => {
   return h;
 };
 
-/** Foto di esempio se c'è (solo demo), altrimenti le iniziali. */
+/** Le iniziali su una tinta fissa per nome. `email` resta per chi la passa già. */
 export const avatar = (nome, misura = '', email = '') =>
-  FOTO_DEMO[email]
-    ? `<img class="avatar con-foto${misura ? ` ${misura}` : ''}" src="${esc(FOTO_DEMO[email])}" alt="">`
-    : `<span class="avatar av${tinta(nome)}${misura ? ` ${misura}` : ''}" aria-hidden="true">${esc(iniziali(nome))}</span>`;
+  `<span class="avatar av${tinta(nome)}${misura ? ` ${misura}` : ''}" aria-hidden="true">${esc(iniziali(nome))}</span>`;
 
 /* Numeri e date */
 
